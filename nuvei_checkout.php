@@ -1644,9 +1644,6 @@ class Nuvei_Checkout extends PaymentModule
                 array('merchantId', 'merchantSiteId', 'clientRequestId', 'amount', 'currency', 'timeStamp')
             );
             
-            // pass the rebilling fields as response only
-            $oo_params = array_merge_recursive($oo_params, $rebilling_params);
-			
 			if(empty($resp['sessionToken'])
 				|| empty($resp['status'])
 				|| 'SUCCESS' != $resp['status']
@@ -1680,9 +1677,13 @@ class Nuvei_Checkout extends PaymentModule
 				)));
 			}
             
-            $oo_params['request_params'] = $resp;
-			
-			return $oo_params;
+            // pass the rebilling fields as response only
+            $oo_params = array_merge_recursive($oo_params, $rebilling_params);
+            
+            $return_arr                     = $resp;
+            $return_arr['request_params']   = $oo_params;
+            
+            return $return_arr;
 		}
 		catch (Exception $ex) {
 			$this->createLog($ex->getMessage(), 'hookPaymentOptions Exception');
@@ -1734,7 +1735,7 @@ class Nuvei_Checkout extends PaymentModule
         
         $this->createLog($oo_params, 'assignOrderData() $oo_params');
         
-        if(empty($oo_params['request_params']['sessionToken'])) {
+        if(empty($oo_params['sessionToken'])) {
             $this->createLog($oo_params, 'Missing session token!', 'CRITICAL');
             return false;
         }
@@ -1793,7 +1794,7 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         $checkout_params = [
-            'sessionToken'              => $oo_params['request_params']['sessionToken'],
+            'sessionToken'              => $oo_params['sessionToken'],
 			'env'                       => 'yes' == Configuration::get('SC_TEST_MODE') ? 'test' : 'prod',
 			'merchantId'                => $oo_params['merchantId'],
 			'merchantSiteId'            => $oo_params['merchantSiteId'],
