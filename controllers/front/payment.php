@@ -101,7 +101,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 					}
 				}
 				
-				$this->module->createLog('processOrder() Error - Cart ID is empty.');
+				$this->module->createLog('processOrder() Error - Cart ID is empty. Redirect to error page.');
 				
 				Tools::redirect($this->context->link->getModuleLink(
 					$this->module->name,

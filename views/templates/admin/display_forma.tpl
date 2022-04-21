@@ -185,16 +185,18 @@
                                 </select>
                             </div>
                         </div>
-                                
-                        <div class="form-group">
-                            <label class="control-label col-lg-3"> {l s='Auto close APM popup' mod='nuvei'}</label>
-                            <div class="col-lg-9">
-                                <select name="NUVEI_AUTO_CLOSE_APM_POPUP">
-                                    <option value="1" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 1}selected{/if}>{l s='Yes' mod='nuvei'}</option>
-                                    <option value="0" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 0}selected{/if}>{l s='No' mod='nuvei'}</option>
-                                </select>
+                        
+                        {if Configuration::get('SC_TEST_MODE') eq 'yes'}
+                            <div class="form-group">
+                                <label class="control-label col-lg-3"> {l s='Auto close APM popup' mod='nuvei'}</label>
+                                <div class="col-lg-9">
+                                    <select name="NUVEI_AUTO_CLOSE_APM_POPUP">
+                                        <option value="1" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 1}selected{/if}>{l s='Yes' mod='nuvei'}</option>
+                                        <option value="0" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 0}selected{/if}>{l s='No' mod='nuvei'}</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
+                        {/if}
                                 
                         <div class="form-group">
                             <label class="control-label col-lg-3"> {l s='Checkout Log level' mod='nuvei'}</label>

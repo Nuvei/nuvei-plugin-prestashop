@@ -1568,13 +1568,13 @@ class Nuvei_Checkout extends PaymentModule
 				'payment',
 				array('prestaShopAction' => 'showError')
 			);
-
+            
 			$success_url	= $this->context->link->getModuleLink(
 				$this->name,
 				'payment',
 				array(
 					'prestaShopAction'	=> 'showCompleted',
-					'id_cart'			=> (int)$cart->id,
+					'id_cart'			=> (int) $cart->id,
 					'id_module'			=> $this->id,
 					'status'			=> Configuration::get('PS_OS_PREPARATION'),
 					'amount'			=> $amount,
@@ -1601,9 +1601,9 @@ class Nuvei_Checkout extends PaymentModule
 
 				'urlDetails'        => array(
 					'notificationUrl'   => $this->getNotifyUrl(),
-					'successUrl'		=> $success_url,
-					'failureUrl'		=> $error_url,
-					'pendingUrl'		=> $success_url,
+//					'successUrl'		=> $success_url,
+//					'failureUrl'		=> $error_url,
+//					'pendingUrl'		=> $success_url,
                     'backUrl'           => $this->context->link->getPageLink('order'),
 				),
 
@@ -1619,7 +1619,9 @@ class Nuvei_Checkout extends PaymentModule
 				),
 			);
             
-            if(1 == Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP')) {
+            if(1 == Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP')
+                || 'no' == Configuration::get('SC_TEST_MODE')
+            ) {
                 $oo_params['urlDetails']['successUrl']  = $oo_params['urlDetails']['failureUrl']
                                                         = $oo_params['urlDetails']['pendingUrl']
                                                         = $this->apmPopupAutoCloseUrl;
