@@ -1459,9 +1459,9 @@ class Nuvei_Checkout extends PaymentModule
                 'sourceApplication' => $this->nuvei_source_application,
                 'url'               => $notificationUrl, // a custom parameter for the checksum
                 
-                'urlDetails'        => array(
-                    'notificationUrl'   => $notificationUrl,
-                ),
+//                'urlDetails'        => array(
+//                    'notificationUrl'   => $notificationUrl,
+//                ),
                 
                 'merchantDetails'	=> array(
 					'customField2' => 'PrestaShop Plugin v' . $this->version,

@@ -32,8 +32,7 @@ class AdminSafeChargeAjaxController extends ModuleAdminControllerCore
             exit;
         }
         
-        if(
-            is_numeric(Tools::getValue('scOrder'))
+        if(is_numeric(Tools::getValue('scOrder'))
             && intval(Tools::getValue('scOrder')) > 0
             && in_array($action, array('settle', 'void'))
         ) {
@@ -77,6 +76,7 @@ class AdminSafeChargeAjaxController extends ModuleAdminControllerCore
             'currency'              => $currency->iso_code,
             'relatedTransactionId'  => $trans_id,
             'authCode'              => $sc_data['auth_code'],
+            'urlDetails'            => array('notificationUrl' => $this->modeule->getNotifyUrl()),
         );
         
         if($action == 'settle') {
