@@ -83,7 +83,7 @@
          * The first step of the checkout validation
          */
         function scUpdateCart() {
-            console.log('scUpdateCart()', "{$ooAjaxUrl}");
+            //console.log('scUpdateCart()', "{$ooAjaxUrl}");
             
             return new Promise((resolve, reject) => {
                 var errorMsg = "{l s='Payment error, please try again later!' mod='nuvei'}";
@@ -247,10 +247,10 @@
             
             // submit checkout payment
             jQuery('#payment-confirmation button').on('click', function(e) {
-                console.log('#payment-confirmation button click');
+                //console.log('#payment-confirmation button click');
                 
                 if ($('input[name=payment-option]:checked').attr('data-module-name') == '{$nuveiModuleName}') {
-                    console.log('send checkout')
+                    //console.log('send checkout')
                     e.preventDefault();
                     e.stopPropagation();
 

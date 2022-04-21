@@ -1564,13 +1564,13 @@ class Nuvei_Checkout extends PaymentModule
 			# /try updateOrder
 			
 			$error_url		= $this->context->link->getModuleLink(
-				'nuvei',
+				$this->name,
 				'payment',
 				array('prestaShopAction' => 'showError')
 			);
 
 			$success_url	= $this->context->link->getModuleLink(
-				'nuvei',
+				$this->name,
 				'payment',
 				array(
 					'prestaShopAction'	=> 'showCompleted',

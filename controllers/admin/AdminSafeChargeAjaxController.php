@@ -76,7 +76,7 @@ class AdminSafeChargeAjaxController extends ModuleAdminControllerCore
             'currency'              => $currency->iso_code,
             'relatedTransactionId'  => $trans_id,
             'authCode'              => $sc_data['auth_code'],
-            'urlDetails'            => array('notificationUrl' => $this->modeule->getNotifyUrl()),
+            'urlDetails'            => array('notificationUrl' => $this->module->getNotifyUrl()),
         );
         
         if($action == 'settle') {
