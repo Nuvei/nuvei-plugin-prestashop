@@ -19,6 +19,11 @@
             display: none;
         }
         
+        #nuvei_error_msg {
+            max-width: 96%;
+            display: inline-block;
+        }
+        
         #nuvei_close_error {
             float: right;
             font-weight: bold;
