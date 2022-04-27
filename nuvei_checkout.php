@@ -1640,7 +1640,9 @@ class Nuvei_Checkout extends PaymentModule
             if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
                 $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
             }
-            elseif(Configuration::get('SC_USE_UPOS') == 1) {
+            elseif(Configuration::get('SC_USE_UPOS') == 1 
+                && (bool) $this->context->customer->isLogged()
+            ) {
                 $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
             }
             # /use or not UPOs

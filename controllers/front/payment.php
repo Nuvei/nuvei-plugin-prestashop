@@ -601,7 +601,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			. $this->l(', PPP Transaction ID: ') . Tools::getValue('PPP_TransactionID')
 			. $this->l(', Transaction Type: ') . $transactionType
 			. $this->l(', Transaction ID: ') . Tools::getValue('TransactionID')
-			. $this->l(', Payment Method: ') . Tools::getValue('payment_method');
+			. $this->l(', Payment Method: ') . $this->getPaymentMethodName();
         
         $msg = $default_msg_start . ' ' . $gw_data;
         
@@ -742,8 +742,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         
 		$this->module->createLog(
 			[
-                'order id' => $order_info['id'],
-                'status id ' => $status_id
+                'order id'      => $order_info['id'],
+                'status id '    => $status_id
             ],
 			'changeOrderStatus() END.'
 		);
@@ -905,6 +905,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 	
 	private function beforeSuccess()
 	{
+        $this->module->createLog(null, 'beforeSuccess()', 'DEBUG');
+        
 		$error_url = $this->context->link->getModuleLink(
 			$this->module->name,
 			'payment',
@@ -914,7 +916,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			)
 		);
 		
-		$payment_method = str_replace('apmgw_', '', Tools::getValue('payment_method', ''));
+		$payment_method = $this->getPaymentMethodName();
 		
 		if(empty($payment_method) || is_numeric($payment_method)) {
 			$payment_method = str_replace('apmgw_', '', Tools::getValue('upo_name', ''));
@@ -937,9 +939,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			Tools::redirect($error_url);
 		}
 		
-//		if(isset($_SESSION['nuvei_last_open_order_details'])) {
-//			unset($_SESSION['nuvei_last_open_order_details']);
-//		}
         if(!empty($this->context->cookie->nuvei_last_open_order_details)) {
             $this->context->cookie->__unset('nuvei_last_open_order_details');
         }
@@ -1120,7 +1119,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             }
             while( $tries <= $max_tries && (!$order_id || empty($order_info->current_state)) );
 
-            $payment_method = str_replace('apmgw_', '', Tools::getValue('payment_method', ''));
+            $payment_method = $this->getPaymentMethodName();
             
             // try to create an Order by DMN data
             if(!$order_id) {
@@ -1445,6 +1444,11 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     {
         $this->module->createLog('Try to start Subscription.');
         
+        if($this->getRequestStatus() != 'APPROVED') {
+            $this->module->createLog('We can not start Subscription for not APPROVED transaction.');
+            return;
+        }
+        
         if(!in_array(Tools::getValue('transactionType'), array('Sale', 'Settle'))
             || empty(Tools::getValue('customField5'))
         ) {
@@ -1577,4 +1581,13 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
     }
     
+    /**
+     * Common function to use same payment method name in all places.
+     * 
+     * @return string
+     */
+    private function getPaymentMethodName()
+    {
+        return str_replace('apmgw_', '', Tools::getValue('payment_method', ''));
+    }
 }
