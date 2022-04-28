@@ -601,7 +601,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			. $this->l(', PPP Transaction ID: ') . Tools::getValue('PPP_TransactionID')
 			. $this->l(', Transaction Type: ') . $transactionType
 			. $this->l(', Transaction ID: ') . Tools::getValue('TransactionID')
-			. $this->l(', Payment Method: ') . $this->getPaymentMethodName();
+			. $this->l(', Payment Method: ') . Tools::getValue('payment_method');
         
         $msg = $default_msg_start . ' ' . $gw_data;
         
@@ -916,7 +916,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			)
 		);
 		
-		$payment_method = $this->getPaymentMethodName();
+		$payment_method = str_replace('apmgw_', '', Tools::getValue('payment_method', ''));
 		
 		if(empty($payment_method) || is_numeric($payment_method)) {
 			$payment_method = str_replace('apmgw_', '', Tools::getValue('upo_name', ''));
@@ -1119,7 +1119,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             }
             while( $tries <= $max_tries && (!$order_id || empty($order_info->current_state)) );
 
-            $payment_method = $this->getPaymentMethodName();
+            $payment_method = str_replace('apmgw_', '', Tools::getValue('payment_method', ''));
             
             // try to create an Order by DMN data
             if(!$order_id) {
@@ -1581,13 +1581,4 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
     }
     
-    /**
-     * Common function to use same payment method name in all places.
-     * 
-     * @return string
-     */
-    private function getPaymentMethodName()
-    {
-        return str_replace('apmgw_', '', Tools::getValue('payment_method', ''));
-    }
 }
