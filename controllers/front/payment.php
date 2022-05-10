@@ -406,7 +406,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             
             $msg = sprintf(
 				/* translators: %s: the status of the Payment */
-				$this->l('Subscription Payment has Status %s was made. '),
+				$this->l('Subscription Payment with Status %s was made. '),
 				$req_status
 			)
 				. $this->l('Plan ID: ') . Tools::getValue('planId') . '. '

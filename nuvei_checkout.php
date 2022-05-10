@@ -862,7 +862,7 @@ class Nuvei_Checkout extends PaymentModule
      */
     public function hookDisplayBackOfficeHeader()
     {
-        $this->createLog('hookDisplayBackOfficeHeader');
+        $this->createLog(null, 'hookDisplayBackOfficeHeader', 'DEBUG');
         
         $code = '';
         
@@ -1255,13 +1255,19 @@ class Nuvei_Checkout extends PaymentModule
 	 */
 	public function createLog($data, $message = '', $log_level = 'INFO', $span_id = '')
     {
-        $logs_path = _PS_ROOT_DIR_ . '/var/logs/';
+        $logs_path  = _PS_ROOT_DIR_ . '/var/logs/';
+        $test_mode  = Configuration::get('SC_TEST_MODE');
 		
 		if(!is_dir($logs_path) || Configuration::get('SC_CREATE_LOGS') == 'no') {
 			return;
 		}
         
-        $beauty_log = ('yes' == Configuration::get('SC_TEST_MODE')) ? true : false;
+        // save debug logs only in test mode
+        if('DEBUG' == $log_level && 'no' == $test_mode) {
+            return;
+        }
+        
+        $beauty_log = ('yes' == $test_mode) ? true : false;
         $tab        = '    '; // 4 spaces
         
         # prepare log parts
