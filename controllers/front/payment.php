@@ -329,8 +329,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 if($res && is_array($res)) {
                     $first_res = current($res);
                     
-                    $this->module->createLog($first_res, 'Order Rebilling data $first_res');
-                    
                     if(is_array($first_res) && !empty($first_res['subscr_ids'])) {
                         $ord_subscr_ids = json_decode($first_res['subscr_ids']);
                     }
@@ -813,11 +811,11 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 . $this->getRequestStatus()
                 . Tools::getValue('productId');
             
-            if(isset($_GET['advanceResponseChecksum']) 
-                && $_GET['advanceResponseChecksum'] == $advanceResponseChecksum
-            ) {
-                $str = urldecode($str);
-            }
+//            if(isset($_GET['advanceResponseChecksum']) 
+//                && $_GET['advanceResponseChecksum'] == $advanceResponseChecksum
+//            ) {
+//                $str = urldecode($str);
+//            }
             
             $full_str   = Configuration::get('SC_SECRET_KEY') . $str;
             $hash_str   = hash(Configuration::get('SC_HASH_TYPE'), $full_str);
@@ -850,14 +848,27 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         if(isset($_GET['responsechecksum']) 
             && $_GET['responsechecksum'] == $responsechecksum
         ) {
-            $concat = urldecode($concat);
+            $this->module->createLog(null, 'GET DMN', 'DEBUG');
+//            $concat = urldecode($concat);
         }
         
         $concat_final   = $concat . Configuration::get('SC_SECRET_KEY');
         $checksum       = hash(Configuration::get('SC_HASH_TYPE'), $concat_final);
         
         if ($responsechecksum != $checksum) {
-            $this->module->createLog($concat, 'Error - responsechecksum validation fail.');
+            $this->module->createLog(
+                [
+                    'urldecode($concat)' => urldecode($concat),
+                    'utf8_encode($concat)' => utf8_encode($concat),
+                ],
+                'Error - responsechecksum validation fail.'
+            );
+            
+            $this->module->createLog(
+                Configuration::get('SC_SECRET_KEY'),
+                'SC_SECRET_KEY',
+                'DEBUG'
+            );
                 
             header('Content-Type: text/plain');
             exit('DMN Error - responsechecksum validation fail.');
