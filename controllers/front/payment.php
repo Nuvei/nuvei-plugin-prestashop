@@ -401,7 +401,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			)
 				. $this->l('Plan ID: ') . Tools::getValue('planId') . '. '
 				. $this->l('Subscription ID: ') . Tools::getValue('subscriptionId') . '. '
-                . $this->l('Amount: ') . $currency . ' ' . Tools::getValue('totalAmount') . ' '
+                . $this->l('Amount: ') . $currency->iso_code . ' ' . Tools::getValue('totalAmount') . ' '
 				. $this->l('TransactionId: ') . Tools::getValue('TransactionID') . '.';
 
 			$this->module->createLog($msg, 'Subscription DMN Payment');
