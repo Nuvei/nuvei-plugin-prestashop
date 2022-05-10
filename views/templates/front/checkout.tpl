@@ -3,9 +3,9 @@
         body .sc_hide { display: none !important; }
 
         /* for the 3DS popup */
-        {*.sfcModal-dialog {
+        .sfcModal-dialog {
             margin-top: 10%;
-        }*}
+        }
 
         #scForm .cc_load_spinner {
             text-align: center;

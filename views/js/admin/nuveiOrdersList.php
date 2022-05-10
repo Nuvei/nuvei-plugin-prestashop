@@ -7,9 +7,6 @@
             nuveiOrdersList.push(Number.parseInt(_row.find('td:nth-child(2)').text()));
         });
 
-        //var nuveiAjaxUrl = window.location.origin + window.location.pathname 
-        //    + '?controller=AdminSafeChargeAjax&security_key=<?= $this->getModuleSecurityKey(); ?>';
-
         var nuveiAjaxUrl    = "<?= $nuvei_ajax_url; ?>";
         var nuveiAjax       = new XMLHttpRequest();
         var nuveiParams     = 'scAction=getOrdersWithPlans&orders=' + JSON.stringify(nuveiOrdersList);
@@ -17,7 +14,7 @@
         nuveiAjax.open("POST", nuveiAjaxUrl, true);
         nuveiAjax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-        nuveiAjax.onreadystatechange = function(resp){
+        nuveiAjax.onreadystatechange = function(resp) {
             if (nuveiAjax.readyState == 4 && nuveiAjax.status == 200) {
                 var nuveiResp = JSON.parse(this.response);
 

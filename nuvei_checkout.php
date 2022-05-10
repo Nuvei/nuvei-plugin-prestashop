@@ -74,7 +74,7 @@ class Nuvei_Checkout extends PaymentModule
             || !$this->registerHook('displayAdminOrderTop')
             || !$this->registerHook('actionGetAdminOrderButtons')
             || !$this->registerHook('displayAdminOrderMain')
-            || !$this->installTab('AdminCatalog', 'AdminSafeChargeAjax', 'SafeChargeAjax')
+            || !$this->installTab('AdminCatalog', 'NuveiAjax', 'SafeChargeAjax')
             || !$this->addOrderState()
         ) {
             return false;
@@ -150,11 +150,11 @@ class Nuvei_Checkout extends PaymentModule
         $invisible_tab = new Tab();
         
         $invisible_tab->active      = 1;
-        $invisible_tab->class_name  = 'AdminSafeChargeAjax';
+        $invisible_tab->class_name  = 'NuveiAjax';
         $invisible_tab->name        = array();
         
         foreach (Language::getLanguages(true) as $lang) {
-            $invisible_tab->name[$lang['id_lang']] = 'AdminSafeChargeAjax';
+            $invisible_tab->name[$lang['id_lang']] = 'NuveiAjax';
         }
 		
 		$this->createLog('Finish install');
@@ -286,7 +286,7 @@ class Nuvei_Checkout extends PaymentModule
         $this->smarty->assign(
             'ajaxUrl',
             $this->context->link
-                ->getAdminLink("AdminSafeChargeAjax") . '&security_key=' . $this->getModuleSecurityKey()
+                ->getAdminLink("NuveiAjax") . '&security_key=' . $this->getModuleSecurityKey()
         );
     }
     
@@ -807,7 +807,10 @@ class Nuvei_Checkout extends PaymentModule
      */
     public function hookActionProductSave($params)
     {
-        $this->createLog($params, 'hookActionProductSave post');
+        $this->createLog(
+//            $params, 
+            'hookActionProductSave post'
+        ); 
         
         if(empty($_POST['nuvei_payment_plan_attr']) || !is_array($_POST['nuvei_payment_plan_attr'])) {
             return;
@@ -875,7 +878,7 @@ class Nuvei_Checkout extends PaymentModule
             ob_start();
             
             $nuvei_ajax_url = $this->context->link
-                ->getAdminLink("AdminSafeChargeAjax") . '&security_key=' . $this->getModuleSecurityKey();
+                ->getAdminLink("NuveiAjax") . '&security_key=' . $this->getModuleSecurityKey();
         
             include dirname(__FILE__) . '/views/js/admin/nuveiOrdersList.php';
 

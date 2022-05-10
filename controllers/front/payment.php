@@ -796,8 +796,10 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         if (!empty($advanceResponseChecksum)) {
             
             $str = Tools::getValue('totalAmount')
-                . Tools::getValue('currency') . Tools::getValue('responseTimeStamp')
-                . Tools::getValue('PPP_TransactionID') . $this->getRequestStatus()
+                . Tools::getValue('currency') 
+                . Tools::getValue('responseTimeStamp')
+                . Tools::getValue('PPP_TransactionID') 
+                . $this->getRequestStatus()
                 . Tools::getValue('productId');
             
             $full_str   = Configuration::get('SC_SECRET_KEY') . $str;
@@ -825,16 +827,10 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 		);
         
         // remove parameters not part of the checksum
-		$dmn_params = array_diff_key($request_arr, $custom_params);
-        $concat     = urldecode(implode('', $dmn_params));
-        
-//        foreach ($dmn_params as $value) {
-//			$concat .= $value;
-//		}
-        
-        $concat_final = $concat . Configuration::get('SC_SECRET_KEY');
-//        $checksum     = hash(Configuration::get('SC_HASH_TYPE'), utf8_encode($concat_final));
-        $checksum     = hash(Configuration::get('SC_HASH_TYPE'), $concat_final);
+		$dmn_params     = array_diff_key($request_arr, $custom_params);
+        $concat         = implode('', $dmn_params);
+        $concat_final   = $concat . Configuration::get('SC_SECRET_KEY');
+        $checksum       = hash(Configuration::get('SC_HASH_TYPE'), $concat_final);
         
         if ($responsechecksum != $checksum) {
             $this->module->createLog($concat, 'Error - responsechecksum validation fail.');

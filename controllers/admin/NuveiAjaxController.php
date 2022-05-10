@@ -6,7 +6,7 @@
 
 //require_once _PS_MODULE_DIR_ . 'nuvei' . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'NuveiRequest.php';
 
-class AdminSafeChargeAjaxController extends ModuleAdminControllerCore
+class NuveiAjaxController extends ModuleAdminControllerCore
 {
     public function __construct()
     {
@@ -19,7 +19,7 @@ class AdminSafeChargeAjaxController extends ModuleAdminControllerCore
                     'ModuleSecurityKey' => $this->module->getModuleSecurityKey(),
                     'security_key'      => Tools::getValue('security_key')
                 ),
-                'AdminSafeChargeAjaxController Error - security key does not match'
+                'NuveiAjaxController Error - security key does not match'
             );
             exit;
         }
