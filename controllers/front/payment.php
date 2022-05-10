@@ -326,13 +326,16 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 
                 $this->module->createLog($res, 'Order Rebilling data');
                 
-                if($res
-                    && is_array($res)
-                    && !empty($res['subscr_ids'])
-                    && is_array($res['subscr_ids'])
-                ) {
+                if($res && is_array($res)) {
+                    $first_res = current($res);
+                    
+                    $this->module->createLog($first_res, 'Order Rebilling data $first_res');
+                    
+                    if(is_array($first_res) && !empty($first_res['subscr_ids'])) {
+                        $ord_subscr_ids = json_decode($first_res['subscr_ids']);
+                    }
+                    
 //                    $ord_subscr_ids = json_decode(current($res['subscr_ids']));
-                    $ord_subscr_ids = json_decode($res['subscr_ids']);
                 }
 
                 // just add the ID without the details, we need only the ID to cancel the Subscription
