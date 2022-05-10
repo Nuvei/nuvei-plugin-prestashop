@@ -320,12 +320,17 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     . $this->l('Plan ID: ') . Tools::getValue('planId');
                 
                 // save the Subscription ID
-                $ord_subscr_ids = array();
+                $ord_subscr_ids = [];
                 $sql            = "SELECT subscr_ids FROM safecharge_order_data WHERE order_id = " . $order_id;
                 $res            = Db::getInstance()->executeS($sql);
 
-                if($res && is_array($res)) {
-                    $ord_subscr_ids = json_decode(current($res['subscr_ids']));
+                if($res
+                    && is_array($res)
+                    && !empty($res['subscr_ids'])
+                    && is_array($res['subscr_ids'])
+                ) {
+//                    $ord_subscr_ids = json_decode(current($res['subscr_ids']));
+                    $ord_subscr_ids = json_decode($res['subscr_ids']);
                 }
 
                 // just add the ID without the details, we need only the ID to cancel the Subscription
