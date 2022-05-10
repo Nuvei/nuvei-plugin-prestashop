@@ -324,6 +324,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 $sql            = "SELECT subscr_ids FROM safecharge_order_data WHERE order_id = " . $order_id;
                 $res            = Db::getInstance()->executeS($sql);
 
+                $this->module->createLog($res, 'Order Rebilling data');
+                
                 if($res
                     && is_array($res)
                     && !empty($res['subscr_ids'])
