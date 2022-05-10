@@ -1463,7 +1463,7 @@ class Nuvei_Checkout extends PaymentModule
                 'timeStamp'         => $time,
                 'deviceDetails'     => NuveiRequest::get_device_details($this->version),
                 'encoding'          => 'UTF-8',
-                'webMasterId'       => 'PrestaShop' . _PS_VERSION_,
+                'webMasterId'       => 'PrestaShop ' . _PS_VERSION_,
                 'sourceApplication' => $this->nuvei_source_application,
                 'url'               => $notificationUrl, // a custom parameter for the checksum
                 

@@ -392,6 +392,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             
             $order_id   = (int) $cri_parts[0];
             $order_info = $this->getOrder($order_id);
+            $currency   = new Currency((int)$order_info->id_currency);
             
             $msg = sprintf(
 				/* translators: %s: the status of the Payment */
@@ -400,7 +401,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			)
 				. $this->l('Plan ID: ') . Tools::getValue('planId') . '. '
 				. $this->l('Subscription ID: ') . Tools::getValue('subscriptionId') . '. '
-                . $this->l('Amount: ') . $order_info->currency . ' ' . Tools::getValue('totalAmount') . ' '
+                . $this->l('Amount: ') . $currency . ' ' . Tools::getValue('totalAmount') . ' '
 				. $this->l('TransactionId: ') . Tools::getValue('TransactionID') . '.';
 
 			$this->module->createLog($msg, 'Subscription DMN Payment');
