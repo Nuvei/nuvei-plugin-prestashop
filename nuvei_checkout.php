@@ -522,7 +522,7 @@ class Nuvei_Checkout extends PaymentModule
     }
     
     /**
-     * At the bottom of the left column we will print Notes and other Nuvei information.
+     * Print Notes and other Nuvei information.
      * 
      * @return template
      */
@@ -862,6 +862,8 @@ class Nuvei_Checkout extends PaymentModule
      */
     public function hookDisplayBackOfficeHeader()
     {
+        $this->createLog('hookDisplayBackOfficeHeader');
+        
         $code = '';
         
         // insert this script only on Products page

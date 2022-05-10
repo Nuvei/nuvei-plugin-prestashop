@@ -1,8 +1,9 @@
 <script>
     window.addEventListener('load', function() {
+        console.log('nuvei getOrdersWithPlans');
         var nuveiOrdersList = [];
 
-        $('#table-order tbody tr').each(function(){
+        $('#order_grid_table tbody tr').each(function(){
             var _row = $(this);
             nuveiOrdersList.push(Number.parseInt(_row.find('td:nth-child(2)').text()));
         });
@@ -15,11 +16,12 @@
         nuveiAjax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
         nuveiAjax.onreadystatechange = function(resp) {
+            console.log('nuvei getOrdersWithPlans', resp);
             if (nuveiAjax.readyState == 4 && nuveiAjax.status == 200) {
                 var nuveiResp = JSON.parse(this.response);
 
                 if(1 == nuveiResp.status && nuveiResp.orders.length > 0) {
-                    $('#table-order tbody tr').each(function(){
+                    $('#order_grid_table tbody tr').each(function(){
                         var _row		= $(this);
                         var rowOrderId	= Number.parseInt(_row.find('td:nth-child(2)').text());
 
@@ -30,10 +32,10 @@
                             _row.find('td:nth-child(9)').html(rowStatus);
                             // fix the style
                             _row.find('td:nth-child(9)').find('span.color_field').css({
-                                marginRight: '3px',
-                                marginBottom: '3px',
+                                marginTop: '3px',
                                 display: 'inline-block',
-                                padding: '.37em .4em'
+                                padding: '2px 5px',
+                                borderRadius: '4px'
                             });
                         }
                     });

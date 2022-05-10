@@ -803,6 +803,12 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 . $this->getRequestStatus()
                 . Tools::getValue('productId');
             
+            if(isset($_GET['advanceResponseChecksum']) 
+                && $_GET['advanceResponseChecksum'] == $advanceResponseChecksum
+            ) {
+                $str = urldecode($str);
+            }
+            
             $full_str   = Configuration::get('SC_SECRET_KEY') . $str;
             $hash_str   = hash(Configuration::get('SC_HASH_TYPE'), $full_str);
             
@@ -830,6 +836,13 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         // remove parameters not part of the checksum
 		$dmn_params     = array_diff_key($request_arr, $custom_params);
         $concat         = implode('', $dmn_params);
+        
+        if(isset($_GET['responsechecksum']) 
+            && $_GET['responsechecksum'] == $responsechecksum
+        ) {
+            $concat = urldecode($concat);
+        }
+        
         $concat_final   = $concat . Configuration::get('SC_SECRET_KEY');
         $checksum       = hash(Configuration::get('SC_HASH_TYPE'), $concat_final);
         
