@@ -1,4 +1,4 @@
-<div class="card mt-2">
+<div class="card mt-2" style="margin-top: -20px !important;">
     <div class="card-header">
         <h3 class="card-header-title">{l s="Nuvei notes" mod='nuvei'} ({$nuvei_messages|count})</h3>
     </div>
