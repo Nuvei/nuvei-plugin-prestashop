@@ -811,12 +811,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 . $this->getRequestStatus()
                 . Tools::getValue('productId');
             
-//            if(isset($_GET['advanceResponseChecksum']) 
-//                && $_GET['advanceResponseChecksum'] == $advanceResponseChecksum
-//            ) {
-//                $str = urldecode($str);
-//            }
-            
             $full_str   = Configuration::get('SC_SECRET_KEY') . $str;
             $hash_str   = hash(Configuration::get('SC_HASH_TYPE'), $full_str);
             
@@ -831,26 +825,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
         
         # subscription DMN with responsechecksum case
-        $concat         = '';
-//		$request_arr    = $_REQUEST;
-//		$custom_params  = array(
-//			'prestaShopAction'  => '',
-//			'test_mode'         => '',
-//			'sc_stop_dmn'       => '',
-//			'responsechecksum'  => '',
-//		);
-//        
-//        // remove parameters not part of the checksum
-//		$dmn_params     = array_diff_key($request_arr, $custom_params);
-//        $concat         = implode('', $dmn_params);
-//        
-//        if(isset($_GET['responsechecksum']) 
-//            && $_GET['responsechecksum'] == $responsechecksum
-//        ) {
-//            $this->module->createLog(null, 'GET DMN', 'DEBUG');
-////            $concat = urldecode($concat);
-//        }
-        
+        $concat                 = '';
         $request_params_keys    = array_keys($_REQUEST);
         $custom_params_keys     = array(
 			'prestaShopAction',
