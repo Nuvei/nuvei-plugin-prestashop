@@ -244,13 +244,6 @@
                                 <span class="help-block">{l s='Please enable /Yes/ only when using a Once Step Checkout module!' mod='nuvei'}</span>
                             </div>
                         </div>
-                            
-                        <div class="form-group">
-                            <label class="control-label col-lg-3">{l s='The Payment method text on the checkout' mod='nuvei'}</label>
-                            <div class="col-lg-9">
-                                <input type="text" name="NUVEI_CHECKOUT_MSG" value="{Configuration::get('NUVEI_CHECKOUT_MSG')}" />
-                            </div>
-                        </div>
                     </div>
                     <!-- advanced settings -->
                     

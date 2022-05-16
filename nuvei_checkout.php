@@ -225,7 +225,6 @@ class Nuvei_Checkout extends PaymentModule
             Configuration::updateValue('NUVEI_PRESELECT_CC',        Tools::getValue('NUVEI_PRESELECT_CC'));
 //            Configuration::updateValue('NUVEI_APPLE_PAY_LABEL',         Tools::getValue('NUVEI_APPLE_PAY_LABEL'));
             Configuration::updateValue('NUVEI_ADD_CHECKOUT_STEP',   Tools::getValue('NUVEI_ADD_CHECKOUT_STEP'));
-            Configuration::updateValue('NUVEI_CHECKOUT_MSG',        Tools::getValue('NUVEI_CHECKOUT_MSG'));
             Configuration::updateValue('NUVEI_PRESELECT_PAYMENT',   Tools::getValue('NUVEI_PRESELECT_PAYMENT'));
             
 //			Configuration::updateValue(
@@ -317,7 +316,7 @@ class Nuvei_Checkout extends PaymentModule
         
         try {
             $newOption      = new PaymentOption();
-            $option_text    = Configuration::get('NUVEI_CHECKOUT_MSG');
+            $option_text    = Configuration::get('SC_FRONTEND_NAME');
 
             if(!$option_text || empty($option_text)) {
                 $option_text = $this->trans('Pay by Nuvei', [], 'Modules.nuvei');
