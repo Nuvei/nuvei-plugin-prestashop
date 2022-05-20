@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.0.2
+```
+    In OpenOrder request use bigger clientUniqueId parameter.
+```
+
 # 1.0.1
 ```
     Remove the repeating option in Advanced plugin settings "The Payment method text on the checkout". The proper option is in General tab - Default title.

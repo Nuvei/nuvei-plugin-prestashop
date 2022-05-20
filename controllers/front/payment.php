@@ -7,7 +7,6 @@
 class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 {
 //    public $ssl = true;
-	private $cuid_postfix	= '_sandbox_apm'; // postfix for Sandbox APM payments
     
     public function initContent()
     {
@@ -1036,23 +1035,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     }
 	
 	/**
-	 * Function setCuid
-	 * 
-	 * Set client unique id.
-	 * We change it only for Sandbox (test) mode.
-	 * 
-	 * @param int $order_id - cart or order id
-	 * @return int|string
-	 */
-	private function setCuid($order_id) {
-		if('yes' != Configuration::get('SC_TEST_MODE')) {
-			return (int)$order_id;
-		}
-		
-		return $order_id . '_' . time() . $this->cuid_postfix;
-	}
-	
-	/**
 	 * Function getCuid
 	 * 
 	 * Get client unique id.
@@ -1060,18 +1042,9 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 	 * 
 	 * @return int|string
 	 */
-	private function getCuid() {
-		$merchant_unique_id = Tools::getValue('merchant_unique_id');
-		
-		if('yes' != Configuration::get('SC_TEST_MODE')) {
-			return $merchant_unique_id;
-		}
-		
-		if(strpos($merchant_unique_id, $this->cuid_postfix) !== false) {
-			return current(explode('_', $merchant_unique_id));
-		}
-		
-		return $merchant_unique_id;
+	private function getCuid()
+    {
+        return current(explode('_', Tools::getValue('merchant_unique_id')));
 	}
     
     /**

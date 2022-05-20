@@ -12,7 +12,7 @@ class Nuvei_Checkout extends PaymentModule
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $version                     = '1.0.1';
+    public $version                     = '1.0.2';
     public $ps_versions_compliancy      = array(
         'min' => '1.7.7.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
@@ -1610,7 +1610,7 @@ class Nuvei_Checkout extends PaymentModule
             
 			# Open Order
 			$oo_params = array(
-				'clientUniqueId'	=> (int)$cart->id,
+				'clientUniqueId'	=> $this->setCuid((int) $cart->id),
 				'amount'            => $amount,
 				'currency'          => $currency->iso_code,
 
@@ -2389,5 +2389,19 @@ class Nuvei_Checkout extends PaymentModule
             return 0;
         }
     }
+    
+    /**
+	 * Function setCuid
+	 * 
+	 * Set client unique id.
+	 * We change it only for Sandbox (test) mode.
+	 * 
+	 * @param int $order_id - cart or order id
+	 * @return int|string
+	 */
+	private function setCuid($order_id)
+    {
+		return $order_id . '_' . time();
+	}
     
 }
