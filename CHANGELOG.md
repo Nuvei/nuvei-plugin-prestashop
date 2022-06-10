@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.0.3
+```
+    For the Checkout SDK pass billing address and into userData parameter.
+```
+
 # 1.0.2
 ```
     In OpenOrder request use bigger clientUniqueId parameter.
