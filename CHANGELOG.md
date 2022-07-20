@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.0.4
+```
+    Added correct links to Nuvei Documentation in the plugin settings.
+```
+
 # 1.0.3
 ```
     For the Checkout SDK pass billing address and into userData parameter.
