@@ -147,13 +147,12 @@
                 }
 
                 if(resp.result == 'DECLINED') {
-                    //console.log('Nuvei Declined payment:');
+                    if (resp.hasOwnProperty('errorDescription') && 'Insufficient funds' == resp.errorDescription) {
+                        scFormFalse("{l s='You have Insufficient funds, please go back and remove some of the items in your shopping cart, or use another card.' mod='nuvei'}");
+                        return
+                    }
                     
                     scFormFalse("{l s='Your Payment was DECLINED. Please try another payment method!' mod='nuvei'}");
-                    
-                    jQuery( document ).ajaxComplete(function() {
-                        console.log( "Triggered ajaxComplete handler." );
-                    });
                     return;
                 }
 
