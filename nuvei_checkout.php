@@ -50,8 +50,6 @@ class Nuvei_Checkout extends PaymentModule
         if (!isset($this->owner) || !isset($this->details) || !isset($this->address)) {
             $this->warning = $this->l('Merchant account details must be configured before using this module.');
         }
-        
-//        $this->createLog(version_compare(_PS_VERSION_, '1.7.8.3', '<='), 'compare');
     }
 	
     public function install()
@@ -223,14 +221,8 @@ class Nuvei_Checkout extends PaymentModule
             Configuration::updateValue('SC_TEST_MODE',              Tools::getValue('SC_TEST_MODE'));
             Configuration::updateValue('SC_CREATE_LOGS',            Tools::getValue('SC_CREATE_LOGS'));
             Configuration::updateValue('NUVEI_PRESELECT_CC',        Tools::getValue('NUVEI_PRESELECT_CC'));
-//            Configuration::updateValue('NUVEI_APPLE_PAY_LABEL',         Tools::getValue('NUVEI_APPLE_PAY_LABEL'));
             Configuration::updateValue('NUVEI_ADD_CHECKOUT_STEP',   Tools::getValue('NUVEI_ADD_CHECKOUT_STEP'));
             Configuration::updateValue('NUVEI_PRESELECT_PAYMENT',   Tools::getValue('NUVEI_PRESELECT_PAYMENT'));
-            
-//			Configuration::updateValue(
-//				'NUVEI_SAVE_ORDER_AFTER_APM_PAYMENT',
-//				Tools::getValue('NUVEI_SAVE_ORDER_AFTER_APM_PAYMENT')
-//			);
             
             Configuration::updateValue('NUVEI_SDK_VERSION',             Tools::getValue('NUVEI_SDK_VERSION'));
             Configuration::updateValue('NUVEI_USE_DCC',                 Tools::getValue('NUVEI_USE_DCC'));
@@ -689,28 +681,6 @@ class Nuvei_Checkout extends PaymentModule
             return false;
         }
         
-        
-//        $cpanel_url = ($test_mode == 'yes' ? 'sandbox' : 'cpanel') . '.safecharge.com';
-//        
-//        $msg = '';
-//        $error_note = $this->l('Request for Refund #') . $last_slip_id 
-//			. $this->l(' fail, if you want login into') . ' <i>' . $cpanel_url . '</i> '
-//            . $this->l('and refund Transaction ID ') . $sc_order_info['related_transaction_id'];
-        
-//        if($json_arr === false) {
-//            $msg = $this->l('The REST API retun false. ') . $error_note;
-//            $this->context->controller->errors[] = $msg;
-//
-//            $message->message = $msg;
-//            $message->add();
-//            
-//            return false;
-//        }
-        
-        
-        
-        
-        
         // the status of the request is ERROR
 //        if(@$json_arr['status'] == 'ERROR') {
             $msg = $this->l('Request ERROR.');
@@ -730,13 +700,6 @@ class Nuvei_Checkout extends PaymentModule
             
             return false;
 //        }
-        
-        // if request is success, we will wait for DMN
-//        $msg = $this->l('Request for Refund #') . $last_slip_id . $this->l(', was sent. Please, wait for DMN!');
-//        $this->context->controller->success[] = $msg;
-//        
-//        $message->message = $msg;
-//        $message->add();
         
         return true;
     }
@@ -860,7 +823,7 @@ class Nuvei_Checkout extends PaymentModule
      */
     public function hookDisplayBackOfficeHeader()
     {
-        $this->createLog(null, 'hookDisplayBackOfficeHeader', 'DEBUG');
+        $this->createLog(null, 'hookDisplayBackOfficeHeader', 'INFO');
         
         $code = '';
         
@@ -938,12 +901,9 @@ class Nuvei_Checkout extends PaymentModule
         try {
             $products                   = $params['cart']->getProducts(); // array
             $group_ids_arr              = $this->getNuvePaymentPlanGroupIds(); // get Nuvei Payment Plan group IDs
-//            $id_lang        = Context::getContext()->language->id;
             $id_lang                    = $this->context->language->id;
             $is_user_logged             = (bool)$this->context->customer->isLogged();
             $combinations               = $params['product']->getAttributeCombinations((int) $id_lang);
-            
-//            Configuration::get('NUVEI_ENABLE_GUEST_REBILLING')
             
             // if current combination is part of Nuvei Payment Plan group 
             // and the user is not logged in and Guests rebilling - do not add the product
@@ -951,7 +911,6 @@ class Nuvei_Checkout extends PaymentModule
                 if($data['id_product_attribute'] == $params['id_product_attribute']
                     && in_array($data['id_attribute_group'], $group_ids_arr)
                     && !$is_user_logged
-//                    && Configuration::get('NUVEI_ENABLE_GUEST_REBILLING') == 0
                 ) {
                     $params['product']->available_for_order = false;
                     return false;
@@ -963,13 +922,6 @@ class Nuvei_Checkout extends PaymentModule
                 $this->createLog('hookActionCartUpdateQuantityBefore() - The Cart is empty.');
                 return;
             }
-            
-            # if the Cart is not empty
-            // 2 if the incoming product does not have Nuvei Payment Plan - check the Cart
-//            if(count($products) > 1) {
-//                $this->createLog('hookActionCartUpdateQuantityBefore() - There are more tha one products in the Cart.');
-//                return;
-//            }
             
             $prod_with_plan = $this->getProdsWithPlansFromCart($params, $group_ids_arr);
             
@@ -1065,7 +1017,6 @@ class Nuvei_Checkout extends PaymentModule
             
             return;
         }
-//        elseif(Configuration::get('NUVEI_ENABLE_GUEST_REBILLING') == 0 && !$is_user_logged) {
         elseif(!$is_user_logged) {
             ob_start();
                 
@@ -1358,61 +1309,6 @@ class Nuvei_Checkout extends PaymentModule
 			$string,
 			FILE_APPEND
 		);
-        
-//		$d		= $data;
-//		$string	= '';
-//
-//		if(is_array($data)) {
-//			// do not log accounts if on prod
-//			if(Configuration::get('SC_TEST_MODE') == 'no') {
-//				if(!empty($data['userAccountDetails']) && is_array($data['userAccountDetails'])) {
-//					$data['userAccountDetails'] = 'userAccountDetails details';
-//				}
-//				if(!empty($data['userPaymentOption']) && is_array($data['userPaymentOption'])) {
-//					$data['userPaymentOption'] = 'userPaymentOption details';
-//				}
-//				if(!empty($data['paymentOption']) && is_array($data['paymentOption'])) {
-//					$data['paymentOption'] = 'paymentOption details';
-//				}
-//			}
-//			// do not log accounts if on prod
-//			
-//			if(!empty($data['paymentMethods']) && is_array($data['paymentMethods'])) {
-//				$data['paymentMethods'] = json_encode($data['paymentMethods']);
-//			}
-//
-//			$d = Configuration::get('SC_TEST_MODE') == 'yes' ? print_r($data, true) : json_encode($data);
-//		}
-//		elseif(is_object($data)) {
-//			$d = Configuration::get('SC_TEST_MODE') == 'yes' ? print_r($data, true) : json_encode($data);
-//		}
-//		elseif(is_bool($data)) {
-//			$d = $data ? 'true' : 'false';
-//		}
-//
-//		$string .= '[v.' . $this->version . '] | ';
-//
-//		if(!empty($message)) {
-//			if(is_string($message)) {
-//				$string .= $message;
-//			}
-//			else {
-//				$string .= "\r\n" . (Configuration::get('SC_TEST_MODE') == 'yes'
-//					? json_encode($message, JSON_PRETTY_PRINT) : json_encode($message));
-//			}
-//			
-//			$string .= "\r\n";
-//		}
-//
-//		$string .= $d . "\r\n\r\n";
-//
-//		try {
-//			file_put_contents(
-//				$logs_path . 'Nuvei-' . date('Y-m-d', time()) . '.log',
-//				date('H:i:s', time()) . ': ' . $string, FILE_APPEND
-//			);
-//		}
-//		catch (Exception $exc) {}
 	}
 	
 	/**
@@ -1472,11 +1368,6 @@ class Nuvei_Checkout extends PaymentModule
                 'webMasterId'       => 'PrestaShop ' . _PS_VERSION_,
                 'sourceApplication' => $this->nuvei_source_application,
                 'url'               => $notificationUrl, // a custom parameter for the checksum
-                
-//                'urlDetails'        => array(
-//                    'notificationUrl'   => $notificationUrl,
-//                ),
-                
                 'merchantDetails'	=> array(
 					'customField2' => 'PrestaShop Plugin v' . $this->version,
 					'customField4' => $time, // time when we create request
@@ -1615,9 +1506,6 @@ class Nuvei_Checkout extends PaymentModule
 
 				'urlDetails'        => array(
 					'notificationUrl'   => $this->getNotifyUrl(),
-//					'successUrl'		=> $success_url,
-//					'failureUrl'		=> $error_url,
-//					'pendingUrl'		=> $success_url,
                     'backUrl'           => $this->context->link->getPageLink('order'),
 				),
 
@@ -2225,10 +2113,6 @@ class Nuvei_Checkout extends PaymentModule
 			. "WHERE module_name = 'Nuvei' "
 			. "ORDER BY id_order_state DESC;");
 		
-//		if (
-//			!Configuration::get('SC_OS_AWAITING_PAIMENT')
-//            || !Validate::isLoadedObject(new OrderState(Configuration::get('SC_OS_AWAITING_PAIMENT')))
-//		) {
 		// create
 		if(empty($res)) {
 			// create new order state

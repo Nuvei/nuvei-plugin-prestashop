@@ -93,6 +93,7 @@ class NuveiAjaxController extends ModuleAdminControllerCore
                 )));
             }
             
+            $method = 'voidTransaction';
         }
         
         if($action == 'settle') {
