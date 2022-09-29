@@ -4,8 +4,6 @@
  * @author Nuvei
  */
 
-//require_once _PS_MODULE_DIR_ . 'nuvei' . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'NuveiRequest.php';
-
 class NuveiAjaxController extends ModuleAdminControllerCore
 {
     public function __construct()
@@ -79,11 +77,26 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             'urlDetails'            => array('notificationUrl' => $this->module->getNotifyUrl()),
         );
         
+        if($action == 'void') {
+            if(0 == $params['amount']) {
+                $resp = $this->module->cancel_subscription($order_id);
+                
+                header('Content-Type: application/json');
+                
+                if($resp === false) {
+                    exit(json_encode(array('status' => 0)));
+                }
+                
+                exit(json_encode(array(
+                    'status'    => $status,
+                    'data'      => $resp
+                )));
+            }
+            
+        }
+        
         if($action == 'settle') {
 			$method = 'settleTransaction';
-        }
-        elseif($action == 'void') {
-			$method = 'voidTransaction';
         }
         
         $resp = $this->module->callRestApi(
@@ -92,8 +105,7 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             array('merchantId', 'merchantSiteId', 'clientRequestId', 'clientUniqueId', 'amount', 'currency', 'relatedTransactionId', 'authCode', 'url', 'timeStamp')
         );
         
-        if(
-            !$resp || !is_array($resp)
+        if(!$resp || !is_array($resp)
             || @$resp['status'] == 'ERROR'
             || @$resp['transactionStatus'] == 'ERROR'
             || @$resp['transactionStatus'] == 'DECLINED'
@@ -101,12 +113,11 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             $status = 0;
         }
         elseif('voidTransaction' == $action) {
-            $this->cancel_subscription($order_id);
+            $this->module->cancel_subscription($order_id);
         }
         
         header('Content-Type: application/json');
-        echo json_encode(array('status' => $status, 'data' => $resp));
-        exit;
+        exit(json_encode(array('status' => $status, 'data' => $resp)));
     }
     
     /**

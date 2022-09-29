@@ -250,7 +250,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     {
         $this->module->createLog(@$_REQUEST, 'DMN request:');
 		
-        // manually stop DMN process
+        # manually stop DMN process
 		if(Tools::getValue('sc_stop_dmn', 0) == 1 
             && Configuration::get('SC_TEST_MODE') == 'yes'
         ) {
@@ -263,6 +263,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			echo 'DMN report: Manually stopped process.';
             exit;
 		}
+        # /manually stop DMN process
         
         $req_status = $this->getRequestStatus();
         $dmnType    = Tools::getValue('dmnType');
@@ -319,7 +320,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     . $this->l('Plan ID: ') . Tools::getValue('planId');
                 
                 // save the Subscription ID
-                $ord_subscr_ids = [];
+                $ord_subscr_ids = '';
                 $sql            = "SELECT subscr_ids FROM safecharge_order_data WHERE order_id = " . $order_id;
                 $res            = Db::getInstance()->executeS($sql);
 
@@ -329,19 +330,19 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     $first_res = current($res);
                     
                     if(is_array($first_res) && !empty($first_res['subscr_ids'])) {
-                        $ord_subscr_ids = json_decode($first_res['subscr_ids']);
+//                        $ord_subscr_ids = json_decode($first_res['subscr_ids']);
+                        $ord_subscr_ids = $first_res['subscr_ids'];
                     }
-                    
-//                    $ord_subscr_ids = json_decode(current($res['subscr_ids']));
                 }
 
                 // just add the ID without the details, we need only the ID to cancel the Subscription
                 if (!in_array($subscriptionId, $ord_subscr_ids)) {
-                    $ord_subscr_ids[] = $subscriptionId;
+                    $ord_subscr_ids = $subscriptionId;
                 }
 
                 $sql = "UPDATE `safecharge_order_data` "
-                    . "SET subscr_ids = '" . json_encode($ord_subscr_ids) . "' "
+//                    . "SET subscr_ids = '" . json_encode($ord_subscr_ids) . "' "
+                    . "SET subscr_ids = " . $ord_subscr_ids . " "
                     . "WHERE order_id = " . $order_id;
                 $res = Db::getInstance()->execute($sql);
 
@@ -1408,7 +1409,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             );
             
             if('Void' == $transactionType && 'APPROVED' == $req_status) {
-                $this->cancel_subscription($order_info->id);
+                $this->module->cancel_subscription($order_info->id);
             }
             else { // Settle, try to start a Subscription
                 $currency = new Currency((int)$order_info->id_currency);
@@ -1471,24 +1472,24 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 		);
         
         // check for more than one products of same type
-        $qty        = 1;
-		$items_data = json_decode(Tools::getValue('customField3'), true); // get items data
-        
-        if (!empty($items_data) && is_array($items_data)) {
-			$items_data_curr = current($items_data);
-			
-			if (!empty($items_data_curr['quantity']) && is_numeric($items_data_curr['quantity'])) {
-				$qty = $items_data_curr['quantity'];
-				
-				$this->module->createLog('We will create ' . $qty . ' subscriptions.');
-			}
-		}
+//        $qty        = 1;
+//		$items_data = json_decode(Tools::getValue('customField3'), true); // get items data
+//        
+//        if (!empty($items_data) && is_array($items_data)) {
+//			$items_data_curr = current($items_data);
+//			
+//			if (!empty($items_data_curr['quantity']) && is_numeric($items_data_curr['quantity'])) {
+//				$qty = $items_data_curr['quantity'];
+//				
+//				$this->module->createLog('We will create ' . $qty . ' subscriptions.');
+//			}
+//		}
         
         $msg                = '';
         $message            = new MessageCore();
         $message->id_order  = $order_id;
         
-        for ($qty; $qty > 0; $qty--) {
+//        for ($qty; $qty > 0; $qty--) {
 			$resp = $this->module->callRestApi(
                 'createSubscription',
                 $params,
@@ -1508,7 +1509,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 $message->message = $msg;
                 $message->add();
 				
-				break;
+//				break;
 			}
 			
 			// On Success
@@ -1521,56 +1522,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             $message->private = true;
             $message->message = $msg;
             $message->add();
-		}
-    }
-    
-    /**
-     * Cancel a Subscription Plan if any.
-     * 
-     * @param int $order_id
-     * @return void
-     */
-    private function cancel_subscription($order_id)
-    {
-        $query = "SELECT subscr_ids FROM safecharge_order_data "
-            . "WHERE order_id = " . $order_id;
-        
-        $res = Db::getInstance()->getRow($query);
-        
-        $this->module->createLog($res, 'cancel_subscription()');
-        
-        if(!$res || empty($res['subscr_ids'])) {
-            return;
-        }
-        
-        $ids = json_decode($res['subscr_ids']);
-        
-        if(empty($ids)) {
-            return;
-        }
-        
-        foreach($ids as $subscr_id) {
-            $resp = $this->module->callRestApi(
-                'cancelSubscription',
-                array('subscriptionId' => $subscr_id),
-                array('merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp',)
-            );
-            
-            // On Error
-			if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
-                $message			= new MessageCore();
-                $message->id_order	= $order_id;
-				$msg                = $this->l('Error when try to cancel a Subscription #') . (int) $subscr_id;
-
-				if (!empty($resp['reason'])) {
-					$msg .= $this->l(' Reason: ') . $resp['reason'];
-				}
-				
-                $message->private = true;
-                $message->message = $msg;
-                $message->add();
-			}
-        }
+//		}
     }
     
 }

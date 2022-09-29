@@ -748,7 +748,6 @@ class Nuvei_Checkout extends PaymentModule
         $product        = new Product((int) $params['id_product']);
         $id_lang        = Context::getContext()->language->id;
         $combinations   = $product->getAttributeCombinations((int) $id_lang, true);
-        $group_ids_arr  = array();
         $comb_ids_arr   = array();
         
         ob_start();
@@ -1862,6 +1861,61 @@ class Nuvei_Checkout extends PaymentModule
         return true;
     }
     
+    /**
+     * Cancel a Subscription Plan if any.
+     * 
+     * @param int $order_id
+     * @return bool|array
+     */
+    public function cancel_subscription($order_id)
+    {
+        $query = "SELECT subscr_ids FROM safecharge_order_data "
+            . "WHERE order_id = " . $order_id;
+        
+        $res = Db::getInstance()->getRow($query);
+        
+        $this->createLog($res, 'cancel_subscription()');
+        
+        if(!$res || empty($res['subscr_ids'])) {
+            return false;
+        }
+        
+//        $ids = json_decode($res['subscr_ids']);
+        $subscr_id = $res['subscr_ids'];
+        
+//        if(empty($ids)) {
+        if(empty($subscr_id)) {
+            return false;
+        }
+        
+//        foreach($ids as $subscr_id) {
+        $resp = $this->callRestApi(
+            'cancelSubscription',
+            array('subscriptionId' => $subscr_id),
+            array('merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp',)
+        );
+
+        // On Error
+        if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
+            $message			= new MessageCore();
+            $message->id_order	= $order_id;
+            $msg                = $this->l('Error when try to cancel a Subscription #') . (int) $subscr_id;
+
+            if (!empty($resp['reason'])) {
+                $msg .= $this->l(' Reason: ') . $resp['reason'];
+            }
+
+            $message->private = true;
+            $message->message = $msg;
+            $message->add();
+
+            return !empty($resp['status']) ? $resp : false;
+        }
+//        }
+            
+        return $resp;
+    }
+    
     private function smartyToJsObject($object, $name = 'nuveiObj')
     {
         return '<script>var ' . $$name . ' = ' . json_encode($object) . ';</script>';
@@ -2309,13 +2363,17 @@ class Nuvei_Checkout extends PaymentModule
                 . "WHERE pac.id_product_attribute = ". (int) $data['id_product_attribute'] ." "
                     . "AND ". _DB_PREFIX_ ."attribute.id_attribute_group IN (". implode(',', $group_ids_arr) .");";
 
-            $res = Db::getInstance()->executeS($sql);
+            $quantity   = $data['quantity'];
+            $res        = Db::getInstance()->executeS($sql);
             
-            $this->createLog($res, 'getProdsWithPlansFromCart()');
-
             // we have product with a Nuvei Payment Plan into the Cart
             if(!empty($res) && is_array($res)) {
-                return current($res);
+                $details                            = current($res);
+                $plan_details                       = json_decode($details['plan_details'], true);
+                $plan_details['recurringAmount']    = $quantity * $plan_details['recurringAmount'];
+                $details['plan_details']                = json_encode($plan_details);
+                
+                return $details;
             }
         }
         

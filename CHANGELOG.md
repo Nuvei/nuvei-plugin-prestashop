@@ -3,6 +3,7 @@
 # 1.0.5
 ```
     Added new text message fror 'Insufficient funds' error.
+    Unify products in a single rebilling plan, instead creating few Rebilings for an Order.
 ```
 
 # 1.0.4

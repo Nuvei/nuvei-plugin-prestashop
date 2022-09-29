@@ -21,6 +21,6 @@
         TrialPeriod             : '<?= $this->l('Trial period'); ?>',
         Day                     : '<?= $this->l('Day'); ?>',
         Month                   : '<?= $this->l('Month'); ?>',
-        Year                    : '<?= $this->l('Year'); ?>',
+        Year                    : '<?= $this->l('Year'); ?>'
     };
 </script>
