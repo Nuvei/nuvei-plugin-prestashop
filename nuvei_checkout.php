@@ -1026,12 +1026,20 @@ class Nuvei_Checkout extends PaymentModule
             return ob_end_flush();
         }
         
-        $product_plans  = array();
-        $gr_ids         = array();
+        $product_plans      = array();
+        $gr_ids             = array();
+        $currency           = new Currency($this->context->cart->id_currency);
+        $conversion_rate    = $currency->getConversationRate();
+        
+        var_dump($currency->id);
+        var_dump($conversion_rate);
         
         foreach($res as $data) {
             $data['plan_details'] = json_decode($data['plan_details'], true);
-            $product_plans[$data['id_attribute']] = $data;
+            
+            // convert the recurringAmount according currency
+            $data['plan_details']['recurringAmount']    *= $conversion_rate;
+            $product_plans[$data['id_attribute']]       = $data;
             
             if(!in_array($data['id_attribute_group'], $gr_ids)) {
                 $gr_ids[] = $data['id_attribute_group'];
@@ -1062,6 +1070,7 @@ class Nuvei_Checkout extends PaymentModule
             'is_cart_empty'     => $is_cart_empty,
             'disable_add_btn'   => $disable_add_btn,
         );
+        
         include dirname(__FILE__) . '/views/templates/front/product_payment_plan_details.php';
         
         ob_get_flush();
@@ -2247,14 +2256,16 @@ class Nuvei_Checkout extends PaymentModule
                 . "WHERE pac.id_product_attribute = ". (int) $data['id_product_attribute'] ." "
                     . "AND ". _DB_PREFIX_ ."attribute.id_attribute_group IN (". implode(',', $group_ids_arr) .");";
 
-            $quantity   = $data['quantity'];
-            $res        = Db::getInstance()->executeS($sql);
+            $quantity           = $data['quantity'];
+            $res                = Db::getInstance()->executeS($sql);
+            $currency           = new Currency($this->context->cart->id_currency);
+            $conversion_rate    = $currency->getConversationRate();
             
             // we have product with a Nuvei Payment Plan into the Cart
             if(!empty($res) && is_array($res)) {
                 $details                            = current($res);
                 $plan_details                       = json_decode($details['plan_details'], true);
-                $plan_details['recurringAmount']    = round($quantity * $plan_details['recurringAmount'], 2);
+                $plan_details['recurringAmount']    = round($quantity * $plan_details['recurringAmount'] * $conversion_rate, 2);
                 $details['plan_details']            = json_encode($plan_details);
                 
                 return $details;

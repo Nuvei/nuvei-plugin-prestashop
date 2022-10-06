@@ -3,6 +3,7 @@
 # 1.0.6
 ```
     Fix for the problem with the Rebiling with multiple products and wrong Recurring amount format.
+    Fix for the recurring amount when used not default currency in the store.
 ```
 
 # 1.0.5
