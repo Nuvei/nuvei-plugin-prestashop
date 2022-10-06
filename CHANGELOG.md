@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.0.6
+```
+    Fix for the problem with the Rebiling with multiple products and wrong Recurring amount format.
+```
+
 # 1.0.5
 ```
     Added new text message fror 'Insufficient funds' error.

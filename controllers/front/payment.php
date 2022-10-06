@@ -1471,58 +1471,41 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			$prod_plan
 		);
         
-        // check for more than one products of same type
-//        $qty        = 1;
-//		$items_data = json_decode(Tools::getValue('customField3'), true); // get items data
-//        
-//        if (!empty($items_data) && is_array($items_data)) {
-//			$items_data_curr = current($items_data);
-//			
-//			if (!empty($items_data_curr['quantity']) && is_numeric($items_data_curr['quantity'])) {
-//				$qty = $items_data_curr['quantity'];
-//				
-//				$this->module->createLog('We will create ' . $qty . ' subscriptions.');
-//			}
-//		}
-        
         $msg                = '';
         $message            = new MessageCore();
         $message->id_order  = $order_id;
         
-//        for ($qty; $qty > 0; $qty--) {
-			$resp = $this->module->callRestApi(
-                'createSubscription',
-                $params,
-                array('merchantId', 'merchantSiteId', 'userTokenId', 'planId', 'userPaymentOptionId', 'initialAmount', 'recurringAmount', 'currency', 'timeStamp')
-            );
-		
-			// On Error
-			if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
-                $msg = $this->l('Error when try to start a Subscription by the Order.');
-                
-				if (!empty($resp['reason'])) {
-                    $msg .= ' ' . $this->l('Reason: ') . $resp['reason'];
-				}
-                
-                // save message
-                $message->private = true;
-                $message->message = $msg;
-                $message->add();
-				
-//				break;
-			}
-			
-			// On Success
-			$msg = $this->l('Subscription was created. ')  . ' '
-                . $this->l('Subscription ID: ') . $resp['subscriptionId'] . '. '
-                . $this->l('Recurring amount: ') . $currency . ' '
-				. $prod_plan['recurringAmount'] . '.';
-            
+        $resp = $this->module->callRestApi(
+            'createSubscription',
+            $params,
+            array('merchantId', 'merchantSiteId', 'userTokenId', 'planId', 'userPaymentOptionId', 'initialAmount', 'recurringAmount', 'currency', 'timeStamp')
+        );
+
+        // On Error
+        if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
+            $msg = $this->l('Error when try to start a Subscription by the Order.');
+
+            if (!empty($resp['reason'])) {
+                $msg .= ' ' . $this->l('Reason: ') . $resp['reason'];
+            }
+
             // save message
             $message->private = true;
             $message->message = $msg;
             $message->add();
-//		}
+
+        }
+
+        // On Success
+        $msg = $this->l('Subscription was created. ')  . ' '
+            . $this->l('Subscription ID: ') . $resp['subscriptionId'] . '. '
+            . $this->l('Recurring amount: ') . $currency . ' '
+            . $prod_plan['recurringAmount'] . '.';
+
+        // save message
+        $message->private = true;
+        $message->message = $msg;
+        $message->add();
     }
     
 }
