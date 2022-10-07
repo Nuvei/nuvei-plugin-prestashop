@@ -4,6 +4,7 @@
 ```
     Fix for the problem with the Rebiling with multiple products and wrong Recurring amount format.
     Fix for the recurring amount when used not default currency in the store.
+    Added better formating for the money.
 ```
 
 # 1.0.5
