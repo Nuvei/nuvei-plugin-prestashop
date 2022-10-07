@@ -70,7 +70,7 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         $params = array(
             'clientRequestId'       => $time . '_' . $trans_id,
             'clientUniqueId'        => $order_id,
-            'amount'                => number_format($order_info->total_paid, 2, '.', ''),
+            'amount'                => $this->module->formatMoney($order_info->total_paid),
             'currency'              => $currency->iso_code,
             'relatedTransactionId'  => $trans_id,
             'authCode'              => $sc_data['auth_code'],

@@ -132,7 +132,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             );
 
             # prepare Order data
-			$total_amount = number_format($cart->getOrderTotal(), 2, '.', '');
+			$total_amount = $this->module->formatMoney($cart->getOrderTotal());
 			
 			# additional check for existing Order by the Card ID
 			$query = "SELECT id_order "
@@ -409,7 +409,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			)
 				. $this->l('Plan ID: ') . Tools::getValue('planId') . '. '
 				. $this->l('Subscription ID: ') . Tools::getValue('subscriptionId') . '. '
-                . $this->l('Amount: ') . $currency->iso_code . ' ' . Tools::getValue('totalAmount') . ' '
+                . $this->l('Amount: ') . $this->module->formatMoney(Tools::getValue('totalAmount'), $currency->iso_code) . ' '
 				. $this->l('TransactionId: ') . Tools::getValue('TransactionID') . '.';
 
 			$this->module->createLog($msg, 'Subscription DMN Payment');
@@ -630,12 +630,10 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 
                 // Refund
                 if(in_array($transactionType, array('Credit', 'Refund'))) {
-					$curr_refund_amount = number_format((float) $totalAmount, 2, '.', '');
-					$formated_refund    = $curr_refund_amount . ' ' .$order_info['currency'];
-					
-					$msg .= $this->l(', Refund Amount: ') . $formated_refund;
-                        
-					$status_id = (int)(Configuration::get('PS_OS_REFUND'));
+					$formated_refund    = $this->module->formatMoney($totalAmount, $order_info['currency']);
+					$msg                .= $this->l(', Refund Amount: ') . $formated_refund;
+					$status_id          = (int)(Configuration::get('PS_OS_REFUND'));
+                    
                     break;
                 }
                 
@@ -680,12 +678,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                         break;
                     }
                     
-                    $curr_refund_amount = (float) $totalAmount;
-                    $curr_refund_amount = number_format($curr_refund_amount, 2, '.', '');
-
-                    $formated_refund = $curr_refund_amount . ' ' .$order_info['currency'];
-                    
-                    $msg .= $this->l(', Refund Amount: ') . $formated_refund;
+                    $formated_refund    = $this->module->formatMoney($totalAmount, $order_info['currency']);
+                    $msg                .= $this->l(', Refund Amount: ') . $formated_refund;
                     break;
                 }
                 
@@ -1493,14 +1487,12 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             $message->private = true;
             $message->message = $msg;
             $message->add();
-
         }
 
         // On Success
         $msg = $this->l('Subscription was created. ')  . ' '
             . $this->l('Subscription ID: ') . $resp['subscriptionId'] . '. '
-            . $this->l('Recurring amount: ') . $currency . ' '
-            . $prod_plan['recurringAmount'] . '.';
+            . $this->l('Recurring amount: ') . $this->module->formatMoney($prod_plan['recurringAmount'], $currency) . '.';
 
         // save message
         $message->private = true;

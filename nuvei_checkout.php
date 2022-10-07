@@ -605,7 +605,7 @@ class Nuvei_Checkout extends PaymentModule
             $request_amoutn += (float) $_REQUEST['cancel_product']['shipping_amount'];
         }
 
-        $request_amoutn = number_format($request_amoutn, 2, '.', '');
+        $request_amoutn = $this->formatMoney($request_amoutn);
         $order_id       = (int) $params['order']->id;
 
         // save order message
@@ -1453,7 +1453,7 @@ class Nuvei_Checkout extends PaymentModule
 			$products			= $cart->getProducts();
 			$currency           = new Currency((int)($cart->id_currency));
 			$customer           = new Customer($cart->id_customer);
-			$amount				= (string) number_format($cart->getOrderTotal(), 2, '.', '');
+			$amount				= $this->formatMoney($cart->getOrderTotal());
             $addresses          = $this->getOrderAddresses();
 			
 			# try updateOrder
@@ -1811,6 +1811,25 @@ class Nuvei_Checkout extends PaymentModule
 //        }
             
         return $resp;
+    }
+    
+    /**
+     * Get formatted money.
+     * 
+     * @param float|int $money
+     * @param string    $currency If passed the currency will be added to the response.
+     * 
+     * @return string
+     */
+    public function formatMoney($money, $currency = '')
+    {
+        $formatted = number_format(round((float) $money, 2), 2, '.', '');
+        
+        if(!empty($currency)) {
+            $formatted = $currency . ' ' . $formatted;
+        }
+        
+        return $formatted;
     }
     
     private function smartyToJsObject($object, $name = 'nuveiObj')
