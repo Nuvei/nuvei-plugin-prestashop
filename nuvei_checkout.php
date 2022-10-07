@@ -1031,9 +1031,6 @@ class Nuvei_Checkout extends PaymentModule
         $currency           = new Currency($this->context->cart->id_currency);
         $conversion_rate    = $currency->getConversationRate();
         
-        var_dump($currency->id);
-        var_dump($conversion_rate);
-        
         foreach($res as $data) {
             $data['plan_details'] = json_decode($data['plan_details'], true);
             
