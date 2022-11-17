@@ -1,5 +1,11 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.0.7
+```
+    Remove the Void button after 48 hours.
+    Add "Cancel Subscription" button.
+```
+
 # 1.0.6
 ```
     Fix for the problem with the Rebiling with multiple products and wrong Recurring amount format.

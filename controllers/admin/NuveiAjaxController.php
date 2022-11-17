@@ -37,6 +37,13 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             $this->order_void_settle($action);
         }
         
+        if(is_numeric(Tools::getValue('scOrder'))
+            && intval(Tools::getValue('scOrder')) > 0
+            && 'cancelSubscription' == $action
+        ) {
+            $this->cancel_subscription();
+        }
+        
         if($action == 'downloadPaymentPlans') {
             $this->get_payment_plans();
         }
@@ -78,22 +85,11 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         );
         
         if($action == 'void') {
-            if(0 == $params['amount']) {
-                $resp = $this->module->cancel_subscription($order_id);
-                
-                header('Content-Type: application/json');
-                
-                if($resp === false) {
-                    exit(json_encode(array('status' => 0)));
-                }
-                
-                exit(json_encode(array(
-                    'status'    => $status,
-                    'data'      => $resp
-                )));
-            }
-            
             $method = 'voidTransaction';
+            
+            if(0 == $params['amount']) {
+                $this->cancel_subscription();
+            }
         }
         
         if($action == 'settle') {
@@ -119,6 +115,24 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         
         header('Content-Type: application/json');
         exit(json_encode(array('status' => $status, 'data' => $resp)));
+    }
+    
+    private function cancel_subscription()
+    {
+        $order_id   = (int) Tools::getValue('scOrder');
+        $resp       = $this->module->cancel_subscription($order_id);
+        $status     = 1; // default status of the response
+        
+        header('Content-Type: application/json');
+                
+        if($resp === false) {
+            exit(json_encode(array('status' => 0)));
+        }
+
+        exit(json_encode(array(
+            'status'    => $status,
+            'data'      => $resp
+        )));
     }
     
     /**

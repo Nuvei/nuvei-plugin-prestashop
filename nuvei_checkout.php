@@ -12,7 +12,7 @@ class Nuvei_Checkout extends PaymentModule
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $version                     = '1.0.6';
+    public $version                     = '1.0.7';
     public $ps_versions_compliancy      = array(
         'min' => '1.7.7.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
@@ -30,6 +30,7 @@ class Nuvei_Checkout extends PaymentModule
     private $restApiIntUrl              = 'https://ppp-test.safecharge.com/ppp/api/v1/';
     private $restApiProdUrl             = 'https://secure.safecharge.com/ppp/api/v1/';
     private $paymentPlanGroup           = 'Nuvei Payment Plan';
+    private $pmAllowedVoidSettle        = ['cc_card', 'apmgw_expresscheckout'];
     private $nuvei_source_application   = ''; // Must be added some day
     private $html                       = '';
     private $trace_id;
@@ -91,6 +92,7 @@ class Nuvei_Checkout extends PaymentModule
                 `payment_method` varchar(50) NOT NULL,
 				`error_msg` text,
                 `subscr_ids` varchar(255) NOT NULL,
+                `subscr_state` varchar(10) NOT NULL,
                 
                 PRIMARY KEY (`id`),
                 KEY `order_id` (`order_id`),
@@ -109,9 +111,22 @@ class Nuvei_Checkout extends PaymentModule
                 'On Install create safecharge_order_data table response'
             );
 		}
+        
+        // check if subscr_state field into safecharge_order_data table exists
+        $sql = "SELECT column_name "
+            . "FROM INFORMATION_SCHEMA.columns "
+            . "WHERE table_name = 'safecharge_order_data' "
+                . "AND column_name = 'subscr_state';";
+        
+        $res = $db->executeS($sql);
+        
+        if(!$res || !is_array($res) || empty($res)) {
+            $db->execute('ALTER TABLE `safecharge_order_data` ADD '
+                . '`subscr_state` VARCHAR(10) NOT NULL AFTER `subscr_ids`; ');
+        }
 		# safecharge_order_data table END
         
-        # chec if subscr_ids field into safecharge_order_data table exists
+        # check if subscr_ids field into safecharge_order_data table exists
         $sql = "SELECT column_name "
             . "FROM INFORMATION_SCHEMA.columns "
             . "WHERE table_name = 'safecharge_order_data' "
@@ -123,7 +138,7 @@ class Nuvei_Checkout extends PaymentModule
             $sql = "ALTER TABLE safecharge_order_data ADD subscr_ids varchar(255) NOT NULL;";
             $res = $db->execute($sql);
         }
-        # for the versions before 2.4.0 add subscr_ids field into safecharge_order_data table END
+        # /check if subscr_ids field into safecharge_order_data table exists
         
         # nuvei_product_payment_plan_details
         $sql =
@@ -404,7 +419,7 @@ class Nuvei_Checkout extends PaymentModule
     }
 	
     /**
-     * Hook to display SC specific order actions
+     * Hook to display Nuvei specific order actions
      * 
      * @param array $params Contain id_order.
      * @return template
@@ -474,9 +489,15 @@ class Nuvei_Checkout extends PaymentModule
         # /Settle button
         
         # Void button
-		$enable_void = false;
+		$enable_void    = false;
+        $order_date_add = strtotime($order->date_add);
+        $order_inv_date = strtotime($order->invoice_date);
+        $order_time     = $order_inv_date > $order_date_add ? $order_inv_date : $order_date_add;
         
-		if (!empty($sc_data['payment_method']) && 'cc_card' == $sc_data['payment_method']) {
+		if (isset($sc_data['payment_method']) 
+            && in_array($sc_data['payment_method'], $this->pmAllowedVoidSettle)
+            && time() < $order_time + 172800
+        ) {
 			if(Configuration::get('PS_OS_PAYMENT') == $sc_data['order_state']
 				&& in_array($sc_data['resp_transaction_type'], array('Sale', 'Settle'))
 			) {
@@ -510,6 +531,28 @@ class Nuvei_Checkout extends PaymentModule
             );
         }
         # /Void button
+
+        # Cancel Subscription button
+        $subs_state = Db::getInstance()->getRow(
+            'SELECT * FROM safecharge_order_data '
+            . 'WHERE order_id = ' . $order_id
+        );
+        
+        if (!empty($subs_state['subscr_state']) && 'active' == $subs_state['subscr_state']) {
+            $bar->add(
+                new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
+                    'btn btn-action',
+                    [
+                        'href' => '#',
+                        'type' => "button",
+                        'id' => "nuvei_cancel_subscr_btn",
+                        'onclick' => "scOrderAction('cancelSubscription', {$order_id})",
+                    ],
+                    'Cancel Subscription'
+                )
+            );
+        }
+        # /Cancel Subscription button
     }
     
     /**

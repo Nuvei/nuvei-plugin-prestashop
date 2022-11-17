@@ -288,9 +288,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         
         # Subscription State DMN
         if ('subscription' == $dmnType) {
-            $subscriptionState  = Tools::getValue('subscriptionState');
+            $subscriptionState  = strtolower(Tools::getValue('subscriptionState'));
 			$subscriptionId     = Tools::getValue('subscriptionId');
-			$planId             = Tools::getValue('planId');
 			$cri_parts          = explode('_', Tools::getValue('clientRequestId'));
             $order_id           = 0;
             
@@ -314,7 +313,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 				exit('DMN Subscription Error - subscriptionState is empty');
             }
             
-            if ('active' == strtolower($subscriptionState)) {
+            if ('active' == $subscriptionState) {
                 $msg = $this->l('Subscription is Active.') . ' '
                     . $this->l('Subscription ID: ') . $subscriptionId . ' '
                     . $this->l('Plan ID: ') . Tools::getValue('planId');
@@ -330,7 +329,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     $first_res = current($res);
                     
                     if(is_array($first_res) && !empty($first_res['subscr_ids'])) {
-//                        $ord_subscr_ids = json_decode($first_res['subscr_ids']);
                         $ord_subscr_ids = $first_res['subscr_ids'];
                     }
                 }
@@ -341,7 +339,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 }
 
                 $sql = "UPDATE `safecharge_order_data` "
-//                    . "SET subscr_ids = '" . json_encode($ord_subscr_ids) . "' "
                     . "SET subscr_ids = " . $ord_subscr_ids . " "
                     . "WHERE order_id = " . $order_id;
                 $res = Db::getInstance()->execute($sql);
@@ -352,16 +349,17 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                             'subscriptionId'    => $subscriptionId,
                             'order_id'          => $order_id,
                         ),
-                        'DMN Error - a subscription ID was not added to the Order data'
+                        'DMN Error - the subscription ID was not added to the Order data',
+                        'WARN'
                     );
                 }
                 // save the Subscription ID END
             }
-            elseif ('inactive' == strtolower($subscriptionState)) {
+            elseif ('inactive' == $subscriptionState) {
                 $msg = $this->l('Subscription is Inactive.') . ' '
                     . $this->l('Subscription ID: ') . $subscriptionId;
             }
-            elseif ('canceled' == strtolower($subscriptionState)) {
+            elseif ('canceled' == $subscriptionState) {
                 $msg = $this->l('Subscription was canceled.') . ' '
                     .$this->l('Subscription ID: ') . $subscriptionId;
             }
@@ -371,6 +369,23 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             $message->private   = true;
             $message->message   = $msg;
             $message->add();
+            
+            // save the state
+            $sql = "UPDATE `safecharge_order_data` "
+                . "SET subscr_state = '" . $subscriptionState . "' "
+                . "WHERE order_id = " . $order_id;
+            $res = Db::getInstance()->execute($sql);
+
+            if(!$res) {
+                $this->module->createLog(
+                    array(
+                        'subscriptionId'    => $subscriptionId,
+                        'order_id'          => $order_id,
+                    ),
+                    'DMN Error - the Subscription State was not added to the Order data',
+                    'WARN'
+                );
+            }
             
             header('Content-Type: text/plain');
 			exit('DMN received.');

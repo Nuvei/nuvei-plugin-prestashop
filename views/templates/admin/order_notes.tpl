@@ -44,6 +44,10 @@
                 question = '{l s='Are you sure you want to Cancel this order?' mod='nuvei'}';
                 break;
             
+            case 'cancelSubscription':
+                question = '{l s='Are you sure you want to Cancel the Order Subscription?' mod='nuvei'}';
+                break;
+            
             default:
                 return;
         }
