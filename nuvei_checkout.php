@@ -121,8 +121,16 @@ class Nuvei_Checkout extends PaymentModule
         $res = $db->executeS($sql);
         
         if(!$res || !is_array($res) || empty($res)) {
-            $db->execute('ALTER TABLE `safecharge_order_data` ADD '
-                . '`subscr_state` VARCHAR(10) NOT NULL AFTER `subscr_ids`; ');
+            $res = $db->execute('ALTER TABLE `safecharge_order_data` ADD '
+                . '`subscr_state` VARCHAR(10) NOT NULL AFTER `subscr_state`; ');
+            
+            if(!$res) {
+                $this->createLog(
+                    [$res, $db->getMsgError(), $db->getNumberError()],
+                    'Error when try to add field `subscr_state`',
+                    'WARN'
+                );
+            }
         }
 		# safecharge_order_data table END
         
@@ -153,9 +161,11 @@ class Nuvei_Checkout extends PaymentModule
         $res = $db->execute($sql);
 		
 		if(!$res) {
-			$this->createLog($res, 'On Install create nuvei_product_payment_plan_details table response');
-			$this->createLog($db->getMsgError(), 'getMsgError');
-			$this->createLog($db->getNumberError(), 'getNumberError');
+			$this->createLog(
+                [$res, $db->getMsgError(), $db->getNumberError()],
+                'On Install create nuvei_product_payment_plan_details table response',
+                'WARN'
+            );
 		}
         # nuvei_product_payment_plan_details END
         

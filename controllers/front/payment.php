@@ -381,6 +381,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     array(
                         'subscriptionId'    => $subscriptionId,
                         'order_id'          => $order_id,
+                        'message'           => Db::getInstance()->getMsgError(),
                     ),
                     'DMN Error - the Subscription State was not added to the Order data',
                     'WARN'
