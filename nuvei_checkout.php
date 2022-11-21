@@ -108,45 +108,35 @@ class Nuvei_Checkout extends PaymentModule
                     'getMsgError' => $db->getMsgError(),
                     'getNumberError' => $db->getNumberError(),
                 ],
-                'On Install create safecharge_order_data table response'
+                'On Install create safecharge_order_data table response',
+                'WARN'
             );
 		}
         
-        // check if subscr_state field into safecharge_order_data table exists
-        $sql = "SELECT column_name "
-            . "FROM INFORMATION_SCHEMA.columns "
-            . "WHERE table_name = 'safecharge_order_data' "
-                . "AND column_name = 'subscr_state';";
+        // add subscr_ids field into safecharge_order_data table if not exists
+        $res = $db->execute("ALTER TABLE safecharge_order_data "
+            . "ADD `subscr_ids` varchar(255) NOT NULL;");
         
-        $res = $db->executeS($sql);
+        if(!$res) {
+            $this->createLog(
+                [$res, $db->getMsgError(), $db->getNumberError()],
+                'Error when try to add field `subscr_ids`',
+                'WARN'
+            );
+        }
         
-        if(!$res || !is_array($res) || empty($res)) {
-            $res = $db->execute('ALTER TABLE `safecharge_order_data` ADD '
-                . '`subscr_state` VARCHAR(10) NOT NULL AFTER `subscr_state`; ');
-            
-            if(!$res) {
-                $this->createLog(
-                    [$res, $db->getMsgError(), $db->getNumberError()],
-                    'Error when try to add field `subscr_state`',
-                    'WARN'
-                );
-            }
+        // add subscr_state field if not exists
+        $res = $db->execute('ALTER TABLE `safecharge_order_data` ADD '
+            . '`subscr_state` VARCHAR(10) NOT NULL;');
+
+        if(!$res) {
+            $this->createLog(
+                [$res, $db->getMsgError(), $db->getNumberError()],
+                'Error when try to add field `subscr_state`',
+                'WARN'
+            );
         }
 		# safecharge_order_data table END
-        
-        # check if subscr_ids field into safecharge_order_data table exists
-        $sql = "SELECT column_name "
-            . "FROM INFORMATION_SCHEMA.columns "
-            . "WHERE table_name = 'safecharge_order_data' "
-                . "AND column_name = 'subscr_ids';";
-        
-        $res = $db->executeS($sql);
-        
-        if(!$res || !is_array($res) || empty($res)) {
-            $sql = "ALTER TABLE safecharge_order_data ADD subscr_ids varchar(255) NOT NULL;";
-            $res = $db->execute($sql);
-        }
-        # /check if subscr_ids field into safecharge_order_data table exists
         
         # nuvei_product_payment_plan_details
         $sql =
