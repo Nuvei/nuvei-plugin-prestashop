@@ -147,7 +147,9 @@
                 }
 
                 if(resp.result == 'DECLINED') {
-                    if (resp.hasOwnProperty('errorDescription') && 'Insufficient funds' == resp.errorDescription) {
+                    if (resp.hasOwnProperty('errorDescription')
+                        && 'insufficient funds' == resp.errorDescription.toLowerCase())
+                    ) {
                         scFormFalse("{l s='You have Insufficient funds, please go back and remove some of the items in your shopping cart, or use another card.' mod='nuvei'}");
                         return
                     }

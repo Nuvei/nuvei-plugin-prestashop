@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.0.8
+```
+    Fix for the missing insufficient funds message.
+```
+
 # 1.0.7
 ```
     Remove the Void button after 48 hours.

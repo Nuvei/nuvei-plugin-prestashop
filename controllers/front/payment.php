@@ -862,12 +862,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 'Error - responsechecksum validation fail.'
             );
             
-            $this->module->createLog(
-                Configuration::get('SC_SECRET_KEY'),
-                'SC_SECRET_KEY',
-                'DEBUG'
-            );
-                
             header('Content-Type: text/plain');
             exit('DMN Error - responsechecksum validation fail.');
 		}
