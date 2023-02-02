@@ -1,5 +1,8 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.0.9
+    Fix for the wrong Nuvei Documentation links into plugin settings.
+
 # 1.0.8
 ```
     Fix for the missing insufficient funds message.

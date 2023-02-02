@@ -137,7 +137,7 @@
                             <label class="control-label col-lg-3">{l s='Block cards' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <input name="NUVEI_BLOCK_CARDS" type="text" value="{Configuration::get('NUVEI_BLOCK_CARDS')}" />
-                                <span class="help-block">{l s='For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/checkout-2/payment-customization/#card-processing" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
+                                <span class="help-block">{l s='For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/payment-customization/#Card_Processing" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
                             </div>
                         </div>
                             
@@ -151,7 +151,7 @@
                                     {/foreach}
                                 </select>
                                 
-                                <span class="help-block">{l s='For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/checkout-2/payment-customization/#apm-whitelisting-blacklisting">{l s='check the Documentation.' mod='nuvei'}</a></span>
+                                <span class="help-block">{l s='For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/payment-customization/#apm-whitelisting-blacklisting" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
                             </div>
                         </div>
                             
@@ -229,7 +229,7 @@
     }
 }'></textarea>
                                 
-                                <span class="help-block">{l s='This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples' mod='nuvei'} <a href="https://docs.safecharge.com/documentation/accept-payment/checkout-sdk/advanced-styling/#i18n-styling">{l s='check the Documentation.' mod='nuvei'}</a></span>
+                                <span class="help-block">{l s='This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/ui-customization/#text-and-translation" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
                             </div>
                         </div>
                             
