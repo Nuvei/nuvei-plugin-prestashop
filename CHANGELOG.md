@@ -2,6 +2,7 @@
 
 # 1.0.9
     Fix for the wrong Nuvei Documentation links into plugin settings.
+    Show better message if the merchant currency is not supported by the APM.
 
 # 1.0.8
 ```

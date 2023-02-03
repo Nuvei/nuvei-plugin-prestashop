@@ -251,18 +251,12 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         $this->module->createLog(@$_REQUEST, 'DMN request:');
 		
         # manually stop DMN process
-		if(Tools::getValue('sc_stop_dmn', 0) == 1 
-            && Configuration::get('SC_TEST_MODE') == 'yes'
-        ) {
-			$this->module->createLog(
-				http_build_query(@$_REQUEST),
-				'DMN report: Manually stopped process.'
-			);
-            
-            header('Content-Type: text/plain');
-			echo 'DMN report: Manually stopped process.';
-            exit;
-		}
+//        $this->module->createLog(
+//            http_build_query(@$_REQUEST),
+//            'DMN report: Manually stopped process.'
+//        );
+//        header('Content-Type: text/plain');
+//        exit('DMN report: Manually stopped process.');
         # /manually stop DMN process
         
         $req_status = $this->getRequestStatus();
@@ -500,8 +494,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 		}
 		
 		// Refund - can not be changed any more, but accept other Refund DMNs
-		if(
-			Configuration::get('PS_OS_REFUND') == $order_status
+		if(Configuration::get('PS_OS_REFUND') == $order_status
 			&& !in_array(strtolower(Tools::getValue('transactionType')), array('credit', 'refund'))
 		) {
 			$this->module->createLog(
@@ -518,8 +511,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 		}
 		
 		// Settle and Sale
-		if(
-			intval($order_status) == intval(Configuration::get('PS_OS_PAYMENT'))
+		if((int) $order_status == (int) Configuration::get('PS_OS_PAYMENT')
 			&& strtolower(Tools::getValue('transactionType')) == 'auth'
 		) {
 			$this->module->createLog(

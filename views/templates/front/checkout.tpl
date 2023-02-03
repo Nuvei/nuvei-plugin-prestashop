@@ -157,51 +157,19 @@
                     scFormFalse("{l s='Your Payment was DECLINED. Please try another payment method!' mod='nuvei'}");
                     return;
                 }
-
-                /*
-                if(resp.hasOwnProperty('errorDescription') && resp.errorDescription != '') {
-                    scFormFalse(
-                        "{l s='Error with your Payment. Please try again later!' mod='nuvei'}"
-                        //+ resp.errorDescription
-                    );
-                    return;
+            }
+            
+            if(resp.status == 'ERROR') {
+                if (resp.hasOwnProperty('reason')
+                    && resp.reason.toLowerCase().search('the currency is not supported') >= 0
+                ) {
+                    scFormFalse(resp.reason);
+                    return
                 }
 
-                if(resp.hasOwnProperty('reason') && '' != resp.reason) {
-                    scFormFalse(
-                        "{l s='Error with your Payment. Please try again later!' mod='nuvei'}"
-                        //+ resp.reason
-                    );
-                    return;
-                }
-
-                //scFormFalse("{l s='Error with your Payment. Please try again later!' mod='nuvei'}");
-                //return;
-                */
+                scFormFalse("{l s='Your Payment was DECLINED. Please try another payment method!' mod='nuvei'}");
+                return;
             }
-
-            /*
-            // errors
-            if(resp.hasOwnProperty('errorDescription') && resp.errorDescription != '') {
-                scFormFalse(
-                    "{l s='Error with your Payment. Please try again later!' mod='nuvei'}<br/>"
-                    + resp.errorDescription
-                );
-            }
-            else if(resp.hasOwnProperty('reason') && '' != resp.reason) {
-                scFormFalse(
-                    "{l s='Error with your Payment. Please try again later!' mod='nuvei'}<br/>"
-                    + resp.reason
-                );
-            }
-            else {
-                scFormFalse("{l s='Error with your Payment. Please try again later!' mod='nuvei'}");
-            }
-
-            console.log('upo/card payment recreate');
-            */
-            //reCreateSCFields();
-            //createSCFields();
             
             scFormFalse("{l s='Error with your Payment. Please try again later!' mod='nuvei'}");
         }
