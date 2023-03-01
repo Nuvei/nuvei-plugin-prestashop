@@ -1,5 +1,8 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.0.10
+    
+
 # 1.0.9
     Fix for the wrong Nuvei Documentation links into plugin settings.
     Show better message if the merchant currency is not supported by the APM.

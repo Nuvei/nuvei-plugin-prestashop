@@ -12,7 +12,7 @@ class Nuvei_Checkout extends PaymentModule
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $version                     = '1.0.9';
+    public $version                     = '1.0.10';
     public $ps_versions_compliancy      = array(
         'min' => '1.7.7.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
@@ -332,7 +332,8 @@ class Nuvei_Checkout extends PaymentModule
             $newOption
                 ->setModuleName($this->name)
                 ->setCallToActionText($option_text)
-                ->setLogo(_MODULE_DIR_ . 'nuvei_checkout/views/img/nuvei-v2.gif');
+//                ->setLogo(_MODULE_DIR_ . 'nuvei_checkout/views/img/nuvei-v2.gif')
+            ;
             
             $this->context->smarty->assign('nuveiModuleName', $this->name);
 		
@@ -1489,32 +1490,45 @@ class Nuvei_Checkout extends PaymentModule
         );
 
 		try {
-			$cart               = $this->context->cart;
-			$products			= $cart->getProducts();
-			$currency           = new Currency((int)($cart->id_currency));
-			$customer           = new Customer($cart->id_customer);
-			$amount				= $this->formatMoney($cart->getOrderTotal());
-            $addresses          = $this->getOrderAddresses();
+			$cart                           = $this->context->cart;
+			$products                       = $cart->getProducts();
+			$currency                       = new Currency((int)($cart->id_currency));
+			$customer                       = new Customer($cart->id_customer);
+			$amount                         = $this->formatMoney($cart->getOrderTotal());
+            $addresses                      = $this->getOrderAddresses();
+            $prod_with_plan                 = $this->getProdsWithPlansFromCart();
+            $nuvei_last_open_order_details  = [];
+        
+            if(!empty($this->context->cookie->nuvei_last_open_order_details)) {
+                $nuvei_last_open_order_details 
+                    = unserialize($this->context->cookie->nuvei_last_open_order_details);
+            }
+            
+            $this->createLog($nuvei_last_open_order_details);
 			
 			# try updateOrder
-			$resp           = $this->updateOrder(); // this is merged array of response and the session
-            $resp_status    = $this->getRequestStatus($resp);
+            if ( ! ( empty($nuvei_last_open_order_details['userTokenId']) 
+                && !empty($prod_with_plan['plan_details']) )
+            ) {
+                $resp           = $this->updateOrder(); // this is merged array of response and the session
+                $resp_status    = $this->getRequestStatus($resp);
+                
+                if (!empty($resp_status) && 'SUCCESS' == $resp_status) {
+                    if ($is_ajax) {
+                        exit(json_encode(array(
+                            'status'        => 1,
+                            'sessionToken'	=> $resp['sessionToken']
+                        )));
+                    }
 
-			if (!empty($resp_status) && 'SUCCESS' == $resp_status) {
-				if ($is_ajax) {
-					exit(json_encode(array(
-						'status'        => 1,
-						'sessionToken'	=> $resp['sessionToken']
-					)));
-				}
+                    $this->context->smarty->assign('sessionToken', $resp['sessionToken']);
 
-				$this->context->smarty->assign('sessionToken', $resp['sessionToken']);
+                    // pass billing country
+                    $resp['billingAddress'] = $addresses['billingAddress'];
 
-				// pass billing country
-				$resp['billingAddress'] = $addresses['billingAddress'];
-				
-				return $resp;
-			}
+                    return $resp;
+                }
+            }
 			# /try updateOrder
 			
 			$error_url		= $this->context->link->getModuleLink(
@@ -1561,7 +1575,7 @@ class Nuvei_Checkout extends PaymentModule
 				'billingAddress'    => $addresses['billingAddress'],
 				'userDetails'       => $addresses['billingAddress'],
 				'shippingAddress'   => $addresses['shippingAddress'],
-				'paymentOption'		=> ['card' => ['threeD' => ['isDynamic3D' => 1]]],
+//				'paymentOption'		=> ['card' => ['threeD' => ['isDynamic3D' => 1]]],
 				'transactionType'	=> Configuration::get('SC_PAYMENT_ACTION'),
 				
                 'merchantDetails'	=> array(
@@ -1579,13 +1593,15 @@ class Nuvei_Checkout extends PaymentModule
             }
             
             // rebiling parameters
-            $rebilling_params = $this->preprareRebillingParams();
-            
-            # use or not UPOs
-            // in case there is a Product with a Payment Plan
-            if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
+            if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
+                $oo_params['merchantDetails']['customField5'] = $prod_with_plan['plan_details'];
                 $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
             }
+            # use or not UPOs
+            // in case there is a Product with a Payment Plan
+//            if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
+//                $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
+//            }
             elseif(Configuration::get('SC_USE_UPOS') == 1 
                 && (bool) $this->context->customer->isLogged()
             ) {
@@ -1610,17 +1626,25 @@ class Nuvei_Checkout extends PaymentModule
 				return false;
 			}
 
+            // set some of the parameters into the session
+            $nuvei_last_open_order_details = [
+                'amount'			=> $oo_params['amount'],
+                'items'				=> $oo_params['merchantDetails']['customField3'],
+                'sessionToken'		=> $resp['sessionToken'],
+                'clientRequestId'	=> $resp['clientRequestId'],
+                'orderId'			=> $resp['orderId'],
+                'billingAddress'	=> array('country' => $oo_params['billingAddress']['country']),
+            ];
+            
+            if (!empty($oo_params['userTokenId'])) {
+                $nuvei_last_open_order_details['userTokenId'] = $oo_params['userTokenId'];
+            }
+            
             $this->context->cookie->__set(
                 'nuvei_last_open_order_details',
-                serialize(array(
-                    'amount'			=> $oo_params['amount'],
-                    'items'				=> $oo_params['merchantDetails']['customField3'],
-                    'sessionToken'		=> $resp['sessionToken'],
-                    'clientRequestId'	=> $resp['clientRequestId'],
-                    'orderId'			=> $resp['orderId'],
-                    'billingAddress'	=> array('country' => $oo_params['billingAddress']['country']),
-                ))
+                serialize($nuvei_last_open_order_details)
             );
+            // /set some of the parameters into the session
             
 			// when need session token only
 			if($is_ajax) {
@@ -1633,7 +1657,7 @@ class Nuvei_Checkout extends PaymentModule
 			}
             
             // pass the rebilling fields as response only
-            $oo_params = array_merge_recursive($oo_params, $rebilling_params);
+//            $oo_params = array_merge_recursive($oo_params, $rebilling_params);
             
             $return_arr                     = $resp;
             $return_arr['request_params']   = $oo_params;
@@ -1688,7 +1712,7 @@ class Nuvei_Checkout extends PaymentModule
     {
         $oo_params = $this->openOrder();
         
-        $this->createLog($oo_params, 'assignOrderData() $oo_params');
+//        $this->createLog($oo_params, 'assignOrderData() $oo_params');
         
         if(empty($oo_params['sessionToken'])) {
             $this->createLog($oo_params, 'Missing session token!', 'CRITICAL');
@@ -1703,9 +1727,10 @@ class Nuvei_Checkout extends PaymentModule
         if(!(bool)$this->context->customer->isLogged()) {
             $use_upos = $save_pm = false;
         }
-        elseif(isset($oo_params['request_params']['isRebilling']) 
-            && 0 == $oo_params['request_params']['isRebilling']
-        ) {
+//        elseif(isset($oo_params['request_params']['isRebilling']) 
+//            && 0 == $oo_params['request_params']['isRebilling']
+//        ) {
+        elseif(!empty($oo_params['userTokenId'])) {
             $is_rebilling   = true;
             $save_pm        = 'always';
         }
@@ -2014,7 +2039,7 @@ class Nuvei_Checkout extends PaymentModule
         
         if(!empty($this->context->cookie->nuvei_last_open_order_details)) {
             $nuvei_last_open_order_details = unserialize($this->context->cookie->nuvei_last_open_order_details);
-        }       
+        }
         
 		$this->createLog(
 			$nuvei_last_open_order_details,
@@ -2065,20 +2090,23 @@ class Nuvei_Checkout extends PaymentModule
 			),
 		);
         
-        // rebiling parameters
-        $rebilling_params = $this->preprareRebillingParams();
+        # check for a product with a Payment Plan
+        $prod_with_plan = $this->getProdsWithPlansFromCart();
+        
         // when will use UPOs
-        if(0 == $rebilling_params['isRebilling']) {
-            $params['userTokenId'] = $addresses['billingAddress']['email'];
+//        if(0 == $rebilling_params['isRebilling']) {
+        if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
+//            $params['userTokenId']                      = $addresses['billingAddress']['email'];
+            $params['merchantDetails']['customField5']  = $prod_with_plan['plan_details'];
         }
         elseif(Configuration::get('SC_USE_UPOS') == 1) {
-            $params['userTokenId'] = $addresses['billingAddress']['email'];
+//            $params['userTokenId'] = $addresses['billingAddress']['email'];
         }
         else {
-            $params['userTokenId'] = null;
+//            $params['userTokenId'] = '';
         }
         
-        $params = array_merge_recursive($params, $rebilling_params);
+//        $params = array_merge_recursive($params, $rebilling_params);
         
 		$resp = $this->callRestApi(
             'updateOrder',
@@ -2149,29 +2177,6 @@ class Nuvei_Checkout extends PaymentModule
         ];
     }
     
-    private function preprareRebillingParams()
-    {
-        $params = [];
-        
-        // default rebiling parameters
-        $params['isRebilling']                                        = 1;
-        $params['paymentOption']['card']['threeD']['rebillFrequency'] = 0;
-        $params['paymentOption']['card']['threeD']['rebillExpiry']    = gmdate('Ymd', time());
-        
-        # check for a product with a Payment Plan
-        $prod_with_plan = $this->getProdsWithPlansFromCart();
-        
-        // in case there is a Product with a Payment Plan
-        if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
-            $params['isRebilling']                                        = 0;
-			$params['paymentOption']['card']['threeD']['rebillFrequency'] = 1;
-			$params['paymentOption']['card']['threeD']['rebillExpiry']    = gmdate('Ymd', strtotime('+5 years'));
-            $params['merchantDetails']['customField5']                    = $prod_with_plan['plan_details'];
-        }
-        
-        return $params;
-    }
-	
 	private function addOrderState()
 	{
 		$db = Db::getInstance();
