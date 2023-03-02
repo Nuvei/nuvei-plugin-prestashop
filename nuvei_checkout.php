@@ -1498,13 +1498,34 @@ class Nuvei_Checkout extends PaymentModule
             $addresses                      = $this->getOrderAddresses();
             $prod_with_plan                 = $this->getProdsWithPlansFromCart();
             $nuvei_last_open_order_details  = [];
+            $products_data                  = [];
         
             if(!empty($this->context->cookie->nuvei_last_open_order_details)) {
                 $nuvei_last_open_order_details 
                     = unserialize($this->context->cookie->nuvei_last_open_order_details);
             }
             
-            $this->createLog($nuvei_last_open_order_details);
+            $this->createLog($products);
+            
+            // check if product is available and get products details
+			foreach ($products as $product) {
+                if ($is_ajax && 0 == $product['available_for_order ']) {
+                    $msg = 'A product is not available';
+                    
+                    $this->createLog($product, $msg);
+                    
+                    exit(json_encode(array(
+                        'status'    => 0,
+                        'message'   => $this->l($msg)
+                    )));
+                }
+                
+				$products_data[$product['id_product']] = array(
+//						'name'		=> $product['name'],
+					'quantity'	=> $product['quantity'],
+					'total_wt'	=> (string)round(floatval($product['total_wt']), 2)
+				);
+			}
 			
 			# try updateOrder
             if ( ! ( empty($nuvei_last_open_order_details['userTokenId']) 
@@ -1550,16 +1571,6 @@ class Nuvei_Checkout extends PaymentModule
 					'key'				=> $customer->secure_key,
 				)
 			);
-            
-            // get products details
-            $products_data = array();
-			foreach ($products as $product) {
-				$products_data[$product['id_product']] = array(
-//						'name'		=> $product['name'],
-					'quantity'	=> $product['quantity'],
-					'total_wt'	=> (string)round(floatval($product['total_wt']), 2)
-				);
-			}
             
 			# Open Order
 			$oo_params = array(

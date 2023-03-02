@@ -84,7 +84,6 @@
         }
 
         /**
-         * Function scUpdateCart
          * The first step of the checkout validation
          */
         function scUpdateCart() {
@@ -121,8 +120,13 @@
 
                             nuveiLoadCheckout()();
                         }
-
-                        reject(errorMsg);
+                        
+                        if (resp.hasOwnProperty('message')) {
+                            errorMsg = resp.message;
+                        }
+                        
+                        scFormFalse(errorMsg);
+                        reject();
                     });
             });
         }
