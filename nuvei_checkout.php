@@ -1509,7 +1509,7 @@ class Nuvei_Checkout extends PaymentModule
             
             // check if product is available and get products details
 			foreach ($products as $product) {
-                if ($is_ajax && 0 == $product['available_for_order ']) {
+                if ($is_ajax && 0 == $product['available_for_order']) {
                     $msg = 'A product is not available';
                     
                     $this->createLog($product, $msg);
