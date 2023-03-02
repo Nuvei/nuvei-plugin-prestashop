@@ -883,10 +883,10 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			$data['related_transaction_id'] = intval($trans_id);
 		}
 		if(!empty($tr_type = Tools::getValue('transactionType', ''))) {
-			$data['resp_transaction_type'] = filter_var($tr_type, FILTER_SANITIZE_STRING);
+			$data['resp_transaction_type'] = filter_var($tr_type);
 		}
 		if(!empty($pm = Tools::getValue('payment_method', ''))) {
-			$data['payment_method'] = filter_var($pm, FILTER_SANITIZE_STRING);
+			$data['payment_method'] = filter_var($pm);
 		}
 		// do not update empty values END
 		

@@ -10,7 +10,7 @@ class NuveiRequest
         // deviceDetails
         'deviceType' => array(
             'length' => 10,
-            'flag'    => FILTER_SANITIZE_STRING
+            'flag'    => FILTER_DEFAULT
         ),
         'deviceName' => array(
             'length' => 255,
@@ -57,11 +57,11 @@ class NuveiRequest
         ),
         'country' => array(
             'length' => 20,
-            'flag'    => FILTER_SANITIZE_STRING
+            'flag'    => FILTER_DEFAULT
         ),
         'state' => array(
             'length' => 2,
-            'flag'    => FILTER_SANITIZE_STRING
+            'flag'    => FILTER_DEFAULT
         ),
         'county' => array(
             'length' => 255,
@@ -263,7 +263,7 @@ class NuveiRequest
 			return $device_details;
 		}
 		
-		$user_agent = strtolower(filter_var($_SERVER['HTTP_USER_AGENT'], FILTER_SANITIZE_STRING));
+		$user_agent = strtolower(filter_var($_SERVER['HTTP_USER_AGENT'], FILTER_DEFAULT));
 		
 		if (empty($user_agent)) {
 			$device_details['Warning'] = 'Probably the merchant Server has problems with PHP filter_var function!';

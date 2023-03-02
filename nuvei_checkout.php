@@ -827,15 +827,15 @@ class Nuvei_Checkout extends PaymentModule
                 'recurringAmount'   => (string) round((float) $data['rec_amount'], 2),
                 
                 'recurringPeriod'   => array(
-                    filter_var($data['rec_unit'], FILTER_SANITIZE_STRING) => (int) $data['rec_period']
+                    filter_var($data['rec_unit']) => (int) $data['rec_period']
                 ),
                 
                 'startAfter'        => array(
-                    filter_var($data['rec_trial_unit'], FILTER_SANITIZE_STRING) => (int) $data['trial_period']
+                    filter_var($data['rec_trial_unit']) => (int) $data['trial_period']
                 ),
                         
                 'endAfter'          => array(
-                    filter_var($data['rec_end_after_unit'], FILTER_SANITIZE_STRING) => (int) $data['rec_end_after_period']
+                    filter_var($data['rec_end_after_unit']) => (int) $data['rec_end_after_period']
                 ),
             );
                     
