@@ -2382,9 +2382,9 @@ class Nuvei_Checkout extends PaymentModule
     }
     
     /**
-     * Extract plugin version form Git master branch.
+     * Extract plugin version form Git main branch.
      * 
-     * @return string|0
+     * @return string
      */
     private function getPluginVerFromGit()
     {
@@ -2395,7 +2395,7 @@ class Nuvei_Checkout extends PaymentModule
             curl_setopt(
                 $ch,
                 CURLOPT_URL,
-                'https://github.com/SafeChargeInternational/safecharge_prestashop/blob/master/CHANGELOG.md'
+                'https://raw.githubusercontent.com/Nuvei/nuvei-plugin-prestashop/main/CHANGELOG.md'
             );
 
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -2403,11 +2403,11 @@ class Nuvei_Checkout extends PaymentModule
 
             $file_text = curl_exec($ch);
             curl_close($ch);
-
-            preg_match('/\#([0-9]\.[0-9](\.[0-9])?)/', $file_text, $matches);
+            
+            preg_match('/\# ([0-9]\.[0-9](\.[0-9])?)/', $file_text, $matches);
 
             if(empty($matches) || !is_array($matches)) {
-                $this->createLog($matches, 'getPluginVerFromGit() error');
+                $this->createLog($matches, 'getPluginVerFromGit error - can not find the version.');
                 return 0;
             }
 
@@ -2415,7 +2415,7 @@ class Nuvei_Checkout extends PaymentModule
         }
         catch(Exception $e) {
             $this->createLog($e->getMessage(), 'getPluginVerFromGit() Exception');
-            return 0;
+            return '0';
         }
     }
     
