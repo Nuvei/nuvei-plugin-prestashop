@@ -1735,19 +1735,18 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         # for UPO
-        $is_rebilling   = false;
-        $use_upos       = $save_pm 
-                        = (bool) Configuration::get('SC_USE_UPOS');
+        $use_upos   = $save_pm 
+                    = (bool) Configuration::get('SC_USE_UPOS');
         
         if(!(bool)$this->context->customer->isLogged()) {
             $use_upos = $save_pm = false;
         }
-//        elseif(isset($oo_params['request_params']['isRebilling']) 
-//            && 0 == $oo_params['request_params']['isRebilling']
-//        ) {
         elseif(!empty($oo_params['userTokenId'])) {
-            $is_rebilling   = true;
-            $save_pm        = 'always';
+            $save_pm = true;
+        }
+        
+        if ($this->is_rebilling_order) {
+            $save_pm = 'always';
         }
         # /for UPO
         
