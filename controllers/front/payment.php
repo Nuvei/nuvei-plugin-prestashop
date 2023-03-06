@@ -64,6 +64,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 		
         try {
 			$cart = $this->context->cart;
+            
+            $this->context->cookie->__set('nuvei_last_open_order_details', serialize([]));
 			
 			// in case user go to confirm-order page too late
 			if(empty($cart->id)) {

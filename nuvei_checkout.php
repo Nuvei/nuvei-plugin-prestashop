@@ -33,6 +33,7 @@ class Nuvei_Checkout extends PaymentModule
     private $pmAllowedVoidSettle        = ['cc_card', 'apmgw_expresscheckout'];
     private $nuvei_source_application   = ''; // Must be added some day
     private $html                       = '';
+    private $is_rebilling_order         = false;
     private $trace_id;
     
     public function __construct()
@@ -1488,6 +1489,8 @@ class Nuvei_Checkout extends PaymentModule
                 array('prestaShopAction'  => 'createOpenOrder')
             )
         );
+        
+        $this->is_rebilling_order = false;
 
 		try {
 			$cart                           = $this->context->cart;
@@ -1505,7 +1508,7 @@ class Nuvei_Checkout extends PaymentModule
                     = unserialize($this->context->cookie->nuvei_last_open_order_details);
             }
             
-            $this->createLog($products);
+            //$this->createLog($products);
             
             // check if product is available and get products details
 			foreach ($products as $product) {
@@ -1605,8 +1608,9 @@ class Nuvei_Checkout extends PaymentModule
             
             // rebiling parameters
             if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
-                $oo_params['merchantDetails']['customField5'] = $prod_with_plan['plan_details'];
-                $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
+                $oo_params['merchantDetails']['customField5']   = $prod_with_plan['plan_details'];
+                $oo_params['userTokenId']                       = $oo_params['billingAddress']['email'];
+                $this->is_rebilling_order                       = true;
             }
             # use or not UPOs
             // in case there is a Product with a Payment Plan
@@ -1616,7 +1620,7 @@ class Nuvei_Checkout extends PaymentModule
             elseif(Configuration::get('SC_USE_UPOS') == 1 
                 && (bool) $this->context->customer->isLogged()
             ) {
-                $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
+                $oo_params['userTokenId']   = $oo_params['billingAddress']['email'];
             }
             # /use or not UPOs
             
@@ -1815,7 +1819,7 @@ class Nuvei_Checkout extends PaymentModule
             'userData'                  => ['billingAddress' => $oo_params['request_params']['billingAddress']],
         ];
         
-        if($is_rebilling) {
+        if($this->is_rebilling_order) {
             unset($checkout_params['pmBlacklist']);
             $checkout_params['pmWhitelist'] = ['cc_card'];
         }
@@ -1828,7 +1832,7 @@ class Nuvei_Checkout extends PaymentModule
         }
 
         $this->context->smarty->assign('nuveiSdkUrl',       $sdk_url);
-        $this->context->smarty->assign('showNuveoOnly',     $is_rebilling);
+        $this->context->smarty->assign('showNuveoOnly',     $this->is_rebilling_order);
         $this->context->smarty->assign('nuveiSdkParams',    json_encode($checkout_params));
         
         return true;
@@ -2109,6 +2113,7 @@ class Nuvei_Checkout extends PaymentModule
         if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
 //            $params['userTokenId']                      = $addresses['billingAddress']['email'];
             $params['merchantDetails']['customField5']  = $prod_with_plan['plan_details'];
+            $this->is_rebilling_order                   = true;
         }
         elseif(Configuration::get('SC_USE_UPOS') == 1) {
 //            $params['userTokenId'] = $addresses['billingAddress']['email'];
