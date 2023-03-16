@@ -1814,8 +1814,8 @@ class Nuvei_Checkout extends PaymentModule
 			'logLevel'                  => Configuration::get('NUVEI_SDK_LOG_LEVEL'),
 			'maskCvv'                   => true,
 			'i18n'                      => Configuration::get('NUVEI_SDK_TRANSL'),
-            'billingAddress'            => $oo_params['request_params']['billingAddress'],
-            'userData'                  => ['billingAddress' => $oo_params['request_params']['billingAddress']],
+//            'billingAddress'            => $oo_params['request_params']['billingAddress'],
+//            'userData'                  => ['billingAddress' => $oo_params['request_params']['billingAddress']],
         ];
         
         if($this->is_rebilling_order) {
