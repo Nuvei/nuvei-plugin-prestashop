@@ -1,7 +1,9 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
 # 1.0.10
-    
+    Fix for the case when userTokenId can not be passed with updateOrder request.
+    Removed few unused objects from the SDK call.
+    When Void an Order check if there is active subscription before try to cancel it.
 
 # 1.0.9
     Fix for the wrong Nuvei Documentation links into plugin settings.

@@ -545,10 +545,10 @@ class Nuvei_Checkout extends PaymentModule
                 new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
                     'btn btn-action',
                     [
-                        'href' => '#',
-                        'type' => "button",
-                        'id' => "nuvei_cancel_subscr_btn",
-                        'onclick' => "scOrderAction('cancelSubscription', {$order_id})",
+                        'href'      => '#',
+                        'type'      => "button",
+                        'id'        => "nuvei_cancel_subscr_btn",
+                        'onclick'   => "scOrderAction('cancelSubscription', {$order_id})",
                     ],
                     'Cancel Subscription'
                 )
@@ -1515,16 +1515,16 @@ class Nuvei_Checkout extends PaymentModule
 //                $this->createLog($product);
                 
 //                if ($is_ajax && 0 == $product['available_for_order']) {
-                if ($is_ajax && 0 == $product['quantity_available']) {
-                    $msg = 'A product is not available';
-                    
-                    $this->createLog($product, $msg);
-                    
-                    exit(json_encode(array(
-                        'status'    => 0,
-                        'message'   => $this->l($msg)
-                    )));
-                }
+//                if ($is_ajax && 0 == $product['quantity_available']) {
+//                    $msg = 'A product is not available';
+//                    
+//                    $this->createLog($product, $msg);
+//                    
+//                    exit(json_encode(array(
+//                        'status'    => 0,
+//                        'message'   => $this->l($msg)
+//                    )));
+//                }
                 
 				$products_data[$product['id_product']] = array(
 //						'name'		=> $product['name'],
@@ -1848,29 +1848,23 @@ class Nuvei_Checkout extends PaymentModule
      */
     public function cancel_subscription($order_id)
     {
-        $query = "SELECT subscr_ids FROM safecharge_order_data "
-            . "WHERE order_id = " . $order_id;
+        $subs_data = Db::getInstance()->getRow(
+            'SELECT * FROM safecharge_order_data '
+            . 'WHERE order_id = ' . $order_id
+        );
         
-        $res = Db::getInstance()->getRow($query);
-        
-        $this->createLog($res, 'cancel_subscription()');
-        
-        if(!$res || empty($res['subscr_ids'])) {
+        if (empty($subs_data['subscr_state'])
+            || empty($subs_data['subscr_ids'])
+            || 'active' != $subs_data['subscr_state']
+            
+        ) {
+            $this->createLog($subs_data, 'Can not cancel the Subscription.');
             return false;
         }
         
-//        $ids = json_decode($res['subscr_ids']);
-        $subscr_id = $res['subscr_ids'];
-        
-//        if(empty($ids)) {
-        if(empty($subscr_id)) {
-            return false;
-        }
-        
-//        foreach($ids as $subscr_id) {
         $resp = $this->callRestApi(
             'cancelSubscription',
-            array('subscriptionId' => $subscr_id),
+            array('subscriptionId' => $subs_data['subscr_ids']),
             array('merchantId', 'merchantSiteId', 'subscriptionId', 'timeStamp',)
         );
 
@@ -1878,7 +1872,8 @@ class Nuvei_Checkout extends PaymentModule
         if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
             $message			= new MessageCore();
             $message->id_order	= $order_id;
-            $msg                = $this->l('Error when try to cancel a Subscription #') . (int) $subscr_id;
+            $msg                = $this->l('Error when try to cancel a Subscription #') 
+                . (int) $subs_data['subscr_ids'];
 
             if (!empty($resp['reason'])) {
                 $msg .= $this->l(' Reason: ') . $resp['reason'];
@@ -1890,7 +1885,6 @@ class Nuvei_Checkout extends PaymentModule
 
             return !empty($resp['status']) ? $resp : false;
         }
-//        }
             
         return $resp;
     }
