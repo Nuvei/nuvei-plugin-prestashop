@@ -1,5 +1,9 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.0.11
+    Add sourceApplication parameter.
+    Into webMasterId added Plugin version.
+
 # 1.0.10
     Fix for the case when userTokenId can not be passed with updateOrder request.
     Removed few unused objects from the SDK call.

@@ -12,7 +12,7 @@ class Nuvei_Checkout extends PaymentModule
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $version                     = '1.0.10';
+    public $version                     = '1.0.11';
     public $ps_versions_compliancy      = array(
         'min' => '1.7.7.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
@@ -31,7 +31,7 @@ class Nuvei_Checkout extends PaymentModule
     private $restApiProdUrl             = 'https://secure.safecharge.com/ppp/api/v1/';
     private $paymentPlanGroup           = 'Nuvei Payment Plan';
     private $pmAllowedVoidSettle        = ['cc_card', 'apmgw_expresscheckout'];
-    private $nuvei_source_application   = ''; // Must be added some day
+    private $nuvei_source_application   = 'Prestashop_Plugin';
     private $html                       = '';
     private $is_rebilling_order         = false;
     private $trace_id;
@@ -1416,7 +1416,7 @@ class Nuvei_Checkout extends PaymentModule
                 'timeStamp'         => $time,
                 'deviceDetails'     => NuveiRequest::get_device_details($this->version),
                 'encoding'          => 'UTF-8',
-                'webMasterId'       => 'PrestaShop ' . _PS_VERSION_,
+                'webMasterId'       => 'PrestaShop ' . _PS_VERSION_ . '; Plugin v' . $this->version,
                 'sourceApplication' => $this->nuvei_source_application,
                 'url'               => $notificationUrl, // a custom parameter for the checksum
                 'merchantDetails'	=> array(
