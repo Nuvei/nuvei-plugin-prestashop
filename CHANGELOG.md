@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.1.0
+    Removed the plugins option "SDK version".
+    Added option to change SDK theme into the plugin.
+    
+
 # 1.0.11
     Add sourceApplication parameter.
     Into webMasterId added Plugin version.

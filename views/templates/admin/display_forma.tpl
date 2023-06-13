@@ -109,8 +109,30 @@
                                 </select>
                             </div>
                         </div>
-                        
+                                
                         <div class="form-group">
+                            <label class="control-label col-lg-3"> {l s='Enable UPOs' mod='nuvei'}</label>
+                            <div class="col-lg-9">
+                                <select name="SC_USE_UPOS">
+                                    <option value="">{l s='Please, select an option...' mod='nuvei'}</option>
+                                    <option value="1" {if Configuration::get('SC_USE_UPOS') eq 1}selected{/if}>{l s='Use UPOs' mod='nuvei'}</option>
+                                    <option value="0" {if Configuration::get('SC_USE_UPOS') eq 0}selected{/if}>{l s='Do NOT use UPOs' mod='nuvei'}</option>
+                                </select>
+                            </div>
+                        </div>
+                                
+                        <div class="form-group">
+                            <label class="control-label col-lg-3"> {l s='SDK theme' mod='nuvei'}</label>
+                            <div class="col-lg-9">
+                                <select name="NUVEI_SDK_THEME">
+                                    <option value="accordion"> {if Configuration::get('SC_USE_UPOS') eq 'accordion'}selected{/if}{l s='Accordion' mod='nuvei'}</option>
+                                    <option value="tiles" {if Configuration::get('NUVEI_SDK_THEME') eq 'tiles'}selected{/if}>{l s='Tiles' mod='nuvei'}</option>
+                                    <option value="horizontal" {if Configuration::get('SC_USE_UPOS') eq 'horizontal'}selected{/if}>{l s='Horizontal' mod='nuvei'}</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        {*<div class="form-group">
                             <label class="control-label col-lg-3">{l s='SDK version' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="NUVEI_SDK_VERSION">
@@ -120,7 +142,7 @@
                                 
                                 <span class="help-block">{l s='It is not recommended to use Dev version on Production sites.' mod='nuvei'}</span>
                             </div>
-                        </div>
+                        </div>*}
                             
                         <div class="form-group">
                             <label class="control-label col-lg-3">{l s='Use currency conversion' mod='nuvei'}</label>
@@ -155,17 +177,6 @@
                             </div>
                         </div>
                             
-                        <div class="form-group">
-                            <label class="control-label col-lg-3"> {l s='Enable UPOs' mod='nuvei'}</label>
-                            <div class="col-lg-9">
-                                <select name="SC_USE_UPOS">
-                                    <option value="">{l s='Please, select an option...' mod='nuvei'}</option>
-                                    <option value="1" {if Configuration::get('SC_USE_UPOS') eq 1}selected{/if}>{l s='Use UPOs' mod='nuvei'}</option>
-                                    <option value="0" {if Configuration::get('SC_USE_UPOS') eq 0}selected{/if}>{l s='Do NOT use UPOs' mod='nuvei'}</option>
-                                </select>
-                            </div>
-                        </div>
-                                
                         <div class="form-group">
                             <label class="control-label col-lg-3"> {l s='Choose the Text on the Pay button' mod='nuvei'}</label>
                             <div class="col-lg-9">

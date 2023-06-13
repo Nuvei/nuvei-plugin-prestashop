@@ -12,7 +12,7 @@ class Nuvei_Checkout extends PaymentModule
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $version                     = '1.0.11';
+    public $version                     = '1.1.0';
     public $ps_versions_compliancy      = array(
         'min' => '1.7.7.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
@@ -240,7 +240,7 @@ class Nuvei_Checkout extends PaymentModule
             Configuration::updateValue('NUVEI_ADD_CHECKOUT_STEP',   Tools::getValue('NUVEI_ADD_CHECKOUT_STEP'));
             Configuration::updateValue('NUVEI_PRESELECT_PAYMENT',   Tools::getValue('NUVEI_PRESELECT_PAYMENT'));
             
-            Configuration::updateValue('NUVEI_SDK_VERSION',             Tools::getValue('NUVEI_SDK_VERSION'));
+//            Configuration::updateValue('NUVEI_SDK_VERSION',             Tools::getValue('NUVEI_SDK_VERSION'));
             Configuration::updateValue('NUVEI_USE_DCC',                 Tools::getValue('NUVEI_USE_DCC'));
             Configuration::updateValue('NUVEI_BLOCK_CARDS',             Tools::getValue('NUVEI_BLOCK_CARDS'));
             Configuration::updateValue('NUVEI_PAY_BTN_TEXT',            Tools::getValue('NUVEI_PAY_BTN_TEXT'));
@@ -248,6 +248,7 @@ class Nuvei_Checkout extends PaymentModule
             Configuration::updateValue('NUVEI_AUTO_CLOSE_APM_POPUP',    Tools::getValue('NUVEI_AUTO_CLOSE_APM_POPUP'));
             Configuration::updateValue('NUVEI_SDK_LOG_LEVEL',           Tools::getValue('NUVEI_SDK_LOG_LEVEL'));
             Configuration::updateValue('NUVEI_SDK_TRANSL',              Tools::getValue('NUVEI_SDK_TRANSL'));
+            Configuration::updateValue('NUVEI_SDK_THEME',               Tools::getValue('NUVEI_SDK_THEME'));
             
             $nuvei_block_pms = Tools::getValue('NUVEI_BLOCK_PMS');
             
@@ -1817,6 +1818,7 @@ class Nuvei_Checkout extends PaymentModule
 			'logLevel'                  => Configuration::get('NUVEI_SDK_LOG_LEVEL'),
 			'maskCvv'                   => true,
 			'i18n'                      => Configuration::get('NUVEI_SDK_TRANSL'),
+			'theme'                     => Configuration::get('NUVEI_SDK_THEME'),
 //            'billingAddress'            => $oo_params['request_params']['billingAddress'],
 //            'userData'                  => ['billingAddress' => $oo_params['request_params']['billingAddress']],
         ];
@@ -1829,9 +1831,9 @@ class Nuvei_Checkout extends PaymentModule
         $sdk_url = $this->getSdkLibUrl();
         
         // when use dev sdk, set this variable
-        if('prod' != Configuration::get('NUVEI_SDK_VERSION')) {
-            $checkout_params['webSdkEnv'] = 'dev';
-        }
+//        if('prod' != Configuration::get('NUVEI_SDK_VERSION')) {
+//            $checkout_params['webSdkEnv'] = 'dev';
+//        }
 
         $this->context->smarty->assign('nuveiSdkUrl',       $sdk_url);
         $this->context->smarty->assign('showNuveoOnly',     $this->is_rebilling_order);
@@ -2031,12 +2033,13 @@ class Nuvei_Checkout extends PaymentModule
     /**
      * @return string
      */
-    private function getSdkLibUrl() {
-        if (Configuration::get('NUVEI_SDK_VERSION') == 'prod') {
+    private function getSdkLibUrl()
+    {
+//        if (Configuration::get('NUVEI_SDK_VERSION') == 'prod') {
 			return $this->sdkLibProdUrl;
-		}
+//		}
 		
-		return $this->sdkLibDevUrl;
+//		return $this->sdkLibDevUrl;
     }
 	
 	/**
