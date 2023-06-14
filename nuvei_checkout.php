@@ -24,10 +24,10 @@ class Nuvei_Checkout extends PaymentModule
     public $need_instance               = 1;
     public $is_eu_compatible            = 1;
     
-    private $sdkLibDevUrl               = 'https://srv-bsf-devpppjs.gw-4u.com/checkoutNext/checkout.js';
+//    private $sdkLibDevUrl               = 'https://srv-bsf-devpppjs.gw-4u.com/checkoutNext/checkout.js';
     private $sdkLibProdUrl              = 'https://cdn.safecharge.com/safecharge_resources/v1/checkout/checkout.js';
     private $apmPopupAutoCloseUrl       = 'https://cdn.safecharge.com/safecharge_resources/v1/websdk/autoclose.html';
-    private $restApiIntUrl              = 'https://ppp-test.safecharge.com/ppp/api/v1/';
+    private $restApiIntUrl              = 'https://ppp-test.nuvei.com/ppp/api/v1/';
     private $restApiProdUrl             = 'https://secure.safecharge.com/ppp/api/v1/';
     private $paymentPlanGroup           = 'Nuvei Payment Plan';
     private $pmAllowedVoidSettle        = ['cc_card', 'apmgw_expresscheckout'];
