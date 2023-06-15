@@ -249,6 +249,7 @@ class Nuvei_Checkout extends PaymentModule
             Configuration::updateValue('NUVEI_SDK_LOG_LEVEL',           Tools::getValue('NUVEI_SDK_LOG_LEVEL'));
             Configuration::updateValue('NUVEI_SDK_TRANSL',              Tools::getValue('NUVEI_SDK_TRANSL'));
             Configuration::updateValue('NUVEI_SDK_THEME',               Tools::getValue('NUVEI_SDK_THEME'));
+            Configuration::updateValue('NUVEI_APM_WINDOW_TYPE',         Tools::getValue('NUVEI_APM_WINDOW_TYPE'));
             
             $nuvei_block_pms = Tools::getValue('NUVEI_BLOCK_PMS');
             
@@ -1588,6 +1589,9 @@ class Nuvei_Checkout extends PaymentModule
 				'urlDetails'        => array(
 					'notificationUrl'   => $this->getNotifyUrl(),
                     'backUrl'           => $this->context->link->getPageLink('order'),
+                    'successUrl'        => $success_url,
+                    'pendingUrl'        => $success_url,
+                    'failureUrl'        => $error_url,
 				),
 
 				'billingAddress'    => $addresses['billingAddress'],
@@ -1602,12 +1606,14 @@ class Nuvei_Checkout extends PaymentModule
 				),
 			);
             
-            if(1 == Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP')
-                || 'no' == Configuration::get('SC_TEST_MODE')
-            ) {
-                $oo_params['urlDetails']['successUrl']  = $oo_params['urlDetails']['failureUrl']
-                                                        = $oo_params['urlDetails']['pendingUrl']
-                                                        = $this->apmPopupAutoCloseUrl;
+            if ('newTab' == Configuration::get('NUVEI_APM_WINDOW_TYPE')) {
+                if (1 == Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP')
+                    || 'no' == Configuration::get('SC_TEST_MODE')
+                ) {
+                    $oo_params['urlDetails']['successUrl']  = $oo_params['urlDetails']['failureUrl']
+                                                            = $oo_params['urlDetails']['pendingUrl']
+                                                            = $this->apmPopupAutoCloseUrl;
+                }
             }
             
             // rebiling parameters
@@ -1819,6 +1825,7 @@ class Nuvei_Checkout extends PaymentModule
 			'maskCvv'                   => true,
 			'i18n'                      => Configuration::get('NUVEI_SDK_TRANSL'),
 			'theme'                     => Configuration::get('NUVEI_SDK_THEME'),
+			'apmWindowType'             => Configuration::get('NUVEI_APM_WINDOW_TYPE'),
 //            'billingAddress'            => $oo_params['request_params']['billingAddress'],
 //            'userData'                  => ['billingAddress' => $oo_params['request_params']['billingAddress']],
         ];

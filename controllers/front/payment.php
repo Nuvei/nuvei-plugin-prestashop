@@ -143,25 +143,37 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 
 			$order_data = Db::getInstance()->getRow($query);
             
-            $this->module->createLog($order_data, 'processOrder() check for Order data.');
+            $this->module->createLog([$query, $order_data], 'processOrder() check for Order data.');
 			
 			if(!empty($order_data)) {
 				Tools::redirect($success_url);
 			}
 			# /additional check for existing Order by the Card ID
 			
-			if(!Tools::getValue('sc_transaction_id', false)) {
-                Tools::redirect($error_url);
-            }
+//			if(!Tools::getValue('sc_transaction_id', false)) {
+//                $this->module->createLog('processOrder() missing sc_transaction_id.');
+//                Tools::redirect($error_url);
+//            }
             
             // save order
+            $extra_vars     = [];
+            $nuvei_tr_id    = Tools::getValue('sc_transaction_id');
+            $nuvei_pm       = Tools::getValue('nuveiPaymentMethod');
+//            $payment_method = $this->module->displayName . ' - ' 
+//                . ($nuvei_pm ? $nuvei_pm : 'APM');
+            $payment_method = $this->module->name;
+            
+            if ($nuvei_tr_id && is_numeric($nuvei_tr_id)) {
+                $extra_vars = ['transaction_id' => $nuvei_tr_id];
+            }
+            
             $res = $this->module->validateOrder(
                 (int)$cart->id
                 ,Configuration::get('SC_OS_AWAITING_PAIMENT') // the status
                 ,$total_amount
-                ,$this->module->displayName . ' - ' . Tools::getValue('nuveiPaymentMethod') // payment_method
+                ,$payment_method // payment_method
                 ,'' // message
-                ,array('transaction_id' => Tools::getValue('sc_transaction_id', false)) // extra_vars
+                ,$extra_vars // extra_vars
                 ,null // currency_special
                 ,false // dont_touch_amount
                 ,$this->context->cart->secure_key // secure_key
@@ -176,10 +188,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 $this->context->cookie->__unset('nuvei_last_open_order_details');
             }
 
-            $this->module->createLog(
-                Tools::getValue('sc_transaction_id'),
-                'processOreder() - the webSDK Order was saved.'
-            );
+            $this->module->createLog($nuvei_tr_id, 'processOreder() - the webSDK Order was saved.');
 
             $this->updateCustomPaymentFields($this->module->currentOrder);
 
@@ -250,37 +259,51 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
      */
     private function processDmn()
     {
-        $this->module->createLog(@$_REQUEST, 'DMN request:');
+        $this->module->createLog(@$_REQUEST, 'DMN request');
 		
         # manually stop DMN process
-//        $this->module->createLog(
-//            http_build_query(@$_REQUEST),
-//            'DMN report: Manually stopped process.'
-//        );
 //        header('Content-Type: text/plain');
 //        exit('DMN report: Manually stopped process.');
         # /manually stop DMN process
         
-        $req_status = $this->getRequestStatus();
-        $dmnType    = Tools::getValue('dmnType');
+        // collect some variables
+        $req_status         = $this->getRequestStatus();
+        $dmnType            = Tools::getValue('dmnType');
+        $tr_id              = Tools::getValue('TransactionID', 0);
+        $transactionType    = Tools::getValue('transactionType', '');
+        $merchant_unique_id = current(explode('_', Tools::getValue('merchant_unique_id', '')));
         
+        // exit
         if ('CARD_TOKENIZATION' == Tools::getValue('type')) {
-			$this->module->createLog('DMN CARD_TOKENIZATION accepted.');
+            $msg = 'DMN CARD_TOKENIZATION accepted.';
+            
+			$this->module->createLog($msg);
             
             header('Content-Type: text/plain');
-			echo 'DMN CARD_TOKENIZATION accepted.';
-			exit;
+			exit($msg);
+		}
+        
+        // exit
+        if ('PENDING' == $req_status) {
+            $msg = 'Pending DMN, wait for the next one.';
+            
+			$this->module->createLog($msg);
+            
+            header('Content-Type: text/plain');
+			exit($msg);
+		}
+        
+        // exit
+        if (empty($req_status) && !$dmnType) {
+			$msg = 'DMN Error - the Status is empty!';
+            
+            $this->module->createLog($msg);
+            
+            header('Content-Type: text/plain');
+			exit($msg);
 		}
         
         $this->validateChecksum();
-        
-        if (empty($req_status) && !$dmnType) {
-			$this->module->createLog('DMN Error - the Status is empty!');
-            
-            header('Content-Type: text/plain');
-			echo 'DMN Error - the Status is empty!';
-			exit;
-		}
         
         # Subscription State DMN
         if ('subscription' == $dmnType) {
@@ -389,14 +412,12 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
         # /Subscription State DMN
         
-        $tr_id = Tools::getValue('TransactionID', '');
-        
-        if(empty($tr_id) || !is_numeric($tr_id)) {
-			$this->module->createLog('DMN Error: TransactionID is empty or not numeric.');
-			
-            header('Content-Type: text/plain');
-            exit('DMN Error: TransactionID is empty or not numeric.');
-		}
+//        if(empty($tr_id) || !is_numeric($tr_id)) {
+//			$this->module->createLog('DMN Error: TransactionID is empty or not numeric.');
+//			
+//            header('Content-Type: text/plain');
+//            exit('DMN Error: TransactionID is empty or not numeric.');
+//		}
         
         # Subscription Payment DMN
         if ('subscriptionPayment' == $dmnType && 0 != $tr_id) {
@@ -437,21 +458,21 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
         # Subscription Payment DMN END
         
-        $transactionType = Tools::getValue('transactionType', '');
-        
+        // exit
 		if(empty($transactionType)) {
-			$this->module->createLog('DMN Error: transactionType is empty.');
+            $msg = 'DMN Error: transactionType is empty.';
+            
+			$this->module->createLog($msg);
 			
             header('Content-Type: text/plain');
-            exit('DMN Error: transactionType is empty.');
+            exit($msg);
 		}
 		
-		$merchant_unique_id = $this->getCuid();
-        
         # Sale and Auth
-        if(Tools::getValue('invoice_id') !== false
-            && in_array($transactionType, array('Sale', 'Auth'))
-        ) {
+//        if(Tools::getValue('invoice_id')
+//            && in_array($transactionType, array('Sale', 'Auth'))
+//        ) {
+        if(in_array($transactionType, array('Sale', 'Auth'))) {
 			$this->dmnSaleAuth($merchant_unique_id, $req_status);
         }
         
@@ -467,6 +488,9 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         if(in_array($transactionType, array('Void', 'Settle'))) {
             $this->dmnVoidSettle($req_status, $transactionType);
         }
+        
+        $msg = 'DMN received, but not recognized.';
+        $this->module->createLog($msg);
         
         header('Content-Type: text/plain');
         exit('DMN received, but not recognized.');
@@ -746,8 +770,9 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     Db::getInstance()->update(
                         'order_payment',
                         array('amount' => $dmn_amount),
-                        "order_reference = '" . $order_info['reference'] . "' AND amount = "
-                            . $order_amount . ' AND  	id_order_payment = ' . $order_payment->id
+                        "order_reference = '" . $order_info['reference'] 
+                            . "' AND amount = " . $order_amount 
+                            . ' AND  	id_order_payment = ' . $order_payment->id
                     );
                 }
             }
@@ -907,14 +932,19 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			$res = Db::getInstance()->execute($query);
 		}
 		catch (Exception $e) {
-			$this->module->createLog($e->getMessage(), 'updateCustomPaymentFields Exception');
-			$this->module->createLog($query, '$query');
+			$this->module->createLog([
+                'updateCustomPaymentFields Exception'   => $e->getMessage(),
+                '$query'                                => $query,
+            ]);
+            
 			return false;
 		}
 		
 		if(!$res) {
-			$this->module->createLog(Db::getInstance()->getMsgError(), 'updateCustomPaymentFields response error');
-			$this->module->createLog($query, '$query');
+            $this->module->createLog([
+                'updateCustomPaymentFields response error'  => Db::getInstance()->getMsgError(),
+                '$query'                                    => $query,
+            ]);
 		}
 		
 		return $res;
@@ -1033,19 +1063,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         return $customer;
     }
 	
-	/**
-	 * Function getCuid
-	 * 
-	 * Get client unique id.
-	 * We change it only for Sandbox (test) mode.
-	 * 
-	 * @return int|string
-	 */
-	private function getCuid()
-    {
-        return current(explode('_', Tools::getValue('merchant_unique_id')));
-	}
-    
     /**
      * Help method for Auth and Sale DMNs logic.
      * 
@@ -1055,36 +1072,33 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     private function dmnSaleAuth($merchant_unique_id, $req_status)
     {
         // REST and WebSDK
-        $this->module->createLog(Tools::getValue('TransactionID'), 'DMN Report - REST sale.');
+//        $this->module->createLog(Tools::getValue('TransactionID'), 'DMN Report - REST sale.');
 
-        if(!Tools::getValue('merchant_unique_id', false)) {
-            $this->module->createLog(
-                Tools::getValue('TransactionID'),
-                'DMN Error - merchant_unique_id is empty!'
-            );
+        // exit
+        if(empty($merchant_unique_id) || !is_numeric($merchant_unique_id)) {
+            $msg = 'DMN Error - merchant_unique_id is empty or not a number!';
+            
+            $this->module->createLog($merchant_unique_id, $msg);
 
             header('Content-Type: text/plain');
-            echo 'DMN Error - merchant_unique_id is empty!';
-            exit;
+            exit($msg);
+        }
+        
+        $order_info         = null;
+        $tries				= 0;
+        $order_id			= false;
+        $max_tries			= 5;
+        $order_request_time	= Tools::getValue('customField4', 0); // time of create/update order
+        
+        // do not search more than once for Auth and Sale, if the DMN response time is more than 24 hours before now
+        if($order_request_time > 0 && (time() - $order_request_time > 3600 ) ) {
+            $max_tries = 0;
         }
 
         try {
-            $order_info         = null;
-            $tries				= 0;
-            $order_id			= false;
-            $max_tries			= 5;
-            $order_request_time	= Tools::getValue('customField4'); // time of create/update order
-
-            // do not search more than once for Auth and Sale, if the DMN response time is more than 24 hours before now
-            if($order_request_time && (time() - $order_request_time > 3600 ) ) {
-                $max_tries = 0;
-            }
-
             do {
                 $tries++;
                 $order_id = Order::getIdByCartId($merchant_unique_id);
-
-                $this->module->createLog($order_id, 'order_id');
 
                 if(!$order_id) {
                     $this->module->createLog(
@@ -1110,28 +1124,27 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             }
             while( $tries <= $max_tries && (!$order_id || empty($order_info->current_state)) );
 
+            $this->module->createLog($order_id, 'order_id');
+            
             $payment_method = str_replace('apmgw_', '', Tools::getValue('payment_method', ''));
+            
+            if ('cc_card' == $payment_method) {
+                $payment_method = 'Credit Card';
+            }
             
             // try to create an Order by DMN data
             if(!$order_id) {
-                // do not create order for Declined transaction
+                // exit. do not create order for Declined transaction
                 if(strtolower($this->getRequestStatus()) != 'approved') {
-                    $this->module->createLog(
-                        Tools::getValue('TransactionID'),
-                        'DMN Error - Not Approved DMN for not existing order - stop process.'
-                    );
+                    $msg = 'DMN Error - Not Approved DMN for not existing order - stop process.';
+                    
+                    $this->module->createLog(Tools::getValue('TransactionID'), $msg);
                     
                     header('Content-Type: text/plain');
-                    echo 'DMN Error - Not Approved DMN for not existing order - stop process.';
-                    exit;
+                    exit($msg);
                 }
 
                 // Approved Transaction - continue porocess
-                $this->module->createLog(
-                    Tools::getValue('TransactionID'),
-                    'The DMN didn\'t wait for the Order creation. Try to save order by the DMN.'
-                );
-
                 $this->module->createLog(
                     array(
                         $merchant_unique_id
@@ -1146,7 +1159,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                         ,false // dont_touch_amount
                         ,Tools::getValue('customField1', '')
                     ),
-                    'validateOrder params'
+                    'The Order is missing. Try to create order by the DMN.'
                 );
 
                 // try to create Order here
@@ -1156,52 +1169,45 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     ,floatval(Tools::getValue('totalAmount', 0))
                     ,$this->module->displayName . ' - ' . $payment_method // payment_method
                     ,'' // message
-                    ,array(
-                        'transaction_id' => Tools::getValue('TransactionID', false)
-                    ) // extra_vars
+                    ,array('transaction_id' => Tools::getValue('TransactionID', false)) // extra_vars
                     ,null // currency_special
                     ,false // dont_touch_amount
                     ,Tools::getValue('customField1', '') // secure_key
                 );
 
+                // exit
                 if(!$res) {
-                    $this->module->createLog(
-                        Tools::getValue('TransactionID'),
-                        'DMN Error - Order was not validated'
-                    );
+                    $msg = 'Faild to create an order by the DMN data.';
+                    
+                    $this->module->createLog($msg);
 
                     http_response_code(400);
                     header('Content-Type: text/plain');
-                    echo 'DMN Error - Order was not validated';
-                    exit;
+                    exit($msg);
                 }
 
                 if(!empty($this->context->cookie->nuvei_last_open_order_details)) {
 					$this->context->cookie->__unset('nuvei_last_open_order_details');
 				}
 
-                $this->module->createLog(
-                    Tools::getValue('TransactionID'),
-                    'DMN Report - An Order was made.'
-                );
+                $this->module->createLog('An Order was made by DMN data.');
 
                 $order_id	= $this->module->currentOrder;
                 $order_info	= new Order($order_id);
-            } // if no Order ID
+            }
+            // /try to create an Order by DMN data
 
-            // check if the Order belongs to this module
+            // exit - check if the Order belongs to this module
             if($this->module->name != $order_info->module) {
+                $msg = 'DMN Error - the Order do not belongs to the ' . $this->module->name;
+                
                 $this->module->createLog(
-                    [
-                        'TransactionID' => Tools::getValue('TransactionID'),
-                        'order module' => $order_info->module
-                    ],
-                    'DMN Error - the Order do not belongs to the ' . $this->module->name
+                    ['order module' => $order_info->module],
+                    $msg
                 );
 
                 header('Content-Type: text/plain');
-                echo 'DMN Error - the Order do not belongs to the ' . $this->module->name;
-                exit;
+                exit($msg);
             }
 
             // is overriding status allowed
@@ -1215,25 +1221,24 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             if(!empty($order_payments) && is_array($order_payments)) {
                 $last_payment = end($order_payments);
 
+                // exit
                 if('' != $last_payment->transaction_id
                     && $last_payment->transaction_id != Tools::getValue('TransactionID', 'int')
                 ) {
+                    $msg = 'DMN Error - DMN TransactionID does not mutch Last Payment transaction_id';
+                    
                     $this->module->createLog(
-                        array(
-                            'DMN TransactionID' => Tools::getValue('TransactionID', 'int'),
-                            'Last Payment transaction_id' => $last_payment->transaction_id
-                        ),
-                        'DMN Error - DMN TransactionID does not mutch Last Payment transaction_id'
+                        ['Last Payment transaction_id' => $last_payment->transaction_id],
+                        $msg
                     );
 
                     header('Content-Type: text/plain');
-                    echo 'DMN Error - DMN TransactionID does not mutch Last Payment transaction_id';
-                    exit;
+                    exit($msg);
                 }
 
                 $insert_data = false;
             }
-            // check for transaction Id after sdk Order END
+            // /check for transaction Id after sdk Order
 
             // wrong amount check
             $order_amount	= round(floatval($order_info->total_paid), 2);
@@ -1256,13 +1261,14 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 . 'WHERE order_id = ' . $order_id
             );
 
-            // there is prevous DMN data
+            // exit - there is prevous DMN data
             if(!empty($sc_data) && 'declined' == strtolower($req_status)) {
-                $this->module->createLog('DMN Error - Declined DMN for already Approved Order. Stop process here.');
+                $msg = 'DMN Error - Declined DMN for already Approved Order. Stop process here.';
+                
+                $this->module->createLog($msg);
 
                 header('Content-Type: text/plain');
-                echo 'DMN Error - Declined DMN for already Approved Order. Process Stops here.';
-                exit;
+                exit($msg);
             }
             # check for previous DMN data END
 
@@ -1284,34 +1290,47 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 );
             }
             
-            $this->module->createLog(
-                [$order_info->payment, strpos($order_info->payment, 'APM')],
-                'DMN Order payment method'
-            );
+            $this->module->createLog($order_info->payment, 'DMN Order payment method');
             
             // update the payment method
-            if(empty($order_info->payment) || false !== strpos($order_info->payment, 'APM')) {
-                $ord_payment_method = $order_info->payment;
-                $new_payment_method = str_replace(
-                    'APM',
-                    DB::getInstance()->escape($payment_method, false, true),
-                    $ord_payment_method
-                );
+//            if(empty($order_info->payment) || false !== strpos($order_info->payment, 'APM')) {
+//                $ord_payment_method = $order_info->payment;
                 
-                $query = "UPDATE " . _DB_PREFIX_ . "order_payment AS op "
+//                if (false === strpos($ord_payment_method, '-')) {
+//                    $new_payment_method = $ord_payment_method . ' - ' 
+//                        . DB::getInstance()->escape($payment_method, false, true);
+//                }
+                
+//                $new_payment_method = str_replace(
+//                    'APM',
+//                    DB::getInstance()->escape($payment_method, false, true),
+//                    $order_info->payment
+//                );
+                
+                $new_payment_method = 'Nuvei Payments - ' . DB::getInstance()->escape($payment_method, false, true);
+                
+                $query =
+                    "UPDATE " . _DB_PREFIX_ . "order_payment AS op "
                     . "LEFT JOIN " . _DB_PREFIX_ . "orders AS o "
-                    . "ON op.order_reference = o.reference "
+                        . "ON op.order_reference = o.reference "
                     . "SET op.payment_method = '" . $new_payment_method . "', "
-                    . "o.payment = '" . $new_payment_method . "' "
-                    . "WHERE op.transaction_id = " . (int) Tools::getValue('TransactionID');
+                        . "o.payment = '" . $new_payment_method . "', "
+                        . "op.transaction_id = " . (int) Tools::getValue('TransactionID') . " "
+                    . "WHERE o.id_order = " . (int) $order_id;
                 
-                $resp = Db::getInstance()->execute($query);
+                $res = Db::getInstance()->execute($query);
                 
-                $this->module->createLog(
-                    [$new_payment_method, $query, $resp],
-                    'DMN Order update payment method'
-                );
-            }
+                if(!$res) {
+                    $this->module->createLog(
+                        [
+                            '$new_payment_method'   => $new_payment_method,
+                            '$query'                => $query,
+                            'error'                 => Db::getInstance()->getMsgError(),
+                        ],
+                        'Order update payment method error.'
+                    );
+                }
+//            }
                 
             // try to start a Subscription
             $currency = new Currency((int)$order_info->id_currency);
@@ -1328,13 +1347,11 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             );
 
             header('Content-Type: text/plain');
-            echo 'DMN Exception: ' . $ex->getMessage();
-            exit;
+            exit('DMN Exception: ' . $ex->getMessage());
         }
 
         header('Content-Type: text/plain');
-        echo 'DMN received.';
-        exit;
+        exit('DMN received.');
     }
     
     /**

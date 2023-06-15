@@ -197,6 +197,16 @@
                             </div>
                         </div>
                         
+                        <div class="form-group">
+                            <label class="control-label col-lg-3"> {l s='APMs window type' mod='nuvei'}</label>
+                            <div class="col-lg-9">
+                                <select name="NUVEI_APM_WINDOW_TYPE">
+                                    <option value="newTab" {if Configuration::get('NUVEI_AUTO_EXPAND_PMS') eq 'newTab'}selected{/if}>{l s='New Tab' mod='nuvei'}</option>
+                                    <option value="redirect" {if Configuration::get('NUVEI_AUTO_EXPAND_PMS') eq 'redirect'}selected{/if}>{l s='Redirect' mod='nuvei'}</option>
+                                </select>
+                            </div>
+                        </div>
+                                
                         {if Configuration::get('SC_TEST_MODE') eq 'yes'}
                             <div class="form-group">
                                 <label class="control-label col-lg-3"> {l s='Auto close APM popup' mod='nuvei'}</label>
@@ -205,6 +215,8 @@
                                         <option value="1" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 1}selected{/if}>{l s='Yes' mod='nuvei'}</option>
                                         <option value="0" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 0}selected{/if}>{l s='No' mod='nuvei'}</option>
                                     </select>
+                                    
+                                    <span class="help-block">{l s='Works only when APMs window type is New Tab' mod='nuvei'}</span>
                                 </div>
                             </div>
                         {/if}

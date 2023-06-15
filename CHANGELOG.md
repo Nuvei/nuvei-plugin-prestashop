@@ -4,6 +4,7 @@
     Removed the plugins option "SDK version".
     Added option to change SDK theme into the plugin.
     Use new Sandbox ednpoint.
+    Added option to choose how to open APM window.
     
 # 1.0.11
     Add sourceApplication parameter.

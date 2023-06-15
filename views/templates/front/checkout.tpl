@@ -118,7 +118,7 @@
                             nuveiCheckoutSdkParams.sessionToken	= resp.sessionToken;
                             nuveiCheckoutSdkParams.amount		= resp.amount;
 
-                            nuveiLoadCheckout()();
+                            nuveiLoadCheckout();
                         }
                         
                         if (resp.hasOwnProperty('message')) {
