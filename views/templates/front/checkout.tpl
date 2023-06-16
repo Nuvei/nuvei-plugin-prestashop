@@ -30,6 +30,10 @@
             cursor: pointer;
             font-size: 16px;
         }
+        
+        .sfc-main-container.horizontal {
+            display: grid;
+        }
     </style>
     
     <div id="nuvei_error">
