@@ -201,8 +201,8 @@
                             <label class="control-label col-lg-3"> {l s='APMs window type' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="NUVEI_APM_WINDOW_TYPE">
-                                    <option value="newTab" {if Configuration::get('NUVEI_AUTO_EXPAND_PMS') eq 'newTab'}selected{/if}>{l s='New Tab' mod='nuvei'}</option>
-                                    <option value="redirect" {if Configuration::get('NUVEI_AUTO_EXPAND_PMS') eq 'redirect'}selected{/if}>{l s='Redirect' mod='nuvei'}</option>
+                                    <option value="newTab" {if Configuration::get('NUVEI_APM_WINDOW_TYPE') eq 'newTab'}selected{/if}>{l s='New Tab' mod='nuvei'}</option>
+                                    <option value="redirect" {if Configuration::get('NUVEI_APM_WINDOW_TYPE') eq 'redirect'}selected{/if}>{l s='Redirect' mod='nuvei'}</option>
                                 </select>
                             </div>
                         </div>
