@@ -1606,7 +1606,7 @@ class Nuvei_Checkout extends PaymentModule
 				),
 			);
             
-            if ('newTab' == Configuration::get('NUVEI_APM_WINDOW_TYPE')) {
+            if ('redirect' != Configuration::get('NUVEI_APM_WINDOW_TYPE')) {
                 if (1 == Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP')
                     || 'no' == Configuration::get('SC_TEST_MODE')
                 ) {

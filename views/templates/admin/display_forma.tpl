@@ -201,6 +201,7 @@
                             <label class="control-label col-lg-3"> {l s='APMs window type' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="NUVEI_APM_WINDOW_TYPE">
+                                    <option value="" {if Configuration::get('NUVEI_APM_WINDOW_TYPE') eq ''}selected{/if}>{l s='Popup' mod='nuvei'}</option>
                                     <option value="newTab" {if Configuration::get('NUVEI_APM_WINDOW_TYPE') eq 'newTab'}selected{/if}>{l s='New Tab' mod='nuvei'}</option>
                                     <option value="redirect" {if Configuration::get('NUVEI_APM_WINDOW_TYPE') eq 'redirect'}selected{/if}>{l s='Redirect' mod='nuvei'}</option>
                                 </select>
@@ -216,7 +217,7 @@
                                         <option value="0" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 0}selected{/if}>{l s='No' mod='nuvei'}</option>
                                     </select>
                                     
-                                    <span class="help-block">{l s='Works only when APMs window type is New Tab' mod='nuvei'}</span>
+                                    <span class="help-block">{l s='Works only when APMs window type is New Tab or Popup' mod='nuvei'}</span>
                                 </div>
                             </div>
                         {/if}
