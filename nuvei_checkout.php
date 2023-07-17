@@ -1604,7 +1604,7 @@ class Nuvei_Checkout extends PaymentModule
 				'shippingAddress'   => $addresses['shippingAddress'],
 //				'paymentOption'		=> ['card' => ['threeD' => ['isDynamic3D' => 1]]],
 				'transactionType'	=> Configuration::get('SC_PAYMENT_ACTION'),
-				'userTokenId'       => $addresses['billingAddress']['email'],
+//				'userTokenId'       => $addresses['billingAddress']['email'],
 				
                 'merchantDetails'	=> array(
 					'customField1' => $cart->secure_key,
@@ -1637,8 +1637,9 @@ class Nuvei_Checkout extends PaymentModule
 //            elseif(Configuration::get('SC_USE_UPOS') == 1 
 //                && (bool) $this->context->customer->isLogged()
 //            ) {
-//                $oo_params['userTokenId']   = $oo_params['billingAddress']['email'];
-//            }
+            if((bool) $this->context->customer->isLogged()) {
+                $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
+            }
             # /use or not UPOs
             
 			$resp = $this->callRestApi(
