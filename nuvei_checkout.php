@@ -1417,12 +1417,12 @@ class Nuvei_Checkout extends PaymentModule
                 
                 'timeStamp'         => $time,
                 'deviceDetails'     => NuveiRequest::get_device_details($this->version),
-                'encoding'          => 'UTF-8',
+//                'encoding'          => 'UTF-8',
                 'webMasterId'       => 'PrestaShop ' . _PS_VERSION_ . '; Plugin v' . $this->version,
                 'sourceApplication' => $this->nuvei_source_application,
                 'url'               => $notificationUrl, // a custom parameter for the checksum
                 'merchantDetails'	=> array(
-					'customField2' => 'PrestaShop Plugin v' . $this->version,
+//					'customField2' => 'PrestaShop Plugin v' . $this->version,
 					'customField4' => $time, // time when we create request
 				),
             ),
@@ -1492,7 +1492,9 @@ class Nuvei_Checkout extends PaymentModule
             )
         );
         
-        $this->is_rebilling_order = false;
+        $this->is_rebilling_order       = false;
+        $nuvei_last_open_order_details  = [];
+//        $products_data                  = [];
 
 		try {
 			$cart                           = $this->context->cart;
@@ -1502,8 +1504,10 @@ class Nuvei_Checkout extends PaymentModule
 			$amount                         = $this->formatMoney($cart->getOrderTotal());
             $addresses                      = $this->getOrderAddresses();
             $prod_with_plan                 = $this->getProdsWithPlansFromCart();
-            $nuvei_last_open_order_details  = [];
-            $products_data                  = [];
+            
+            if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
+                $this->is_rebilling_order = true;
+            }
         
             if(!empty($this->context->cookie->nuvei_last_open_order_details)) {
                 $nuvei_last_open_order_details 
@@ -1513,7 +1517,7 @@ class Nuvei_Checkout extends PaymentModule
             //$this->createLog($products);
             
             // check if product is available and get products details
-			foreach ($products as $product) {
+//			foreach ($products as $product) {
 //                $this->createLog($product);
                 
 //                if ($is_ajax && 0 == $product['available_for_order']) {
@@ -1528,17 +1532,18 @@ class Nuvei_Checkout extends PaymentModule
 //                    )));
 //                }
                 
-				$products_data[$product['id_product']] = array(
-//						'name'		=> $product['name'],
-					'quantity'	=> $product['quantity'],
-					'total_wt'	=> (string)round(floatval($product['total_wt']), 2)
-				);
-			}
+//				$products_data[$product['id_product']] = array(
+//				$products_data[] = array(
+//                    'name'		=> $product['name'],
+//					'quantity'	=> $product['quantity'],
+//					'total_wt'	=> (string)round(floatval($product['total_wt']), 2)
+//				);
+//			}
 			
 			# try updateOrder
-            if ( ! ( empty($nuvei_last_open_order_details['userTokenId']) 
-                && !empty($prod_with_plan['plan_details']) )
-            ) {
+            $callUpdateOrder = $this->callUpdateOrder($nuvei_last_open_order_details, $amount);
+            
+            if ($callUpdateOrder) {
                 $resp           = $this->updateOrder(); // this is merged array of response and the session
                 $resp_status    = $this->getRequestStatus($resp);
                 
@@ -1560,13 +1565,13 @@ class Nuvei_Checkout extends PaymentModule
             }
 			# /try updateOrder
 			
-			$error_url		= $this->context->link->getModuleLink(
+			$error_url = $this->context->link->getModuleLink(
 				$this->name,
 				'payment',
 				array('prestaShopAction' => 'showError')
 			);
             
-			$success_url	= $this->context->link->getModuleLink(
+			$success_url = $this->context->link->getModuleLink(
 				$this->name,
 				'payment',
 				array(
@@ -1599,10 +1604,12 @@ class Nuvei_Checkout extends PaymentModule
 				'shippingAddress'   => $addresses['shippingAddress'],
 //				'paymentOption'		=> ['card' => ['threeD' => ['isDynamic3D' => 1]]],
 				'transactionType'	=> Configuration::get('SC_PAYMENT_ACTION'),
+				'userTokenId'       => $addresses['billingAddress']['email'],
 				
                 'merchantDetails'	=> array(
 					'customField1' => $cart->secure_key,
-					'customField3' => json_encode($products_data), // items info
+//					'customField3' => json_encode($products_data), // items info
+					'customField5' => $prod_with_plan['plan_details'] ?? '',
 				),
 			);
             
@@ -1617,21 +1624,21 @@ class Nuvei_Checkout extends PaymentModule
             }
             
             // rebiling parameters
-            if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
-                $oo_params['merchantDetails']['customField5']   = $prod_with_plan['plan_details'];
-                $oo_params['userTokenId']                       = $oo_params['billingAddress']['email'];
-                $this->is_rebilling_order                       = true;
-            }
+//            if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
+//                $oo_params['merchantDetails']['customField5']   = $prod_with_plan['plan_details'];
+////                $oo_params['userTokenId']                       = $oo_params['billingAddress']['email'];
+////                $this->is_rebilling_order                       = true;
+//            }
             # use or not UPOs
             // in case there is a Product with a Payment Plan
 //            if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
 //                $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
 //            }
-            elseif(Configuration::get('SC_USE_UPOS') == 1 
-                && (bool) $this->context->customer->isLogged()
-            ) {
-                $oo_params['userTokenId']   = $oo_params['billingAddress']['email'];
-            }
+//            elseif(Configuration::get('SC_USE_UPOS') == 1 
+//                && (bool) $this->context->customer->isLogged()
+//            ) {
+//                $oo_params['userTokenId']   = $oo_params['billingAddress']['email'];
+//            }
             # /use or not UPOs
             
 			$resp = $this->callRestApi(
@@ -1654,16 +1661,18 @@ class Nuvei_Checkout extends PaymentModule
             // set some of the parameters into the session
             $nuvei_last_open_order_details = [
                 'amount'			=> $oo_params['amount'],
-                'items'				=> $oo_params['merchantDetails']['customField3'],
+//                'items'				=> $oo_params['merchantDetails']['customField3'],
                 'sessionToken'		=> $resp['sessionToken'],
                 'clientRequestId'	=> $resp['clientRequestId'],
                 'orderId'			=> $resp['orderId'],
                 'billingAddress'	=> array('country' => $oo_params['billingAddress']['country']),
+                'isRebillingOrder'  => $this->is_rebilling_order,
+                'transactionType'	=> $oo_params['transactionType'],
             ];
             
-            if (!empty($oo_params['userTokenId'])) {
-                $nuvei_last_open_order_details['userTokenId'] = $oo_params['userTokenId'];
-            }
+//            if (!empty($oo_params['userTokenId'])) {
+//                $nuvei_last_open_order_details['userTokenId'] = $oo_params['userTokenId'];
+//            }
             
             $this->context->cookie->__set(
                 'nuvei_last_open_order_details',
@@ -2042,11 +2051,7 @@ class Nuvei_Checkout extends PaymentModule
      */
     private function getSdkLibUrl()
     {
-//        if (Configuration::get('NUVEI_SDK_VERSION') == 'prod') {
-			return $this->sdkLibProdUrl;
-//		}
-		
-//		return $this->sdkLibDevUrl;
+        return $this->sdkLibProdUrl;
     }
 	
 	/**
@@ -2084,10 +2089,12 @@ class Nuvei_Checkout extends PaymentModule
 
 		// get items
 		foreach ($this->context->cart->getProducts() as $product) {
-			$cart_items[$product['id_product']] = array(
-//				'name'		=> $product['name'],
+//			$cart_items[$product['id_product']] = array(
+			$cart_items[] = array(
+				'name'		=> $product['name'],
 				'quantity'	=> $product['quantity'],
-				'total_wt'	=> (string) round(floatval($product['total_wt']), 2)
+//				'total_wt'	=> (string) round(floatval($product['total_wt']), 2)
+				'price'	=> (string) round(floatval($product['total_wt']), 2)
 			);
 		}
 		
@@ -2098,16 +2105,17 @@ class Nuvei_Checkout extends PaymentModule
 			'clientRequestId'	=> $nuvei_last_open_order_details['clientRequestId'],
 			'currency'			=> $currency->iso_code,
 			'amount'			=> $cart_amount,
-			'items'				=> array(
-				array(
-					'name'          => 'wc_order',
-					'price'         => $cart_amount,
-					'quantity'      => 1
-				)
-			),
+            'items'             => $cart_items,
+//			'items'				=> array(
+//				array(
+//					'name'          => 'wc_order',
+//					'price'         => $cart_amount,
+//					'quantity'      => 1
+//				)
+//			),
 			'merchantDetails'   => array(
 				'customField1' => $this->context->cart->secure_key,
-				'customField3' => json_encode($cart_items),
+//				'customField3' => json_encode($cart_items),
 			),
 		);
         
@@ -2115,20 +2123,10 @@ class Nuvei_Checkout extends PaymentModule
         $prod_with_plan = $this->getProdsWithPlansFromCart();
         
         // when will use UPOs
-//        if(0 == $rebilling_params['isRebilling']) {
         if(!empty($prod_with_plan) && is_array($prod_with_plan)) {
-//            $params['userTokenId']                      = $addresses['billingAddress']['email'];
             $params['merchantDetails']['customField5']  = $prod_with_plan['plan_details'];
             $this->is_rebilling_order                   = true;
         }
-        elseif(Configuration::get('SC_USE_UPOS') == 1) {
-//            $params['userTokenId'] = $addresses['billingAddress']['email'];
-        }
-        else {
-//            $params['userTokenId'] = '';
-        }
-        
-//        $params = array_merge_recursive($params, $rebilling_params);
         
 		$resp = $this->callRestApi(
             'updateOrder',
@@ -2141,8 +2139,6 @@ class Nuvei_Checkout extends PaymentModule
 		# Success
 		if (!empty($resp_status) && 'SUCCESS' == $resp_status) {
             $nuvei_last_open_order_details['amount'] = $cart_amount;
-			$nuvei_last_open_order_details['items']  = $params['merchantDetails']['customField3'];
-            
             $this->context->cookie->__set('nuvei_last_open_order_details', serialize($nuvei_last_open_order_details));
 			
             $resp['request_params'] = $params;
@@ -2443,5 +2439,59 @@ class Nuvei_Checkout extends PaymentModule
     {
 		return $order_id . '_' . time();
 	}
+    
+    /**
+     * Just check can we call an updateOrder request.
+     * 
+     * @params array $nuvei_last_open_order_details
+     * @params float $amount The Order amount.
+     * 
+     * @return bool
+     * 
+     */
+    private function callUpdateOrder($nuvei_last_open_order_details, $amount)
+    {
+        $callUpdateOrder = true;
+            
+        // when missing previous OpenOrder data
+        if (empty($nuvei_last_open_order_details)) {
+            $callUpdateOrder = false;
+        }
+
+        // when added new product with Rebilling
+        if (empty($nuvei_last_open_order_details['isRebillingOrder'])
+            && $this->is_rebilling_order
+        ) {
+            $this->createLog('A new product with rebilling product was added.');
+            $callUpdateOrder = false;
+        }
+
+        // if by some reason missing transactionType
+        if (empty($nuvei_last_open_order_details['transactionType'])) {
+            $this->createLog('transactionType is empty.');
+            $callUpdateOrder = false;
+        }
+
+        // when the total is 0 and saved transaction type is not Auth
+        if ($amount == 0
+            && ( empty($nuvei_last_open_order_details['transactionType'])
+                || 'Auth' != $nuvei_last_open_order_details['transactionType']
+            )
+        ) {
+            $this->createLog('Amont is 0, but transactionType is not Auth.');
+            $callUpdateOrder = false;
+        }
+        
+        if ($amount > 0
+            && !empty($nuvei_last_open_order_details['transactionType'])
+            && 'Auth' == $nuvei_last_open_order_details['transactionType']
+            && $nuvei_last_open_order_details['transactionType'] != Configuration::get('SC_PAYMENT_ACTION')
+        ) {
+            $this->createLog('Amont is not 0, but transactionType is Auth.');
+            $callUpdateOrder = false;
+        }
+        
+        return $callUpdateOrder;
+    }
     
 }

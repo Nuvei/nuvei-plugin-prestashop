@@ -1,23 +1,32 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
 # 1.1.0
+```
     Removed the plugins option "SDK version".
     Added option to change SDK theme into the plugin.
-    Use new Sandbox ednpoint.
     Added option to choose how to open APM window.
+    Added new plugin logo.
+    Use new Sandbox ednpoint.
+```
     
 # 1.0.11
+```
     Add sourceApplication parameter.
     Into webMasterId added Plugin version.
+```
 
 # 1.0.10
+```
     Fix for the case when userTokenId can not be passed with updateOrder request.
     Removed few unused objects from the SDK call.
     When Void an Order check if there is active subscription before try to cancel it.
+```
 
 # 1.0.9
+```
     Fix for the wrong Nuvei Documentation links into plugin settings.
     Show better message if the merchant currency is not supported by the APM.
+```
 
 # 1.0.8
 ```
@@ -66,5 +75,5 @@
 
 # 1.0.0
 ```
-    * Based on Nuvei Web SDK plugin, but replace Web SDK with Checkout SDK.
+    Based on Nuvei Web SDK plugin, but replace Web SDK with Checkout SDK.
 ```
