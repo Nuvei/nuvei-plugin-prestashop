@@ -410,13 +410,13 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         if(empty($sc_data['resp_transaction_type'])) {
-            $smarty->assign('nuvei_error', $this->l('Missing Order Transaction Type.'));
+            $smarty->assign('nuvei_error', $this->l('Nuvei Error - Missing Order Transaction Type.'));
             
             return $this->display(__FILE__, 'views/templates/admin/order_top_msg.tpl');
         }
         // TODO do we need this check...?
         if(empty($sc_data['related_transaction_id'])) {
-            $smarty->assign('nuvei_error', $this->l('Missing Order Transaction ID.'));
+            $smarty->assign('nuvei_error', $this->l('Nuvei Error - Missing Order Transaction ID.'));
             
             return $this->display(__FILE__, 'views/templates/admin/order_top_msg.tpl');
         }
@@ -445,6 +445,8 @@ class Nuvei_Checkout extends PaymentModule
         $order_id   = (int) $params['id_order'];
         $order      = new Order($order_id);
         $payment    = strtolower($order->payment);
+        
+        $this->createLog($order->id_cart, 'Order->id_cart');
         
         // not Nuvei order
 		if(strpos($payment, 'safecharge') === false
@@ -1372,7 +1374,7 @@ class Nuvei_Checkout extends PaymentModule
      *          'customField1' => string - cart secure_key,
      *          'customField2' => string - Prestashop plugin version,
      *          'customField3' => json string - items info,
-     *          'customField4' => string - time,
+     *          'customField4' => string - timestamp,
      *          'customField5' => json string - subscription data
      *      ),
 	 * 
@@ -1417,17 +1419,14 @@ class Nuvei_Checkout extends PaymentModule
                 
                 'timeStamp'         => $time,
                 'deviceDetails'     => NuveiRequest::get_device_details($this->version),
-//                'encoding'          => 'UTF-8',
                 'webMasterId'       => 'PrestaShop ' . _PS_VERSION_ . '; Plugin v' . $this->version,
                 'sourceApplication' => $this->nuvei_source_application,
                 'url'               => $notificationUrl, // a custom parameter for the checksum
-                'merchantDetails'	=> array(
-//					'customField2' => 'PrestaShop Plugin v' . $this->version,
-					'customField4' => $time, // time when we create request
-				),
             ),
             $params
         );
+        
+        $params['merchantDetails']['customField4'] = time();
         
         // calculate the checksum
         $concat = '';
@@ -1602,13 +1601,11 @@ class Nuvei_Checkout extends PaymentModule
 				'billingAddress'    => $addresses['billingAddress'],
 				'userDetails'       => $addresses['billingAddress'],
 				'shippingAddress'   => $addresses['shippingAddress'],
-//				'paymentOption'		=> ['card' => ['threeD' => ['isDynamic3D' => 1]]],
 				'transactionType'	=> Configuration::get('SC_PAYMENT_ACTION'),
-//				'userTokenId'       => $addresses['billingAddress']['email'],
+				'userTokenId'       => $addresses['billingAddress']['email'],
 				
                 'merchantDetails'	=> array(
 					'customField1' => $cart->secure_key,
-//					'customField3' => json_encode($products_data), // items info
 					'customField5' => $prod_with_plan['plan_details'] ?? '',
 				),
 			);
@@ -1629,18 +1626,6 @@ class Nuvei_Checkout extends PaymentModule
 ////                $oo_params['userTokenId']                       = $oo_params['billingAddress']['email'];
 ////                $this->is_rebilling_order                       = true;
 //            }
-            # use or not UPOs
-            // in case there is a Product with a Payment Plan
-//            if(isset($rebilling_params['isRebilling']) && 0 == $rebilling_params['isRebilling']) {
-//                $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
-//            }
-//            elseif(Configuration::get('SC_USE_UPOS') == 1 
-//                && (bool) $this->context->customer->isLogged()
-//            ) {
-            if((bool) $this->context->customer->isLogged()) {
-                $oo_params['userTokenId'] = $oo_params['billingAddress']['email'];
-            }
-            # /use or not UPOs
             
 			$resp = $this->callRestApi(
                 'openOrder', 
@@ -2116,7 +2101,6 @@ class Nuvei_Checkout extends PaymentModule
 //			),
 			'merchantDetails'   => array(
 				'customField1' => $this->context->cart->secure_key,
-//				'customField3' => json_encode($cart_items),
 			),
 		);
         
@@ -2433,12 +2417,12 @@ class Nuvei_Checkout extends PaymentModule
 	 * Set client unique id.
 	 * We change it only for Sandbox (test) mode.
 	 * 
-	 * @param int $order_id - cart or order id
+	 * @param int $cart_id - cart or order id
 	 * @return int|string
 	 */
-	private function setCuid($order_id)
+	private function setCuid($cart_id)
     {
-		return $order_id . '_' . time();
+		return $cart_id . '_' . time();
 	}
     
     /**

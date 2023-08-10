@@ -139,32 +139,39 @@
         function afterSdkResponse(resp) {
             console.log('afterSdkResponse()', resp);
 
-            if(typeof resp.result != 'undefined') {
-                if(resp.result === 'APPROVED' && resp.transactionId != 'undefined') {
-                    jQuery('#sc_transaction_id').val(resp.transactionId);
-                    
-                    if(resp.hasOwnProperty('ccCardNumber') && '' != resp.ccCardNumber) {
-                        jQuery('#nuveiPaymentMethod').val('Credit Card');
-                    }
-                    else {
-                        jQuery('#nuveiPaymentMethod').val('APM');
-                    }
-                    
-                    jQuery('#scForm').submit();
-                    return;
+            // missing result parameter
+            if(typeof resp.result == 'undefined') {
+                scFormFalse("{l s='Error with your Payment. Please try again later!' mod='nuvei'}");
+            }
+            
+            // success or pending
+            if(resp.hasOwnProperty('transactionId')
+                && '' != resp.transactionId
+                && (resp.result == 'APPROVED' || resp.result == 'PENDING')
+            ) {
+                jQuery('#sc_transaction_id').val(resp.transactionId);
+
+                if(resp.hasOwnProperty('ccCardNumber') && '' != resp.ccCardNumber) {
+                    jQuery('#nuveiPaymentMethod').val('Credit Card');
+                }
+                else {
+                    jQuery('#nuveiPaymentMethod').val('APM');
                 }
 
-                if(resp.result == 'DECLINED') {
-                    if (resp.hasOwnProperty('errorDescription')
-                        && 'insufficient funds' == resp.errorDescription.toLowerCase()
-                    ) {
-                        scFormFalse("{l s='You have Insufficient funds, please go back and remove some of the items in your shopping cart, or use another card.' mod='nuvei'}");
-                        return
-                    }
-                    
-                    scFormFalse("{l s='Your Payment was DECLINED. Please try another payment method!' mod='nuvei'}");
-                    return;
+                jQuery('#scForm').submit();
+                return;
+            }
+
+            if(resp.result == 'DECLINED') {
+                if (resp.hasOwnProperty('errorDescription')
+                    && 'insufficient funds' == resp.errorDescription.toLowerCase()
+                ) {
+                    scFormFalse("{l s='You have Insufficient funds, please go back and remove some of the items in your shopping cart, or use another card.' mod='nuvei'}");
+                    return
                 }
+
+                scFormFalse("{l s='Your Payment was DECLINED. Please try another payment method!' mod='nuvei'}");
+                return;
             }
             
             if(resp.status == 'ERROR') {

@@ -7,6 +7,8 @@
     Added option to choose how to open APM window.
     Added new plugin logo.
     Use new Sandbox ednpoint.
+    Added Auto-Void logic.
+    Remove the logic who create Order, if missing in Prestashop system, by DMN data.
 ```
     
 # 1.0.11

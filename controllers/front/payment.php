@@ -196,7 +196,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 		}
 		catch(Exception $e) {
 			$this->module->createLog(
-				array($e->getMessage(), $e->getTrace()),
+				array($e->getMessage(), $e->getTrace(1)),
 				'processOrder() Exception:'
 			);
 			
@@ -503,7 +503,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 	 * 
 	 * @param int $order_status
 	 */
-	private function canOverrideOrderStatus($order_status) {
+	private function canOverrideOrderStatus($order_status)
+    {
 		// Void - can not be changed any more
 		if(Configuration::get('PS_OS_CANCELED') == $order_status) {
 			$this->module->createLog(
@@ -553,7 +554,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			exit;
 		}
 	}
-
 
 	/**
 	 * Function getOrder
@@ -1072,7 +1072,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     private function dmnSaleAuth($merchant_unique_id, $req_status)
     {
         // REST and WebSDK
-//        $this->module->createLog(Tools::getValue('TransactionID'), 'DMN Report - REST sale.');
+        $this->module->createLog($merchant_unique_id, 'dmnSaleAuth()');
 
         // exit
         if(empty($merchant_unique_id) || !is_numeric($merchant_unique_id)) {
@@ -1084,125 +1084,102 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             exit($msg);
         }
         
-        $order_info         = null;
-        $tries				= 0;
-        $order_id			= false;
-        $max_tries			= 5;
-        $order_request_time	= Tools::getValue('customField4', 0); // time of create/update order
+        $order_info = null;
+        $tries      = 0;
+        $max_tries	= 4;
+        $order_id	= false;
         
-        // do not search more than once for Auth and Sale, if the DMN response time is more than 24 hours before now
-        if($order_request_time > 0 && (time() - $order_request_time > 3600 ) ) {
-            $max_tries = 0;
+        do {
+            $tries++;
+            $order_id = Order::getIdByCartId($merchant_unique_id);
+
+            if(!$order_id) {
+                $this->module->createLog(
+                    Tools::getValue('TransactionID'),
+                    'The DMN wait for the order.'
+                );
+
+                sleep(3);
+                continue;
+            }
+            
+            $order_info	= new Order($order_id);
+
+            // check for slow Prestashop slow saving process
+            if (empty($order_info->current_state)) {
+                $this->module->createLog(
+                    Tools::getValue('TransactionID'),
+                    'Current order state is 0. Wait to refresh the State.'
+                );
+
+                sleep(3);
+            }
+        }
+        while( $tries <= $max_tries && (!$order_id || empty($order_info->current_state)) );
+
+        $this->module->createLog($order_id, 'order_id');
+
+        // the order was not found
+        if(!$order_id) {
+            // exit, do not create order for Declined transaction
+            if(strtolower($this->getRequestStatus()) != 'approved') {
+                $msg = 'Not Approved DMN for not existing order - stop process.';
+                $this->module->createLog(Tools::getValue('TransactionID'), $msg);
+
+                header('Content-Type: text/plain');
+                exit($msg);
+            }
+
+            // eventualy create Void from this DMN
+            $this->createAutoVoid();
+
+            // return 400 to Cashier and wait for new DMN
+            $msg = 'The Order was not found. Send us DMN again!';
+            $this->module->createLog($msg);
+
+            header('Content-Type: text/plain');
+            http_response_code(400);
+            exit($msg);
+        }
+        // /the order was not found
+
+        // exit - check if the Order belongs to this module
+        if($this->module->name != $order_info->module) {
+            $msg = 'The Order do not belongs to the ' . $this->module->name;
+
+            $this->module->createLog(
+                ['order module' => $order_info->module],
+                $msg
+            );
+
+            header('Content-Type: text/plain');
+            exit($msg);
         }
 
-        try {
-            do {
-                $tries++;
-                $order_id = Order::getIdByCartId($merchant_unique_id);
+        // is overriding status allowed
+        $this->canOverrideOrderStatus($order_info->current_state);
 
-                if(!$order_id) {
-                    $this->module->createLog(
-                        Tools::getValue('TransactionID'),
-                        'DMN Report - the DMN wait for the order.'
-                    );
+        // check for transaction Id after sdk Order
+        $payment		= new OrderPaymentCore();
+        $order_payments	= $payment->getByOrderReference($order_info->reference);
+        $insert_data	= true; // false for update
+        $payment_method = str_replace('apmgw_', '', Tools::getValue('payment_method', ''));
 
-                    sleep(3);
-                }
-                else {
-                    $order_info	= new Order($order_id);
+        if ('cc_card' == $payment_method) {
+            $payment_method = 'Credit Card';
+        }
 
-                    // check for slow Prestashop slow saving process
-                    if(empty($order_info->current_state)) {
-                        $this->module->createLog(
-                            Tools::getValue('TransactionID'),
-                            'DMN Error - current order state is 0. Wait to refresh the State.'
-                        );
+        if(!empty($order_payments) && is_array($order_payments)) {
+            $last_payment = end($order_payments);
 
-                        sleep(3);
-                    }
-                }
-            }
-            while( $tries <= $max_tries && (!$order_id || empty($order_info->current_state)) );
+            // exit
+            if('' != $last_payment->transaction_id
+                && $last_payment->transaction_id != Tools::getValue('TransactionID', 'int')
+            ) {
+                $msg = 'DMN TransactionID does not mutch Last Payment transaction_id';
 
-            $this->module->createLog($order_id, 'order_id');
-            
-            $payment_method = str_replace('apmgw_', '', Tools::getValue('payment_method', ''));
-            
-            if ('cc_card' == $payment_method) {
-                $payment_method = 'Credit Card';
-            }
-            
-            // try to create an Order by DMN data
-            if(!$order_id) {
-                // exit. do not create order for Declined transaction
-                if(strtolower($this->getRequestStatus()) != 'approved') {
-                    $msg = 'DMN Error - Not Approved DMN for not existing order - stop process.';
-                    
-                    $this->module->createLog(Tools::getValue('TransactionID'), $msg);
-                    
-                    header('Content-Type: text/plain');
-                    exit($msg);
-                }
-
-                // Approved Transaction - continue porocess
                 $this->module->createLog(
-                    array(
-                        $merchant_unique_id
-                        ,Configuration::get('SC_OS_AWAITING_PAIMENT') // the status
-                        ,floatval(Tools::getValue('totalAmount', 0))
-                        ,$this->module->displayName . ' - ' . $payment_method
-                        ,'' // message
-                        ,array(
-                            'transaction_id' => Tools::getValue('TransactionID', false)
-                        ) // extra_vars
-                        ,null // currency_special
-                        ,false // dont_touch_amount
-                        ,Tools::getValue('customField1', '')
-                    ),
-                    'The Order is missing. Try to create order by the DMN.'
-                );
-
-                // try to create Order here
-                $res = $this->module->validateOrder(
-                    (int) $merchant_unique_id
-                    ,Configuration::get('SC_OS_AWAITING_PAIMENT') // the status
-                    ,floatval(Tools::getValue('totalAmount', 0))
-                    ,$this->module->displayName . ' - ' . $payment_method // payment_method
-                    ,'' // message
-                    ,array('transaction_id' => Tools::getValue('TransactionID', false)) // extra_vars
-                    ,null // currency_special
-                    ,false // dont_touch_amount
-                    ,Tools::getValue('customField1', '') // secure_key
-                );
-
-                // exit
-                if(!$res) {
-                    $msg = 'Faild to create an order by the DMN data.';
-                    
-                    $this->module->createLog($msg);
-
-                    http_response_code(400);
-                    header('Content-Type: text/plain');
-                    exit($msg);
-                }
-
-                if(!empty($this->context->cookie->nuvei_last_open_order_details)) {
-					$this->context->cookie->__unset('nuvei_last_open_order_details');
-				}
-
-                $this->module->createLog('An Order was made by DMN data.');
-
-                $order_id	= $this->module->currentOrder;
-                $order_info	= new Order($order_id);
-            }
-            // /try to create an Order by DMN data
-
-            // exit - check if the Order belongs to this module
-            if($this->module->name != $order_info->module) {
-                $msg = 'DMN Error - the Order do not belongs to the ' . $this->module->name;
-                
-                $this->module->createLog(
-                    ['order module' => $order_info->module],
+                    ['Last Payment transaction_id' => $last_payment->transaction_id],
                     $msg
                 );
 
@@ -1210,148 +1187,156 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 exit($msg);
             }
 
-            // is overriding status allowed
-            $this->canOverrideOrderStatus($order_info->current_state);
-
-            // check for transaction Id after sdk Order
-            $payment		= new OrderPaymentCore();
-            $order_payments	= $payment->getByOrderReference($order_info->reference);
-            $insert_data	= true; // false for update
-
-            if(!empty($order_payments) && is_array($order_payments)) {
-                $last_payment = end($order_payments);
-
-                // exit
-                if('' != $last_payment->transaction_id
-                    && $last_payment->transaction_id != Tools::getValue('TransactionID', 'int')
-                ) {
-                    $msg = 'DMN Error - DMN TransactionID does not mutch Last Payment transaction_id';
-                    
-                    $this->module->createLog(
-                        ['Last Payment transaction_id' => $last_payment->transaction_id],
-                        $msg
-                    );
-
-                    header('Content-Type: text/plain');
-                    exit($msg);
-                }
-
-                $insert_data = false;
-            }
-            // /check for transaction Id after sdk Order
-
-            // wrong amount check
-            $order_amount	= round(floatval($order_info->total_paid), 2);
-            $dmn_amount		= round(Tools::getValue('totalAmount', 0), 2);
-
-            if($order_amount != $dmn_amount) {
-                $this->module->createLog(
-                    array(
-                        'DMN totalAmount' => $dmn_amount,
-                        'Order Amount' => $order_amount
-                    ),
-                    'DMN Error - DMN totalAmount does not mutch Order Amount'
-                );
-            }
-            // wrong amount check
-
-            # check for previous DMN data
-            $sc_data = Db::getInstance()->getRow(
-                'SELECT * FROM safecharge_order_data '
-                . 'WHERE order_id = ' . $order_id
-            );
-
-            // exit - there is prevous DMN data
-            if(!empty($sc_data) && 'declined' == strtolower($req_status)) {
-                $msg = 'DMN Error - Declined DMN for already Approved Order. Stop process here.';
-                
-                $this->module->createLog($msg);
-
-                header('Content-Type: text/plain');
-                exit($msg);
-            }
-            # check for previous DMN data END
-
-            $this->updateCustomPaymentFields($order_id, $insert_data);
-
-            if((int) $order_info->current_state != (int) Configuration::get('PS_OS_PAYMENT')
-                && (int) $order_info->current_state != (int) Configuration::get('PS_OS_ERROR')
-            ) {
-                $this->changeOrderStatus(
-                    array(
-                        'id'            => $order_id,
-                        'current_state' => $order_info->current_state,
-                        'has_invoice'	=> $order_info->hasInvoice(),
-                        'total_paid'	=> $order_info->total_paid,
-                        'id_customer'	=> $order_info->id_customer,
-                        'reference'		=> $order_info->reference,
-                    )
-                    ,$req_status
-                );
-            }
-            
-            $this->module->createLog($order_info->payment, 'DMN Order payment method');
-            
-            // update the payment method
-//            if(empty($order_info->payment) || false !== strpos($order_info->payment, 'APM')) {
-//                $ord_payment_method = $order_info->payment;
-                
-//                if (false === strpos($ord_payment_method, '-')) {
-//                    $new_payment_method = $ord_payment_method . ' - ' 
-//                        . DB::getInstance()->escape($payment_method, false, true);
-//                }
-                
-//                $new_payment_method = str_replace(
-//                    'APM',
-//                    DB::getInstance()->escape($payment_method, false, true),
-//                    $order_info->payment
-//                );
-                
-                $new_payment_method = 'Nuvei Payments - ' . DB::getInstance()->escape($payment_method, false, true);
-                
-                $query =
-                    "UPDATE " . _DB_PREFIX_ . "order_payment AS op "
-                    . "LEFT JOIN " . _DB_PREFIX_ . "orders AS o "
-                        . "ON op.order_reference = o.reference "
-                    . "SET op.payment_method = '" . $new_payment_method . "', "
-                        . "o.payment = '" . $new_payment_method . "', "
-                        . "op.transaction_id = " . (int) Tools::getValue('TransactionID') . " "
-                    . "WHERE o.id_order = " . (int) $order_id;
-                
-                $res = Db::getInstance()->execute($query);
-                
-                if(!$res) {
-                    $this->module->createLog(
-                        [
-                            '$new_payment_method'   => $new_payment_method,
-                            '$query'                => $query,
-                            'error'                 => Db::getInstance()->getMsgError(),
-                        ],
-                        'Order update payment method error.'
-                    );
-                }
-//            }
-                
-            // try to start a Subscription
-            $currency = new Currency((int)$order_info->id_currency);
-            
-            $this->startSubscription($order_id, $currency->iso_code);
+            $insert_data = false;
         }
-        catch (Exception $ex) {
+        // /check for transaction Id after sdk Order
+
+        // wrong amount check
+        $order_amount	= round(floatval($order_info->total_paid), 2);
+        $dmn_amount		= round(Tools::getValue('totalAmount', 0), 2);
+
+        if($order_amount != $dmn_amount) {
             $this->module->createLog(
-                [
-                    $ex->getMessage(),
-                    $ex->getTrace()
-                ],
-                'Sale DMN Exception:', 'CRITICAL'
+                array(
+                    'DMN totalAmount' => $dmn_amount,
+                    'Order Amount' => $order_amount
+                ),
+                'DMN totalAmount does not mutch Order Amount.'
             );
+        }
+        // wrong amount check
+
+        # check for previous DMN data
+        $sc_data = Db::getInstance()->getRow(
+            'SELECT * FROM safecharge_order_data '
+            . 'WHERE order_id = ' . $order_id
+        );
+
+        // exit - there is prevous DMN data
+        if(!empty($sc_data) && 'declined' == strtolower($req_status)) {
+            $msg = 'DMN Error - Declined DMN for already Approved Order. Stop process here.';
+
+            $this->module->createLog($msg);
 
             header('Content-Type: text/plain');
-            exit('DMN Exception: ' . $ex->getMessage());
+            exit($msg);
+        }
+        # check for previous DMN data END
+
+        $this->updateCustomPaymentFields($order_id, $insert_data);
+
+        if((int) $order_info->current_state != (int) Configuration::get('PS_OS_PAYMENT')
+            && (int) $order_info->current_state != (int) Configuration::get('PS_OS_ERROR')
+        ) {
+            $this->changeOrderStatus(
+                array(
+                    'id'            => $order_id,
+                    'current_state' => $order_info->current_state,
+                    'has_invoice'	=> $order_info->hasInvoice(),
+                    'total_paid'	=> $order_info->total_paid,
+                    'id_customer'	=> $order_info->id_customer,
+                    'reference'		=> $order_info->reference,
+                )
+                ,$req_status
+            );
         }
 
+        $this->module->createLog($order_info->payment, 'DMN Order payment method');
+
+        $new_payment_method = 'Nuvei Payments - ' . DB::getInstance()->escape($payment_method, false, true);
+
+        $query =
+            "UPDATE " . _DB_PREFIX_ . "order_payment AS op "
+            . "LEFT JOIN " . _DB_PREFIX_ . "orders AS o "
+                . "ON op.order_reference = o.reference "
+            . "SET op.payment_method = '" . $new_payment_method . "', "
+                . "o.payment = '" . $new_payment_method . "', "
+                . "op.transaction_id = " . (int) Tools::getValue('TransactionID') . " "
+            . "WHERE o.id_order = " . (int) $order_id;
+
+        $res = Db::getInstance()->execute($query);
+
+        if(!$res) {
+            $this->module->createLog(
+                [
+                    '$new_payment_method'   => $new_payment_method,
+                    '$query'                => $query,
+                    'error'                 => Db::getInstance()->getMsgError(),
+                ],
+                'Order update payment method error.'
+            );
+        }
+
+        // try to start a Subscription
+        $currency = new Currency((int)$order_info->id_currency);
+
+        $this->startSubscription($order_id, $currency->iso_code);
+
+        $msg = 'DMN received.';
+        $this->module->createLog($msg);
+        
         header('Content-Type: text/plain');
-        exit('DMN received.');
+        exit($msg);
+    }
+    
+    private function createAutoVoid()
+    {
+        $order_request_time	= Tools::getValue('customField4', 0); // time of create/update order
+        $curr_time          = time();
+        
+        $this->module->createLog(
+            [$order_request_time, $curr_time],
+            'createAutoVoid'
+        );
+        
+        // not allowed Auto-Void
+        if (0 == $order_request_time || !$order_request_time) {
+            $this->module->createLog(
+                null,
+                'There is problem with $order_request_time. End process.',
+                'WARINING'
+            );
+            return;
+        }
+        
+        if ($curr_time - $order_request_time <= 1800) {
+            $this->module->createLog("Let's wait one more DMN try.");
+            return;
+        }
+        // /not allowed Auto-Void
+        
+        $notify_url     = $this->module->getNotifyUrl();
+        $params    = [
+            'clientRequestId'       => time() . '_' . uniqid(),
+            'clientUniqueId'        => date('YmdHis') . '_' . uniqid(),
+            'amount'                => (string) Tools::getValue('totalAmount'),
+            'currency'              => Tools::getValue('currency'),
+            'relatedTransactionId'  => Tools::getValue('TransactionID'),
+            'url'                   => $notify_url,
+            'urlDetails'            => ['notificationUrl' => $notify_url],
+            'customData'            => 'This is Auto-Void transaction',
+        ];
+        
+        $resp = $this->module->callRestApi(
+            'voidTransaction',
+            $params,
+            array('merchantId', 'merchantSiteId', 'clientRequestId', 'clientUniqueId', 'amount', 'currency', 'relatedTransactionId', 'url', 'timeStamp')
+        );
+        
+        // Void Success
+        if (!empty($resp['transactionStatus'])
+            && 'APPROVED' == $resp['transactionStatus']
+            && !empty($resp['transactionId'])
+        ) {
+            $msg = 'The searched Order does not exists, a Void request was made for this Transacrion.';
+            $this->module->createLog($msg);
+            
+            header('Content-Type: text/plain');
+            http_response_code(200);
+            exit($msg);
+        }
+        
+        return;
     }
     
     /**
