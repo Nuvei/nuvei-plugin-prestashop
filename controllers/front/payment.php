@@ -264,7 +264,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         # manually stop DMN process
 //        header('Content-Type: text/plain');
 //        exit('DMN report: Manually stopped process.');
-        # /manually stop DMN process
         
         // collect some variables
         $req_status         = $this->getRequestStatus();
@@ -412,13 +411,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
         # /Subscription State DMN
         
-//        if(empty($tr_id) || !is_numeric($tr_id)) {
-//			$this->module->createLog('DMN Error: TransactionID is empty or not numeric.');
-//			
-//            header('Content-Type: text/plain');
-//            exit('DMN Error: TransactionID is empty or not numeric.');
-//		}
-        
         # Subscription Payment DMN
         if ('subscriptionPayment' == $dmnType && 0 != $tr_id) {
             $cri_parts  = explode('_', Tools::getValue('clientRequestId'));
@@ -458,20 +450,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
         # Subscription Payment DMN END
         
-        // exit
-		if(empty($transactionType)) {
-            $msg = 'DMN Error: transactionType is empty.';
-            
-			$this->module->createLog($msg);
-			
-            header('Content-Type: text/plain');
-            exit($msg);
-		}
-		
         # Sale and Auth
-//        if(Tools::getValue('invoice_id')
-//            && in_array($transactionType, array('Sale', 'Auth'))
-//        ) {
         if(in_array($transactionType, array('Sale', 'Auth'))) {
 			$this->dmnSaleAuth($merchant_unique_id, $req_status);
         }
