@@ -1654,6 +1654,7 @@ class Nuvei_Checkout extends PaymentModule
                 'billingAddress'	=> array('country' => $oo_params['billingAddress']['country']),
                 'isRebillingOrder'  => $this->is_rebilling_order,
                 'transactionType'	=> $oo_params['transactionType'],
+                'userTokenId'       => $oo_params['userTokenId'],
             ];
             
 //            if (!empty($oo_params['userTokenId'])) {
