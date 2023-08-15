@@ -10,6 +10,7 @@
     Added Auto-Void logic.
     Remove the logic who create Order, if missing in Prestashop system, by DMN data.
     Return code 400 to the Cashier, when the plugin did not find an OC Order nby the DMN data.
+    Trim the merchant credentials after get them.
 ```
     
 # 1.0.11

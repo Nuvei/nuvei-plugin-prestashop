@@ -151,12 +151,12 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         
         $checksum = hash(
             Configuration::get('SC_HASH_TYPE'),
-            Configuration::get('SC_MERCHANT_ID') 
-                . Configuration::get('SC_MERCHANT_SITE_ID')
+            trim(Configuration::get('SC_MERCHANT_ID')) 
+                . trim(Configuration::get('SC_MERCHANT_SITE_ID'))
                 . $params['currency']
                 . $params['planStatus']
                 . $time
-                . Configuration::get('SC_SECRET_KEY')
+                . trim(Configuration::get('SC_SECRET_KEY'))
         );
         
         $params['checksum'] = $checksum;

@@ -1413,8 +1413,8 @@ class Nuvei_Checkout extends PaymentModule
         // set here some of the mandatory parameters
         $params = array_merge(
             array(
-                'merchantId'        => Configuration::get('SC_MERCHANT_ID'),
-                'merchantSiteId'    => Configuration::get('SC_MERCHANT_SITE_ID'),
+                'merchantId'        => trim(Configuration::get('SC_MERCHANT_ID')),
+                'merchantSiteId'    => trim(Configuration::get('SC_MERCHANT_SITE_ID')),
                 'clientRequestId'   => $time . '_' . uniqid(),
                 
                 'timeStamp'         => $time,
@@ -1448,7 +1448,7 @@ class Nuvei_Checkout extends PaymentModule
             $concat .= $params[$key];
         }
         
-        $concat .= Configuration::get('SC_SECRET_KEY');
+        $concat .= trim(Configuration::get('SC_SECRET_KEY'));
         
         $params['checksum'] = hash(Configuration::get('SC_HASH_TYPE'), $concat);
         // calculate the checksum END
@@ -2267,7 +2267,7 @@ class Nuvei_Checkout extends PaymentModule
         try {
             $str = hash(
                 Configuration::get('SC_HASH_TYPE'),
-                Configuration::get('SC_SECRET_KEY') . @$_REQUEST['totalAmount']
+                trim(Configuration::get('SC_SECRET_KEY')) . @$_REQUEST['totalAmount']
                     . @$_REQUEST['currency'] . @$_REQUEST['responseTimeStamp']
                     . @$_REQUEST['PPP_TransactionID'] . $this->getRequestStatus()
                     . @$_REQUEST['productId']

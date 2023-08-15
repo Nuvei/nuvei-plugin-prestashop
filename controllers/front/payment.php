@@ -820,7 +820,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 . $this->getRequestStatus()
                 . Tools::getValue('productId');
             
-            $full_str   = Configuration::get('SC_SECRET_KEY') . $str;
+            $full_str   = trim(Configuration::get('SC_SECRET_KEY')) . $str;
             $hash_str   = hash(Configuration::get('SC_HASH_TYPE'), $full_str);
             
             if ($hash_str != $advanceResponseChecksum) {
@@ -849,7 +849,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             $concat .= Tools::getValue($key, '');
         }
         
-        $concat_final   = $concat . Configuration::get('SC_SECRET_KEY');
+        $concat_final   = $concat . trim(Configuration::get('SC_SECRET_KEY'));
         $checksum       = hash(Configuration::get('SC_HASH_TYPE'), $concat_final);
         
         if ($responsechecksum != $checksum) {
