@@ -1746,9 +1746,9 @@ class Nuvei_Checkout extends PaymentModule
         if(!(bool)$this->context->customer->isLogged()) {
             $use_upos = $save_pm = false;
         }
-        elseif(!empty($oo_params['userTokenId'])) {
-            $save_pm = true;
-        }
+//        elseif(!empty($oo_params['userTokenId'])) {
+//            $save_pm = true;
+//        }
         
         if ($this->is_rebilling_order) {
             $save_pm = 'always';
@@ -1799,7 +1799,7 @@ class Nuvei_Checkout extends PaymentModule
 			'merchantSiteId'            => $oo_params['merchantSiteId'],
 			'country'                   => $oo_params['request_params']['billingAddress']['country'],
 			'currency'                  => $oo_params['request_params']['currency'],
-			'amount'                    => $oo_params['request_params']['amount'],
+			'amount'                    => (string) $oo_params['request_params']['amount'],
 			'renderTo'                  => '#nuvei_checkout',
 			'useDCC'                    => Configuration::get('NUVEI_USE_DCC'),
 			'strict'                    => false,

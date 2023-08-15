@@ -263,6 +263,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 		
         # manually stop DMN process
 //        header('Content-Type: text/plain');
+//        $this->module->createLog('DMN report: Manually stopped process.');
 //        exit('DMN report: Manually stopped process.');
         
         // collect some variables
