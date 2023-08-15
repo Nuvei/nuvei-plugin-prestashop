@@ -2085,14 +2085,14 @@ class Nuvei_Checkout extends PaymentModule
 			'clientRequestId'	=> $nuvei_last_open_order_details['clientRequestId'],
 			'currency'			=> $currency->iso_code,
 			'amount'			=> $cart_amount,
-            'items'             => $cart_items,
-//			'items'				=> array(
-//				array(
-//					'name'          => 'wc_order',
-//					'price'         => $cart_amount,
-//					'quantity'      => 1
-//				)
-//			),
+//            'items'             => $cart_items,
+			'items'				=> array(
+				array(
+					'name'          => 'wc_order',
+					'price'         => $cart_amount,
+					'quantity'      => 1
+				)
+			),
 			'merchantDetails'   => array(
 				'customField1' => $this->context->cart->secure_key,
 			),
