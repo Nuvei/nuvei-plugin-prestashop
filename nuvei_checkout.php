@@ -1822,8 +1822,6 @@ class Nuvei_Checkout extends PaymentModule
 			'i18n'                      => Configuration::get('NUVEI_SDK_TRANSL'),
 			'theme'                     => Configuration::get('NUVEI_SDK_THEME'),
 			'apmWindowType'             => Configuration::get('NUVEI_APM_WINDOW_TYPE'),
-//            'billingAddress'            => $oo_params['request_params']['billingAddress'],
-//            'userData'                  => ['billingAddress' => $oo_params['request_params']['billingAddress']],
         ];
         
         if($this->is_rebilling_order) {
@@ -1833,11 +1831,6 @@ class Nuvei_Checkout extends PaymentModule
         
         $sdk_url = $this->getSdkLibUrl();
         
-        // when use dev sdk, set this variable
-//        if('prod' != Configuration::get('NUVEI_SDK_VERSION')) {
-//            $checkout_params['webSdkEnv'] = 'dev';
-//        }
-
         $this->context->smarty->assign('nuveiSdkUrl',       $sdk_url);
         $this->context->smarty->assign('showNuveoOnly',     $this->is_rebilling_order);
         $this->context->smarty->assign('nuveiSdkParams',    json_encode($checkout_params));
