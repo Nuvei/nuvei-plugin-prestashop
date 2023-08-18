@@ -16,9 +16,9 @@
         nuveiAjax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
         nuveiAjax.onreadystatechange = function(resp) {
-            console.log('nuvei getOrdersWithPlans', resp);
             if (nuveiAjax.readyState == 4 && nuveiAjax.status == 200) {
                 var nuveiResp = JSON.parse(this.response);
+                console.log('nuvei getOrdersWithPlans', nuveiResp);
 
                 if(1 == nuveiResp.status && nuveiResp.orders.length > 0) {
                     $('#order_grid_table tbody tr').each(function(){
@@ -44,6 +44,9 @@
                 }
 
                 return;
+            }
+            else {
+                console.log('Problem with the response', resp);
             }
         }
 

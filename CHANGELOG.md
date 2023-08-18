@@ -2,13 +2,14 @@
 
 # 1.1.0
 ```
-    Removed the plugins option "SDK version".
+    Fixed the problem with Rebilling activation DMN message in the admin. Prevent save of repeating messages.
     Added option to change SDK theme into the plugin.
     Added option to choose how to open APM window.
     Added new plugin logo.
-    Use new Sandbox ednpoint.
     Added Auto-Void logic.
-    Remove the logic who create Order, if missing in Prestashop system, by DMN data.
+    Use new Sandbox ednpoint.
+    Removed the logic who create Order, if missing in Prestashop system, by DMN data.
+    Removed the plugins option "SDK version".
     Return code 400 to the Cashier, when the plugin did not find an OC Order nby the DMN data.
     Trim the merchant credentials after get them.
 ```

@@ -308,22 +308,9 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         # Subscription State DMN
         if ('subscription' == $dmnType) {
             $subscriptionState  = strtolower(Tools::getValue('subscriptionState'));
-			$subscriptionId     = Tools::getValue('subscriptionId');
+			$subscriptionId     = (int) Tools::getValue('subscriptionId');
 			$cri_parts          = explode('_', Tools::getValue('clientRequestId'));
             $order_id           = 0;
-            
-            if (empty($cri_parts) 
-                || empty($cri_parts[0]) 
-                || !is_numeric($cri_parts[0])
-            ) {
-				$this->module->createLog($cri_parts, 'DMN Subscription Error with Client Request Id parts:');
-                
-                header('Content-Type: text/plain');
-				exit('DMN Subscription Error with Client Request Id parts.');
-			}
-            
-            $order_id   = (int) $cri_parts[0];
-            $this->getOrder($order_id);
             
             if (empty($subscriptionState)) {
                 $this->module->createLog($subscriptionState, 'DMN Subscription Error - subscriptionState is empty.');
@@ -332,33 +319,48 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 				exit('DMN Subscription Error - subscriptionState is empty');
             }
             
+            if (empty($cri_parts[0]) || !is_numeric($cri_parts[0])) {
+				$this->module->createLog($cri_parts, 'DMN Subscription Error with Client Request Id parts:');
+                
+                header('Content-Type: text/plain');
+				exit('DMN Subscription Error with Client Request Id parts.');
+			}
+            
+            $order_id = (int) $cri_parts[0];
+            
+            $this->getOrder($order_id);
+            
             if ('active' == $subscriptionState) {
                 $msg = $this->l('Subscription is Active.') . ' '
                     . $this->l('Subscription ID: ') . $subscriptionId . ' '
                     . $this->l('Plan ID: ') . Tools::getValue('planId');
                 
-                // save the Subscription ID
+                // check for repeating DMN
                 $ord_subscr_ids = '';
                 $sql            = "SELECT subscr_ids FROM safecharge_order_data WHERE order_id = " . $order_id;
                 $res            = Db::getInstance()->executeS($sql);
 
-                $this->module->createLog($res, 'Order Rebilling data');
-                
                 if($res && is_array($res)) {
                     $first_res = current($res);
                     
                     if(is_array($first_res) && !empty($first_res['subscr_ids'])) {
-                        $ord_subscr_ids = $first_res['subscr_ids'];
+//                        $ord_subscr_ids = $first_res['subscr_ids'];
+                        $this->module->createLog($res, 'There is already Active Subscription for this Order! Possible repeating DMN or wrong Rebilling.', 'WARN');
+                        
+                        header('Content-Type: text/plain');
+                        exit('DMN received.');
                     }
                 }
 
                 // just add the ID without the details, we need only the ID to cancel the Subscription
-                if (!in_array($subscriptionId, $ord_subscr_ids)) {
-                    $ord_subscr_ids = $subscriptionId;
-                }
-
+//                if (!in_array($subscriptionId, $ord_subscr_ids)) {
+//                    $ord_subscr_ids = $subscriptionId;
+//                }
+                // /check for repeating DMN
+                
                 $sql = "UPDATE `safecharge_order_data` "
-                    . "SET subscr_ids = " . $ord_subscr_ids . " "
+//                    . "SET subscr_ids = " . $ord_subscr_ids . " "
+                    . "SET subscr_ids = " . $subscriptionId . " "
                     . "WHERE order_id = " . $order_id;
                 $res = Db::getInstance()->execute($sql);
 
@@ -387,7 +389,9 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             $message->id_order  = $order_id;
             $message->private   = true;
             $message->message   = $msg;
-            $message->add();
+            $resp = $message->add();
+            
+            $this->module->createLog([$order_id, $msg, $resp], 'Message to save', 'DEBUG');
             
             // save the state
             $sql = "UPDATE `safecharge_order_data` "
@@ -1417,11 +1421,13 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     {
         $this->module->createLog('Try to start Subscription.');
         
+        // error
         if($this->getRequestStatus() != 'APPROVED') {
             $this->module->createLog('We can not start Subscription for not APPROVED transaction.');
             return;
         }
         
+        // error
         if(!in_array(Tools::getValue('transactionType'), array('Sale', 'Settle'))
             || empty(Tools::getValue('customField5'))
         ) {
@@ -1431,6 +1437,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         
         $prod_plan = json_decode(Tools::getValue('customField5'), true);
         
+        // error
         if (empty($prod_plan) || !is_array($prod_plan)) {
 			$this->module->createLog(
                 $prod_plan,
@@ -1461,7 +1468,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             array('merchantId', 'merchantSiteId', 'userTokenId', 'planId', 'userPaymentOptionId', 'initialAmount', 'recurringAmount', 'currency', 'timeStamp')
         );
 
-        // On Error
+        // Error
         if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
             $msg = $this->l('Error when try to start a Subscription by the Order.');
 
