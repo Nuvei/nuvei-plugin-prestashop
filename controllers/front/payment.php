@@ -1070,7 +1070,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         
         $order_info = null;
         $tries      = 0;
-        $max_tries	= 4;
+        $wait_time  = 3;
+        $max_tries	= 'yes' == Configuration::get('SC_TEST_MODE') ? 10 : 4;
         $order_id	= false;
         
         do {
@@ -1083,7 +1084,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     'The DMN wait for the order.'
                 );
 
-                sleep(3);
+                sleep($wait_time);
                 continue;
             }
             
@@ -1096,7 +1097,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     'Current order state is 0. Wait to refresh the State.'
                 );
 
-                sleep(3);
+                sleep($wait_time);
             }
         }
         while( $tries <= $max_tries && (!$order_id || empty($order_info->current_state)) );

@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.1.1
+```
+    Set different delay time in the DMN logic according the environment.
+```
+
 # 1.1.0
 ```
     Fixed the problem with Rebilling activation DMN message in the admin. Prevent save of repeating messages.
