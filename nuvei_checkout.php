@@ -1474,7 +1474,8 @@ class Nuvei_Checkout extends PaymentModule
 	 * 
 	 * @return boolean
 	 */
-	public function openOrder($is_ajax = false)
+//	public function openOrder($is_ajax = false)
+	public function openOrder()
     {
 		$this->createLog('openOrder()');
 		
@@ -1483,11 +1484,11 @@ class Nuvei_Checkout extends PaymentModule
         $this->context->smarty->assign('scAPMsErrorMsg',        '');
 		
 		$this->context->smarty->assign(
-            'ooAjaxUrl',
+            'ajaxUrl',
             $this->context->link->getModuleLink(
                 'nuvei_checkout',
                 'payment',
-                array('prestaShopAction'  => 'createOpenOrder')
+                array('prestaShopAction'  => 'prePaymentCheck')
             )
         );
         
@@ -1498,6 +1499,7 @@ class Nuvei_Checkout extends PaymentModule
 		try {
 			$cart                           = $this->context->cart;
 			$products                       = $cart->getProducts();
+            $products_hash                  = md5(serialize($products));
 			$currency                       = new Currency((int)($cart->id_currency));
 			$customer                       = new Customer($cart->id_customer);
 			$amount                         = $this->formatMoney($cart->getOrderTotal());
@@ -1513,7 +1515,7 @@ class Nuvei_Checkout extends PaymentModule
                     = unserialize($this->context->cookie->nuvei_last_open_order_details);
             }
             
-            //$this->createLog($products);
+            $this->createLog($products);
             
             // check if product is available and get products details
 //			foreach ($products as $product) {
@@ -1547,12 +1549,12 @@ class Nuvei_Checkout extends PaymentModule
                 $resp_status    = $this->getRequestStatus($resp);
                 
                 if (!empty($resp_status) && 'SUCCESS' == $resp_status) {
-                    if ($is_ajax) {
-                        exit(json_encode(array(
-                            'status'        => 1,
-                            'sessionToken'	=> $resp['sessionToken']
-                        )));
-                    }
+//                    if ($is_ajax) {
+//                        exit(json_encode(array(
+//                            'status'        => 1,
+//                            'sessionToken'	=> $resp['sessionToken']
+//                        )));
+//                    }
 
                     $this->context->smarty->assign('sessionToken', $resp['sessionToken']);
 
@@ -1655,6 +1657,7 @@ class Nuvei_Checkout extends PaymentModule
                 'isRebillingOrder'  => $this->is_rebilling_order,
                 'transactionType'	=> $oo_params['transactionType'],
                 'userTokenId'       => $oo_params['userTokenId'],
+                'productsHash'      => $products_hash,
             ];
             
 //            if (!empty($oo_params['userTokenId'])) {
@@ -1668,14 +1671,14 @@ class Nuvei_Checkout extends PaymentModule
             // /set some of the parameters into the session
             
 			// when need session token only
-			if($is_ajax) {
-				$this->createLog($resp['sessionToken'], 'Session token for Ajax call');
-
-				exit(json_encode(array(
-					'status'        => 1,
-					'sessionToken' => $resp['sessionToken']
-				)));
-			}
+//			if($is_ajax) {
+//				$this->createLog($resp['sessionToken'], 'Session token for Ajax call');
+//
+//				exit(json_encode(array(
+//					'status'        => 1,
+//					'sessionToken' => $resp['sessionToken']
+//				)));
+//			}
             
             // pass the rebilling fields as response only
 //            $oo_params = array_merge_recursive($oo_params, $rebilling_params);
@@ -2062,21 +2065,21 @@ class Nuvei_Checkout extends PaymentModule
             return array('status' => 'ERROR');
 		}
 		
-        $cart_items		= [];
+//        $cart_items		= [];
 		$cart_amount    = (string) round($this->context->cart->getOrderTotal(), 2);
 		$currency		= new Currency((int)($this->context->cart->id_currency));
         $addresses      = $this->getOrderAddresses();
 
 		// get items
-		foreach ($this->context->cart->getProducts() as $product) {
-//			$cart_items[$product['id_product']] = array(
-			$cart_items[] = array(
-				'name'		=> $product['name'],
-				'quantity'	=> $product['quantity'],
-//				'total_wt'	=> (string) round(floatval($product['total_wt']), 2)
-				'price'	=> (string) round(floatval($product['total_wt']), 2)
-			);
-		}
+//		foreach ($products as $product) {
+////			$cart_items[$product['id_product']] = array(
+//			$cart_items[] = array(
+//				'name'		=> $product['name'],
+//				'quantity'	=> $product['quantity'],
+////				'total_wt'	=> (string) round(floatval($product['total_wt']), 2)
+//				'price'	=> (string) round(floatval($product['total_wt']), 2)
+//			);
+//		}
 		
 		// create Order upgrade
 		$params = array(

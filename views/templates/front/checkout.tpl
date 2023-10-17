@@ -91,14 +91,14 @@
          * The first step of the checkout validation
          */
         function scUpdateCart() {
-            //console.log('scUpdateCart()', "{$ooAjaxUrl}");
+            console.log('scUpdateCart()');
             
             return new Promise((resolve, reject) => {
                 var errorMsg = "{l s='Payment error, please try again later!' mod='nuvei'}";
 
                 jQuery.ajax({
                     type: "POST",
-                    url: "{$ooAjaxUrl}",
+                    url: "{$ajaxUrl}",
                     data: {
                         securityToken : jQuery('#nuveiToken').val()
                     },
@@ -110,7 +110,16 @@
                     .done(function(resp) {
                         console.log(resp);
 
-                        if(resp.hasOwnProperty('sessionToken') && '' != resp.sessionToken) {
+                        if (!resp.hasOwnProperty('success') || 0 == resp.success) {
+                            reject();
+                            window.location.reload();
+                            return;
+                        }
+
+                        resolve();
+                        return;
+
+                        {*if(resp.hasOwnProperty('sessionToken') && '' != resp.sessionToken) {
                             jQuery('#lst').val(resp.sessionToken);
 
                             if(resp.sessionToken == nuveiCheckoutSdkParams.sessionToken) {
@@ -123,14 +132,14 @@
                             nuveiCheckoutSdkParams.amount		= resp.amount;
 
                             nuveiLoadCheckout();
-                        }
+                        }*}
                         
-                        if (resp.hasOwnProperty('message')) {
+                        {*if (resp.hasOwnProperty('message')) {
                             errorMsg = resp.message;
                         }
                         
                         scFormFalse(errorMsg);
-                        reject();
+                        reject();*}
                     });
             });
         }
@@ -138,6 +147,12 @@
         // process after we get the response from the webSDK
         function afterSdkResponse(resp) {
             console.log('afterSdkResponse()', resp);
+
+            // expired session
+            if (resp.hasOwnProperty('session_expired') && resp.session_expired) {
+                window.location.reload();
+                return;
+            }
 
             // missing result parameter
             if(typeof resp.result == 'undefined') {

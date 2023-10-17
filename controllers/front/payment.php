@@ -31,7 +31,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             return;
         }
 		
-		if(Tools::getValue('prestaShopAction', false) == 'createOpenOrder') {
+		if(Tools::getValue('prestaShopAction', false) == 'prePaymentCheck') {
             // security check
             if($this->module->getModuleSecurityKey() != Tools::getValue('securityToken')) {
                 $this->module->createLog(
@@ -46,7 +46,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 Tools::redirect($this->context->link->getPageLink('order'));
             }
             
-            $this->module->openOrder(true);
+//            $this->module->openOrder(true);
+            $this->prePaymentCheck();
             return;
         }
 		
@@ -1492,6 +1493,46 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         $message->private = true;
         $message->message = $msg;
         $message->add();
+    }
+    
+    private function prePaymentCheck()
+    {
+        $this->module->createLog('prePaymentCheck');
+        
+        $cart               = $this->context->cart;
+        $products           = $cart->getProducts();
+        $nuvei_loo_details  = $this->context->cookie->nuvei_last_open_order_details;
+        
+        header('Content-Type: application/json');
+        
+        // error
+        if (empty($nuvei_loo_details)) {
+            $this->module->createLog('nuvei_last_open_order_details is empty.');
+            
+            exit(json_encode(array(
+                'success' => 0,
+            )));
+        }
+        
+        $nuvei_loo_details_arr  = unserialize($nuvei_loo_details);
+        $products_hash          = md5(serialize($products));
+        
+        if (empty($nuvei_loo_details_arr['productsHash'])
+            || $nuvei_loo_details_arr['productsHash'] != $products_hash
+        ) {
+            $this->module->createLog(
+                [$nuvei_loo_details_arr['productsHash'], $products_hash], 
+                'New Cart data is different than the last recorded'
+            );
+            
+            exit(json_encode(array(
+                'success' => 0,
+            )));
+        }
+        
+        exit(json_encode(array(
+            'success' => 1,
+        )));
     }
     
 }

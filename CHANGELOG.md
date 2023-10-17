@@ -3,6 +3,7 @@
 # 1.1.1
 ```
     Set different delay time in the DMN logic according the environment.
+    Removed the updateOrder request on prePayment SDK event.
 ```
 
 # 1.1.0
