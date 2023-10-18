@@ -4,6 +4,7 @@
 ```
     Set different delay time in the DMN logic according the environment.
     Removed the updateOrder request on prePayment SDK event.
+    Check for new version of the plugin every day and keep the repo version in the admin session.
 ```
 
 # 1.1.0

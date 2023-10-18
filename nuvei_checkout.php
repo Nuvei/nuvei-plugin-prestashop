@@ -34,6 +34,7 @@ class Nuvei_Checkout extends PaymentModule
     private $nuvei_source_application   = 'Prestashop_Plugin';
     private $html                       = '';
     private $is_rebilling_order         = false;
+    private $plugin_git_changelog       = 'https://raw.githubusercontent.com/Nuvei/nuvei-plugin-prestashop/main/CHANGELOG.md';
     private $trace_id;
     
     public function __construct()
@@ -1136,50 +1137,24 @@ class Nuvei_Checkout extends PaymentModule
         
         // path is different fore each plugin
         $logs_path              = _PS_ROOT_DIR_ . '/var/logs/';
-        $version_file           = $logs_path . 'nuvei-latest-version.json';
         $allowed_controllers    = array('AdminDashboard', 'AdminOrders');
         $git_version            = 0;
-        $date_check             = 0;
         $plug_curr_ver          = str_replace('.', '', trim($this->version));
         
         if(!in_array(Tools::getValue('controller'), $allowed_controllers)) {
             return;
         }
         
-        // if version file does not exists creat it
-        if(!file_exists($version_file)) {
-            $ver_str        = $this->getPluginVerFromGit();
-            $git_version    = str_replace('.', '', trim($ver_str));
-            $git_version    = str_replace('#', '', trim($git_version));
-            $date_check     = gmdate('Y-m-d H:i:s', time());
-            
-            $array = array(
-                'date'  => $date_check,
-                'git_v' => (int) trim($git_version),
-            );
-            
-            file_put_contents($version_file, json_encode($array));
+        if (!empty($_SESSION['nuveiPluginGitVersion'])) {
+            $git_version = $_SESSION['nuveiPluginGitVersion'];
         }
         
-        // read file if need to
-        if (0 == $date_check || 0 == $git_version) {
-            $version_file_data = json_decode(file_get_contents($version_file), true);
-
-            if (!empty($version_file_data['date'])) {
-                $date_check = $version_file_data['date'];
-            }
-            if (!empty($version_file_data['git_v'])) {
-                $git_version = $version_file_data['git_v'];
-            }
-        }
-
-        // check file date and get new file if current one is more than a week old
-        if (strtotime('-1 Week') > strtotime($date_check)) {
-            $ver_str        = $this->getPluginVerFromGit();
-            $git_version    = str_replace('.', '', trim($ver_str));
-            $git_version    = str_replace('#', '', trim($git_version));
-            $date_check     = gmdate('Y-m-d H:i:s', time());
-        }
+        $ver_str        = $this->getPluginVerFromGit();
+        $git_version    = str_replace('.', '', trim($ver_str));
+        $git_version    = $_SESSION['nuveiPluginGitVersion'] 
+                        = str_replace('#', '', trim($git_version));
+        
+        $this->createLog($git_version);
         
         if($git_version > $plug_curr_ver) {
             $this->createLog(
@@ -1193,7 +1168,7 @@ class Nuvei_Checkout extends PaymentModule
             echo
                 '<div class="alert alert-warning" style="margin: 16px;">
                     <button type="button" class="close" data-dismiss="alert">×</button>
-                    There is a new version of Nuvei Plugin available. <a href="https://github.com/SafeChargeInternational/safecharge_prestashop/blob/master/CHANGELOG.md" target="_blank">View version details.</a>
+                    A new version of Nuvei Plugin is available. <a href="'. $this->plugin_git_changelog .'" target="_blank">View version details.</a>
                 </div>';
         }
     }
@@ -2381,12 +2356,7 @@ class Nuvei_Checkout extends PaymentModule
             $matches = array();
             $ch      = curl_init();
 
-            curl_setopt(
-                $ch,
-                CURLOPT_URL,
-                'https://raw.githubusercontent.com/Nuvei/nuvei-plugin-prestashop/main/CHANGELOG.md'
-            );
-
+            curl_setopt($ch, CURLOPT_URL, $this->plugin_git_changelog);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
