@@ -22,7 +22,7 @@
                     {foreach $nuvei_messages as $msg}
                         <tr>
                             <td>{$msg.date_add}</td>
-                            <td>{$msg.message}</td>
+                            <td>{$msg.message|replace:'#':'<br/>'}</td>
                         </tr>
                     {/foreach}
                 </tbody>

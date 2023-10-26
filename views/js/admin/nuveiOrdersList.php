@@ -10,52 +10,55 @@
 
         var nuveiAjaxUrl    = "<?= $nuvei_ajax_url; ?>";
         var nuveiAjax       = new XMLHttpRequest();
-        var nuveiParams     = 'scAction=getOrdersWithPlans&orders=' + JSON.stringify(nuveiOrdersList);
+        var nuveiParams     = 'scAction=getOrdersList&orders=' + JSON.stringify(nuveiOrdersList);
 
         nuveiAjax.open("POST", nuveiAjaxUrl, true);
         nuveiAjax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-        nuveiAjax.onreadystatechange = function(resp) {
-            if (nuveiAjax.readyState == 4 && nuveiAjax.status == 200) {
-                var nuveiResp = JSON.parse(this.response);
-                console.log('nuvei getOrdersWithPlans', nuveiResp);
-
-                if(1 == nuveiResp.status && nuveiResp.orders.length > 0) {
-                    $('#order_grid_table tbody tr').each(function(){
-                        var _row		= $(this);
-                        var rowOrderId	= Number.parseInt(_row.find('td:nth-child(2)').text());
-
-                        if(nuveiResp.orders.findIndex(item => item == rowOrderId) > -1) {
-                            var rowStatus = _row.find('td:nth-child(9)').html()
-                                + '<span class="label color_field" style="background-color:#40c1ac;color:#383838">Nuvei Subscription</span>';
-
-                            _row.find('td:nth-child(9)').html(rowStatus);
-                            // fix the style
-                            _row.find('td:nth-child(9)').find('span.color_field').css({
-                                marginTop: '3px',
-                                display: 'inline-block',
-                                padding: '2px 5px',
-                                borderRadius: '4px'
-                            });
-                        }
-                    });
-
+        nuveiAjax.onreadystatechange = function() {
+            if (nuveiAjax.readyState == XMLHttpRequest.DONE && nuveiAjax.status == 200) {
+                var nuveiResp = JSON.parse(nuveiAjax.response);
+                console.log('nuvei getOrdersList', nuveiResp);
+                
+                // on missing data
+                if (!nuveiResp.hasOwnProperty('orders')
+                    || nuveiResp.orders.length == 0
+                ) {
                     return;
                 }
 
+                $('#order_grid_table tbody tr').each(function(){
+                    var _row		= $(this);
+                    var rowOrderId	= Number.parseInt(_row.find('td:nth-child(2)').text());
+
+                    // not a Nuvei order
+                    if (!nuveiResp.orders.hasOwnProperty(rowOrderId)) {
+                        return;
+                    }
+                    
+                    // set Subscription marker
+                    if (1 == nuveiResp.orders[rowOrderId].subscr) {
+                        _row.find('td:nth-child(9)').append('<span class="label color_field" style="background-color: #40c1ac; color:#383838; margin-top: 3px; display: inline-block; padding: 2px 5px; border-radius: 4px;">Nuvei Subscription</span>');
+                    }
+                    
+                    // set suspicious total/currency marker
+                    if (1 == nuveiResp.orders[rowOrderId].fraud) {
+                        _row.find('td:nth-child(9)').append('<span class="label color_field" style="background-color: #fbc6c3; color:#383838; margin-top: 3px; display: inline-block; padding: 2px 5px; border-radius: 4px;" title="Nuvei\s original total/currency is different than the Order\'s total/currency.">Nuvei Alert!</span>');
+                    }
+                });
+
                 return;
             }
-            else {
-                console.log('Problem with the response', resp);
-            }
+//            else {
+//                console.log('Problem with the response', nuveiAjax.response);
+//            }
         }
 
         // If an error occur during the nuveiAjax call.
-        if (nuveiAjax.readyState == 4 && ajax.status == 404) {
-            console.error('Nuvei Ajax call error.');
-        }
+//        if (nuveiAjax.status == 404) {
+//            console.error('Nuvei Ajax call error.');
+//        }
 
         nuveiAjax.send(nuveiParams);
-
     });
 </script>

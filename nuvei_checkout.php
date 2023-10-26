@@ -116,26 +116,42 @@ class Nuvei_Checkout extends PaymentModule
 		}
         
         // add subscr_ids field into safecharge_order_data table if not exists
-        $res = $db->execute("ALTER TABLE safecharge_order_data "
-            . "ADD `subscr_ids` varchar(255) NOT NULL;");
-        
-        if(!$res) {
+        try {
+            $res = $db->execute("ALTER TABLE safecharge_order_data "
+                . "ADD `subscr_ids` varchar(255) NOT NULL;");
+
+            if(!$res) {
+                $this->createLog(
+                    [$res, $db->getMsgError(), $db->getNumberError()],
+                    'Error when try to add field `subscr_ids`',
+                    'WARN'
+                );
+            }
+        }
+        catch (Exception $e) {
             $this->createLog(
-                [$res, $db->getMsgError(), $db->getNumberError()],
-                'Error when try to add field `subscr_ids`',
-                'WARN'
+                $e->getMessage(),
+                'Error when try to add field `subscr_ids`'
             );
         }
         
         // add subscr_state field if not exists
-        $res = $db->execute('ALTER TABLE `safecharge_order_data` ADD '
-            . '`subscr_state` VARCHAR(10) NOT NULL;');
+        try {
+            $res = $db->execute('ALTER TABLE `safecharge_order_data` ADD '
+                . '`subscr_state` VARCHAR(10) NOT NULL;');
 
-        if(!$res) {
+            if(!$res) {
+                $this->createLog(
+                    [$res, $db->getMsgError(), $db->getNumberError()],
+                    'Error when try to add field `subscr_state`',
+                    'WARN'
+                );
+            }
+        }
+        catch (Exception $e) {
             $this->createLog(
-                [$res, $db->getMsgError(), $db->getNumberError()],
+                $e->getMessage(),
                 'Error when try to add field `subscr_state`',
-                'WARN'
             );
         }
 		# safecharge_order_data table END
@@ -160,6 +176,57 @@ class Nuvei_Checkout extends PaymentModule
             );
 		}
         # nuvei_product_payment_plan_details END
+        
+        # add new Nuvei table, in future it will be used to keep all data
+        /**
+         * data fiels json example:
+         * 
+         * {
+         *      'transactions': {
+         *          {transaction_id} : {
+         *              'authCode'          => {AuthCode},
+         *              'transactionId'     => {transactionId},
+         *              'transactionType'   => {transactionType},
+         *              'paymentMethod'     => {payment_method},
+         *              'dmnTotal'          => {totalAmount},
+         *              'dmnCurrency'       => {currency},
+         *              'originalTotal'     => {customField2},
+         *              'originalCurrency'  => {customField3},
+         *              'clientUniqueId'    => {clientUniqueId},
+         *              'upoId'             => {userPaymentOptionId},
+         *              'userTokenId'       => {user_token_id},
+         *              'totalCurrAlert'    => true|false, // optional, when PS Order total/currency is different than originalTotal/originalCurrency
+         *          }
+         *      },
+         *      'subscriptions': {
+         *          {subscription_id}: {
+         *              'state': {state},
+         *              'planId': {plan_id},
+         *              'payments': {
+         *                  {transaction_id}: {
+         *                      'total'     => {total},
+         *                      'currency'  => {currency},
+         *                  }
+         *              }
+         *          }
+         *      },
+         *      ...
+         * }
+         */
+        $sql =
+            "CREATE TABLE IF NOT EXISTS `nuvei_orders_data` (
+                `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+                `order_id` int(11) unsigned NOT NULL,
+                `transaction_id` varchar(25) NOT NULL,
+				`data` text NOT NULL,
+                
+                PRIMARY KEY (`id`),
+                KEY `order_id` (`order_id`),
+                UNIQUE KEY `un_order_id` (`order_id`)
+              ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+        
+        $res = $db->execute($sql);
+        # /add new Nuvei table, in future it will be used to keep all data
         
         // create tab for the admin module
         $invisible_tab = new Tab();
@@ -449,6 +516,9 @@ class Nuvei_Checkout extends PaymentModule
         
         $this->createLog($order->id_cart, 'Order->id_cart');
         
+        $data = $this->getNuveiOrderData($order_id);
+        $this->createLog($data, 'getNuveiOrderData');
+        
         // not Nuvei order
 		if(strpos($payment, 'safecharge') === false
 			&& strpos($payment, 'nuvei') === false
@@ -458,8 +528,10 @@ class Nuvei_Checkout extends PaymentModule
 			return false;
 		}
         
-        $sc_data = Db::getInstance()->getRow('SELECT * FROM safecharge_order_data '
-            . 'WHERE order_id = ' . $order_id);
+        $sc_data = Db::getInstance()->getRow(
+            'SELECT * FROM safecharge_order_data '
+            . 'WHERE order_id = ' . $order_id
+        );
         
         if(empty($sc_data)) {
             $this->createLog('Missing safecharge_order_data for order ' . $order_id);
@@ -1347,8 +1419,8 @@ class Nuvei_Checkout extends PaymentModule
      * Explain 'merchantDetails'
      *      'merchantDetails'	=> array(
      *          'customField1' => string - cart secure_key,
-     *          'customField2' => string - Prestashop plugin version,
-     *          'customField3' => json string - items info,
+     *          'customField2' => string - currency,
+     *          'customField3' => string - order total,
      *          'customField4' => string - timestamp,
      *          'customField5' => json string - subscription data
      *      ),
@@ -1490,7 +1562,7 @@ class Nuvei_Checkout extends PaymentModule
                     = unserialize($this->context->cookie->nuvei_last_open_order_details);
             }
             
-            $this->createLog($products);
+//            $this->createLog($products);
             
             // check if product is available and get products details
 //			foreach ($products as $product) {
@@ -1583,6 +1655,8 @@ class Nuvei_Checkout extends PaymentModule
 				
                 'merchantDetails'	=> array(
 					'customField1' => $cart->secure_key,
+                    'customField2' => $amount,
+                    'customField3' => $currency->iso_code,
 					'customField5' => $prod_with_plan['plan_details'] ?? '',
 				),
 			);
@@ -1624,7 +1698,6 @@ class Nuvei_Checkout extends PaymentModule
             // set some of the parameters into the session
             $nuvei_last_open_order_details = [
                 'amount'			=> $oo_params['amount'],
-//                'items'				=> $oo_params['merchantDetails']['customField3'],
                 'sessionToken'		=> $resp['sessionToken'],
                 'clientRequestId'	=> $resp['clientRequestId'],
                 'orderId'			=> $resp['orderId'],
@@ -1884,6 +1957,26 @@ class Nuvei_Checkout extends PaymentModule
         return $formatted;
     }
     
+    /**
+     * A place to get Nuvei data from the new table.
+     * 
+     * @param int $order_id
+     * @return array
+     */
+    public function getNuveiOrderData($order_id)
+    {
+        $query = 
+            "SELECT * "
+            . "FROM nuvei_orders_data "
+            . "WHERE order_id = " . (int) $order_id;
+
+        $data = Db::getInstance()->getRow($query);
+        
+        $this->createLog($data, 'Nuvei Data in nuvei_orders_data table.');
+        
+        return $data;
+    }
+    
     private function smartyToJsObject($object, $name = 'nuveiObj')
     {
         return '<script>var ' . $$name . ' = ' . json_encode($object) . ';</script>';
@@ -2040,22 +2133,10 @@ class Nuvei_Checkout extends PaymentModule
             return array('status' => 'ERROR');
 		}
 		
-//        $cart_items		= [];
 		$cart_amount    = (string) round($this->context->cart->getOrderTotal(), 2);
 		$currency		= new Currency((int)($this->context->cart->id_currency));
         $addresses      = $this->getOrderAddresses();
 
-		// get items
-//		foreach ($products as $product) {
-////			$cart_items[$product['id_product']] = array(
-//			$cart_items[] = array(
-//				'name'		=> $product['name'],
-//				'quantity'	=> $product['quantity'],
-////				'total_wt'	=> (string) round(floatval($product['total_wt']), 2)
-//				'price'	=> (string) round(floatval($product['total_wt']), 2)
-//			);
-//		}
-		
 		// create Order upgrade
 		$params = array(
 			'sessionToken'		=> $nuvei_last_open_order_details['sessionToken'],
@@ -2063,16 +2144,17 @@ class Nuvei_Checkout extends PaymentModule
 			'clientRequestId'	=> $nuvei_last_open_order_details['clientRequestId'],
 			'currency'			=> $currency->iso_code,
 			'amount'			=> $cart_amount,
-//            'items'             => $cart_items,
 			'items'				=> array(
 				array(
-					'name'          => 'wc_order',
+					'name'          => 'prestashop_order',
 					'price'         => $cart_amount,
 					'quantity'      => 1
 				)
 			),
 			'merchantDetails'   => array(
 				'customField1' => $this->context->cart->secure_key,
+                'customField2' => $cart_amount,
+                'customField3' => $currency->iso_code,
 			),
 		);
         
@@ -2152,14 +2234,120 @@ class Nuvei_Checkout extends PaymentModule
         ];
     }
     
+    /**
+     * Add a custom Order state.
+     * 
+     * @return boolean
+     */
 	private function addOrderState()
 	{
-		$db = Db::getInstance();
-		
-		$res = $db->getRow('SELECT * '
+        $db         = Db::getInstance();
+        $source     = _PS_MODULE_DIR_ . 'nuvei_checkout/views/img/nuvei.png';
+        $languages  = Language::getLanguages(false);
+        
+//        $res = $db->execute(
+//            'delete FROM ' . _DB_PREFIX_ . "order_state "
+//			. "WHERE module_name = '" . $this->name . "' "
+//        );
+//        return true;
+        
+        /*
+         * In case we want to add more states
+         * 
+        $states = [
+            'SC_OS_AWAITING_PAIMENT' => [
+                'conf_value'    => Configuration::get('SC_OS_AWAITING_PAIMENT'),
+                'invoice'		=> false,
+                'paid'          => false,
+                'unremovable'   => true,
+                'send_email'	=> false,
+                'module_name'	=> $this->name,
+                'color'			=> '#4169E1',
+                'hidden'		=> false,
+                'logable'		=> true,
+                'delivery'		=> false,
+                'name'          => array(),
+                'text_name'     => 'Awaiting Nuvei payment',
+            ],
+//            'NUVEI_OS_SUSPECTED_FRAUD' => [
+//                'conf_value' => Configuration::get('NUVEI_OS_SUSPECTED_FRAUD'),
+//                'invoice'		=> true,
+//                'paid'          => true,
+//                'unremovable'   => true,
+//                'send_email'	=> false,
+//                'module_name'	=> $this->name,
+//                'color'			=> '#f5bf42',
+//                'hidden'		=> false,
+//                'logable'		=> true,
+//                'delivery'		=> false,
+//                'name'          => array(),
+//                'text_name'     => 'Nuvei suspected fraud',
+//            ],
+        ];
+        
+        foreach ($states as $conf_name => $data) {
+            $query = 
+                'SELECT * '
+                . 'FROM ' . _DB_PREFIX_ . "order_state "
+                . "WHERE module_name = 'Nuvei' "
+                    . "AND id_order_state = '" . $data['conf_val'] . "' ";
+            
+            $this->createLog($query);
+        
+            $state = $db->getRow($query);
+            
+            $this->createLog($state);
+            
+            // add state
+            if(empty($state)) {
+                $order_state = new OrderState();
+
+                $order_state->invoice		= $data['invoice'];
+                $order_state->unremovable   = $data['unremovable'];
+                $order_state->send_email	= $data['send_email'];
+                $order_state->module_name	= $data['module_name'];
+                $order_state->color			= $data['color'];
+                $order_state->hidden		= $data['hidden'];
+                $order_state->logable		= $data['logable'];
+                $order_state->delivery		= $data['delivery'];
+                $order_state->name          = $data['name'];
+
+                // set the name for all lanugaes
+                foreach ($languages as $language) {
+                    $order_state->name[ $language['id_lang'] ] = $data['text_name'];
+                }
+
+                if(!$order_state->add()) {
+                    $this->createLog(null, 'Can not add state ' . $data['text_name'], 'WARN');
+                    return false;
+                }
+
+                // on success add icon
+                $destination = _PS_ROOT_DIR_ . '/img/os/' . (int) $order_state->id . '.gif';
+                copy($source, $destination);
+
+                // set status in the config
+                Configuration::updateValue($conf_name, (int) $order_state->id);
+            }
+            // update if need to
+            elseif (1 == $state['deleted']) {
+                $db->execute(
+                    "UPDATE " . _DB_PREFIX_ . "order_state "
+                    . "SET deleted = 0, unremovable = 1 "
+                    . "WHERE id_order_state = " . (int) $state['id_order_state']
+                );
+            }
+        }
+        
+        return true;
+        */
+        
+        $res = $db->getRow(
+            'SELECT * '
 			. 'FROM ' . _DB_PREFIX_ . "order_state "
 			. "WHERE module_name = 'Nuvei' "
-			. "ORDER BY id_order_state DESC;");
+			. "ORDER BY id_order_state DESC;"
+        );
 		
 		// create
 		if(empty($res)) {
@@ -2167,15 +2355,14 @@ class Nuvei_Checkout extends PaymentModule
 			$order_state = new OrderState();
 
 			$order_state->invoice		= false;
+            $order_state->unremovable   = true;
 			$order_state->send_email	= false;
 			$order_state->module_name	= 'Nuvei';
 			$order_state->color			= '#4169E1';
 			$order_state->hidden		= false;
 			$order_state->logable		= true;
 			$order_state->delivery		= false;
-
-			$order_state->name	= array();
-			$languages			= Language::getLanguages(false);
+			$order_state->name          = array();
 
 			// set the name for all lanugaes
 			foreach ($languages as $language) {
@@ -2187,16 +2374,24 @@ class Nuvei_Checkout extends PaymentModule
 			}
 			
 			// on success add icon
-			$source = _PS_MODULE_DIR_ . 'nuvei_checkout/views/img/nuvei.png';
-			$destination = _PS_ROOT_DIR_ . '/img/os/' . (int)$order_state->id . '.gif';
+			$destination = _PS_ROOT_DIR_ . '/img/os/' . (int) $order_state->id . '.gif';
 			copy($source, $destination);
 
 			// set status in the config
+            $this->createLog($order_state->id);
 			Configuration::updateValue('SC_OS_AWAITING_PAIMENT', (int) $order_state->id);
 		}
 		// update if need to
 		else {
 			Configuration::updateValue('SC_OS_AWAITING_PAIMENT', (int) $res['id_order_state']);
+            
+            if (1 == $res['deleted']) {
+                $db->execute(
+                    "UPDATE " . _DB_PREFIX_ . "order_state "
+                    . "SET deleted = 0, unremovable = 1 "
+                    . "WHERE id_order_state = " . (int) $res['id_order_state']
+                );
+            }
 		}
 		
 		return true;

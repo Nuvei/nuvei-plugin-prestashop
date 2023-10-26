@@ -48,8 +48,8 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             $this->get_payment_plans();
         }
         
-        if($action == 'getOrdersWithPlans' && Tools::getValue('orders')) {
-            $this->get_orders_with_plans();
+        if($action == 'getOrdersList' && Tools::getValue('orders')) {
+            $this->getOrdersList();
         }
         
         exit;
@@ -230,7 +230,7 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         );
     }
     
-    private function get_orders_with_plans()
+    private function getOrdersList()
     {
         $orders_params  = Tools::getValue('orders');
         $orders_str     = substr($orders_params, 1, -1);
@@ -244,31 +244,53 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             exit;
         }
         
-        $query = "SELECT order_id FROM safecharge_order_data "
-            . "WHERE subscr_ids <> '' "
-                . "AND order_id IN (" . DB::getInstance()->escape($orders_str, false, true) . ');';
+        $query = 
+            "SELECT sod.order_id, sod.subscr_ids, nod.data "
+            . "FROM safecharge_order_data AS sod "
+            . "LEFT JOIN nuvei_orders_data AS nod "
+                . "ON sod.order_id = nod.order_id "
+            . "WHERE sod.order_id IN (" . DB::getInstance()->escape($orders_str, false, true) . ');';
         
         $res = DB::getInstance()->executeS($query);
+        
+//        $this->module->createLog($res, 'Orders list.');
         
         header('Content-Type: application/json');
         
         if(!$res || empty($res)) {
-            echo json_encode(array(
-                'status'    => 1,
-                'orders'    => array(),
-            ));
-            exit;
+            exit(json_encode(array(
+                'orders' => array(),
+            )));
         }
+        
+//        foreach ($res as $data) {
+//            $orders_arr[] = $data['order_id'];
+//        }
         
         foreach ($res as $data) {
-            $orders_arr[] = $data['order_id'];
+            $orders_arr[$data['order_id']]['subscr']    = empty($data['subscr_ids']) ? 0 : 1;
+            $orders_arr[$data['order_id']]['fraud']     = 0;
+            
+            $transactions = json_decode($data['data'], true);
+            
+            if (empty($transactions) || empty($transactions['transactions'])) {
+                continue;
+            }
+            
+            foreach ($transactions['transactions'] as $tr) {
+                if (!in_array($tr['transactionType'], ['Auth', 'Sale'])) {
+                    continue;
+                }
+                
+                if (isset($tr['totalCurrAlert'])) {
+                    $orders_arr[$data['order_id']]['fraud'] = 1;
+                }
+            }
         }
         
-        echo json_encode(array(
-            'status'    => 1,
-            'orders'    => $orders_arr,
-        ));
-        exit;
+        exit(json_encode(array(
+            'orders' => $orders_arr,
+        )));
     }
     
 }

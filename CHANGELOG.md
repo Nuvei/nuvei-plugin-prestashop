@@ -1,10 +1,13 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
-# 1.1.1
+# 1.2.0
 ```
     Set different delay time in the DMN logic according the environment.
     Removed the updateOrder request on prePayment SDK event.
     Check for new version of the plugin every day and keep the repo version in the admin session.
+    Fix for the module Reset exception.
+    Added new table for Nuvei Order data. It will be used in future.
+    Added an Order marker if the original amount/currency is different than the Prestshop amount/currency.
 ```
 
 # 1.1.0

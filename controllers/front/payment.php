@@ -8,6 +8,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 {
 //    public $ssl = true;
     
+    private $order_info; // the Order data get during DMN process.
+    
     public function initContent()
     {
         parent::initContent();
@@ -223,8 +225,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     }
 	
 	/**
-     * Function scOrderError
-     * Shows a message when there is an error with the order
+     * Shows a message when there is an error with the order.
      */
     private function scOrderError()
     {
@@ -306,155 +307,15 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         
         $this->validateChecksum();
         
-        # Subscription State DMN
+        // Subscription State DMN. Exit.
         if ('subscription' == $dmnType) {
-            $subscriptionState  = strtolower(Tools::getValue('subscriptionState'));
-			$subscriptionId     = (int) Tools::getValue('subscriptionId');
-			$cri_parts          = explode('_', Tools::getValue('clientRequestId'));
-            $order_id           = 0;
-            
-            if (empty($subscriptionState)) {
-                $this->module->createLog($subscriptionState, 'DMN Subscription Error - subscriptionState is empty.');
-                
-                header('Content-Type: text/plain');
-				exit('DMN Subscription Error - subscriptionState is empty');
-            }
-            
-            if (empty($cri_parts[0]) || !is_numeric($cri_parts[0])) {
-				$this->module->createLog($cri_parts, 'DMN Subscription Error with Client Request Id parts:');
-                
-                header('Content-Type: text/plain');
-				exit('DMN Subscription Error with Client Request Id parts.');
-			}
-            
-            $order_id = (int) $cri_parts[0];
-            
-            $this->getOrder($order_id);
-            
-            if ('active' == $subscriptionState) {
-                $msg = $this->l('Subscription is Active.') . ' '
-                    . $this->l('Subscription ID: ') . $subscriptionId . ' '
-                    . $this->l('Plan ID: ') . Tools::getValue('planId');
-                
-                // check for repeating DMN
-                $ord_subscr_ids = '';
-                $sql            = "SELECT subscr_ids FROM safecharge_order_data WHERE order_id = " . $order_id;
-                $res            = Db::getInstance()->executeS($sql);
-
-                if($res && is_array($res)) {
-                    $first_res = current($res);
-                    
-                    if(is_array($first_res) && !empty($first_res['subscr_ids'])) {
-//                        $ord_subscr_ids = $first_res['subscr_ids'];
-                        $this->module->createLog($res, 'There is already Active Subscription for this Order! Possible repeating DMN or wrong Rebilling.', 'WARN');
-                        
-                        header('Content-Type: text/plain');
-                        exit('DMN received.');
-                    }
-                }
-
-                // just add the ID without the details, we need only the ID to cancel the Subscription
-//                if (!in_array($subscriptionId, $ord_subscr_ids)) {
-//                    $ord_subscr_ids = $subscriptionId;
-//                }
-                // /check for repeating DMN
-                
-                $sql = "UPDATE `safecharge_order_data` "
-//                    . "SET subscr_ids = " . $ord_subscr_ids . " "
-                    . "SET subscr_ids = " . $subscriptionId . " "
-                    . "WHERE order_id = " . $order_id;
-                $res = Db::getInstance()->execute($sql);
-
-                if(!$res) {
-                    $this->module->createLog(
-                        array(
-                            'subscriptionId'    => $subscriptionId,
-                            'order_id'          => $order_id,
-                        ),
-                        'DMN Error - the subscription ID was not added to the Order data',
-                        'WARN'
-                    );
-                }
-                // save the Subscription ID END
-            }
-            elseif ('inactive' == $subscriptionState) {
-                $msg = $this->l('Subscription is Inactive.') . ' '
-                    . $this->l('Subscription ID: ') . $subscriptionId;
-            }
-            elseif ('canceled' == $subscriptionState) {
-                $msg = $this->l('Subscription was canceled.') . ' '
-                    .$this->l('Subscription ID: ') . $subscriptionId;
-            }
-
-            $message            = new MessageCore();
-            $message->id_order  = $order_id;
-            $message->private   = true;
-            $message->message   = $msg;
-            $resp = $message->add();
-            
-            $this->module->createLog([$order_id, $msg, $resp], 'Message to save', 'DEBUG');
-            
-            // save the state
-            $sql = "UPDATE `safecharge_order_data` "
-                . "SET subscr_state = '" . $subscriptionState . "' "
-                . "WHERE order_id = " . $order_id;
-            $res = Db::getInstance()->execute($sql);
-
-            if(!$res) {
-                $this->module->createLog(
-                    array(
-                        'subscriptionId'    => $subscriptionId,
-                        'order_id'          => $order_id,
-                        'message'           => Db::getInstance()->getMsgError(),
-                    ),
-                    'DMN Error - the Subscription State was not added to the Order data',
-                    'WARN'
-                );
-            }
-            
-            header('Content-Type: text/plain');
-			exit('DMN received.');
+            $this->dmnSubscr();
         }
-        # /Subscription State DMN
         
-        # Subscription Payment DMN
+        // Subscription Payment DMN. Exit.
         if ('subscriptionPayment' == $dmnType && 0 != $tr_id) {
-            $cri_parts  = explode('_', Tools::getValue('clientRequestId'));
-            $order_id   = 0;
-            
-            if (empty($cri_parts) || empty($cri_parts[0]) || !is_numeric($cri_parts[0])) {
-				$this->module->createLog($cri_parts, 'DMN Subscription Error with Client Request Id parts:');
-                
-                header('Content-Type: text/plain');
-				exit('DMN Subscription Error with Client Request Id parts.');
-			}
-            
-            $order_id   = (int) $cri_parts[0];
-            $order_info = $this->getOrder($order_id);
-            $currency   = new Currency((int)$order_info->id_currency);
-            
-            $msg = sprintf(
-				/* translators: %s: the status of the Payment */
-				$this->l('Subscription Payment with Status %s was made. '),
-				$req_status
-			)
-				. $this->l('Plan ID: ') . Tools::getValue('planId') . '. '
-				. $this->l('Subscription ID: ') . Tools::getValue('subscriptionId') . '. '
-                . $this->l('Amount: ') . $this->module->formatMoney(Tools::getValue('totalAmount'), $currency->iso_code) . ' '
-				. $this->l('TransactionId: ') . Tools::getValue('TransactionID') . '.';
-
-			$this->module->createLog($msg, 'Subscription DMN Payment');
-			
-            $message            = new MessageCore();
-            $message->id_order  = $order_id;
-            $message->private   = true;
-            $message->message   = $msg;
-            $message->add();
-            
-            header('Content-Type: text/plain');
-			exit('DMN received.');
+            $this->dmnSubscrPayment($req_status);
         }
-        # Subscription Payment DMN END
         
         # Sale and Auth
         if(in_array($transactionType, array('Sale', 'Auth'))) {
@@ -541,13 +402,13 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 	}
 
 	/**
-	 * Function getOrder
 	 * Get the Order by prestaShopOrderID parameter
 	 * 
      * @param int the Order ID
 	 * @return \Order
 	 */
-	private function getOrder($order_id = 0) {
+	private function getOrder($order_id = 0)
+    {
 		try {
             if(0 == $order_id || !is_numeric($order_id)) {
                 if(is_numeric(Tools::getValue('prestaShopOrderID'))) {
@@ -609,8 +470,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     {
         $this->module->createLog(
             [
-                'Order' => $order_info['id'],
-                'Status' => $status,
+                'Order'     => $order_info->id,
+                'Status'    => $status,
             ],
             'changeOrderStatus()'
         );
@@ -619,19 +480,20 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         $error_order_status	= '';
 		$is_msg_private		= true;
         $message			= new MessageCore();
-        $message->id_order	= $order_info['id'];
-		$status_id			= $order_info['current_state'];
+        $message->id_order	= $order_info->id;
+		$status_id			= $order_info->current_state;
         $transactionType    = Tools::getValue('transactionType', '');
         $totalAmount        = Tools::getValue('totalAmount', 0);
-        $default_msg_start  = $this->l('DMN '. $transactionType .' message.');
+//        $default_msg_start  = $this->l('DMN '. $transactionType .' message.');
         
-        $gw_data = $this->l('Status: ') . $this->l($status)
-			. $this->l(', PPP Transaction ID: ') . Tools::getValue('PPP_TransactionID')
-			. $this->l(', Transaction Type: ') . $transactionType
-			. $this->l(', Transaction ID: ') . Tools::getValue('TransactionID')
-			. $this->l(', Payment Method: ') . Tools::getValue('payment_method');
+        $gw_data = $this->l('Transaction Type: ') . $transactionType . '.#'
+            . $this->l('Status: ') . $this->l($status) . '.#'
+			. $this->l('PPP Transaction ID: ') . Tools::getValue('PPP_TransactionID') . '.#'
+			. $this->l('Transaction ID: ') . Tools::getValue('TransactionID') . '.#'
+			. $this->l('Payment Method: ') . Tools::getValue('payment_method') . '.#'
+            . $this->l('Total: ') . $this->module->formatMoney($totalAmount, Tools::getValue('currency')) . '.#';
         
-        $msg = $default_msg_start . ' ' . $gw_data;
+//        $msg = $default_msg_start . ' ' . $gw_data;
         
         switch($status) {
             case 'CANCELED':
@@ -639,68 +501,64 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 break;
 
             case 'APPROVED':
-				$status_id = (int)(Configuration::get('PS_OS_PAYMENT')); // set the Order status to Complete
+				$status_id = Configuration::get('PS_OS_PAYMENT'); // set the Order status to Complete
 				
                 // Void
                 if('Void' == $transactionType) {
-                    $status_id  = (int)(Configuration::get('PS_OS_CANCELED'));
+                    $status_id  = Configuration::get('PS_OS_CANCELED');
                     break;
                 }
                 
                 // Refund
                 if(in_array($transactionType, array('Credit', 'Refund'))) {
-					$formated_refund    = $this->module->formatMoney($totalAmount, $order_info['currency']);
-					$msg                .= $this->l(', Refund Amount: ') . $formated_refund;
-					$status_id          = (int)(Configuration::get('PS_OS_REFUND'));
-                    
+					$status_id = Configuration::get('PS_OS_REFUND');
                     break;
                 }
                 
                 if('Auth' == $transactionType) {
-                    $msg        = $this->l('The amount has been authorized and wait for Settle.') . ' ' . $gw_data;
+                    $msg        = $this->l('The amount has been authorized and wait for Settle.') . '#' . $gw_data;
 					$status_id  = ''; // if we set the id we will have twice this status in the history
                 }
                 elseif('Settle' == $transactionType) {
-                    $msg = $this->l('The amount has been authorized and captured by Nuvei.') . ' ' . $gw_data;
+                    $msg = $this->l('The amount has been authorized and captured by Nuvei.') . '#' 
+                        . $gw_data;
                 }
 				// compare DMN amount and Order amount
 				elseif('Sale' == $transactionType) {
-                    $msg            = $this->l('The amount has been authorized and captured by Nuvei.') . ' ' . $gw_data;
-					$dmn_amount		= round((float) $totalAmount, 2);
-					$order_amount	= round((float) $order_info['total_paid'], 2);
-					
-					if($dmn_amount !== $order_amount) {
-						$error_order_status = (int)(Configuration::get('PS_OS_ERROR'));
-					}
+                    $msg = $this->l('The amount has been authorized and captured by Nuvei.') . '#'
+                        . $gw_data;
 				}
+                
+                // total and currency check
+                if (in_array($transactionType, ['Auth', 'Sale'])) {
+                    $dmn_amount		= round((float) $totalAmount, 2);
+					$order_amount	= round((float) $order_info->total_paid, 2);
+                    $currency       = new Currency($order_info->id_currency);
+                    
+					if($dmn_amount != $order_amount
+                        || $currency->iso_code != Tools::getValue('currency')
+                    ) {
+						$msg .= $this->l('Attention - the DMN total/currency is different than Order total/currency!') . '#';
+					}
+                }
                 
                 break;
 
             case 'ERROR':
             case 'DECLINED':
             case 'FAIL':
-                $error          = $this->l(", Message = ") . Tools::getValue('message', '');
+                $error          = $this->l("Message: ") . Tools::getValue('message', '') . '.#';
                 $reason_holders = ['reason', 'Reason', 'paymentMethodErrorReason', 'gwErrorReason'];
                 
                 foreach($reason_holders as $key) {
                     if(!empty(Tools::getValue($key))) {
-                        $error .= $this->l(', Reason: ') . Tools::getValue($key, '');
+                        $error .= $this->l('Reason: ') . Tools::getValue($key, '') . '.#';
                         break;
                     }
                 }
                 
-                $msg = $default_msg_start . ' ' . $gw_data . $error;
-                
-                // Refund, do not change status
-                if(in_array($transactionType, array('Credit', 'Refund'))) {
-                    if(0 == $totalAmount) {
-                        break;
-                    }
-                    
-                    $formated_refund    = $this->module->formatMoney($totalAmount, $order_info['currency']);
-                    $msg                .= $this->l(', Refund Amount: ') . $formated_refund;
-                    break;
-                }
+//                $msg = $default_msg_start . ' ' . $gw_data . $error;
+                $msg = $gw_data . $error;
                 
 				// Sale or Auth
 				if(in_array($transactionType, array('Sale', 'Auth'))) {
@@ -710,7 +568,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 break;
 
             case 'PENDING':
-                $msg        = $default_msg_start . ' ' . $gw_data;
+//                $msg        = $default_msg_start . ' ' . $gw_data;
+                $msg        = $gw_data;
 				$status_id  = ''; // set it empty to avoid adding duplicate status in the history
                 break;
                 
@@ -734,19 +593,19 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         $this->module->createLog('changeOrderStatus() - Order status will be set to ' . $status_id);
 
         $history = new OrderHistory();
-        $history->id_order = (int)$order_info['id'];
-        $history->changeIdOrderState($status_id, (int)($order_info['id']), !$order_info['has_invoice']);
+        $history->id_order = $order_info->id;
+        $history->changeIdOrderState($status_id, $order_info->id, !$order_info->has_invoice);
         $history->add(true);
 
         // in case ot Payment error
         if(!empty($error_order_status)) {
             // add Error status
-            $history->changeIdOrderState($error_order_status, (int)($order_info['id']));
+            $history->changeIdOrderState($error_order_status, $order_info->id);
             $history->add(true);
 
             // get and manipulate Order Payment
             $payment = new OrderPaymentCore();
-            $order_payments	= $payment->getByOrderReference($order_info['reference']);
+            $order_payments	= $payment->getByOrderReference($order_info->reference);
 
             if(is_array($order_payments) && !empty($order_payments)) {
                 $order_payment	= end($order_payments);
@@ -755,7 +614,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                     Db::getInstance()->update(
                         'order_payment',
                         array('amount' => $dmn_amount),
-                        "order_reference = '" . $order_info['reference'] 
+                        "order_reference = '" . $order_info->reference 
                             . "' AND amount = " . $order_amount 
                             . ' AND  	id_order_payment = ' . $order_payment->id
                     );
@@ -765,7 +624,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         
 		$this->module->createLog(
 			[
-                'order id'      => $order_info['id'],
+                'order id'      => $order_info->id,
                 'status id '    => $status_id
             ],
 			'changeOrderStatus() END.'
@@ -874,18 +733,38 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     }
     
     /**
-     * Function updateCustomPaymentFields
-     * Update Order Custom Payment Fields
+     * Update Order Custom Payment Fields.
      * 
      * @param int $order_id
+     * @param array $additional_data An optional array to be added into $new_data array.
+     * 
 	 * @return bool
      */
-    private function updateCustomPaymentFields($order_id)
+    private function updateCustomPaymentFields($order_id, $additional_data = [])
     {
 		$trans_id = !empty(Tools::getValue('sc_transaction_id', ''))
 			? Tools::getValue('sc_transaction_id', '') : Tools::getValue('TransactionID', '');
 		
+        // for the old table
         $data = array('order_id' => $order_id);
+        // for the new table
+        $new_data = [
+            'authCode'          =>  Tools::getValue('AuthCode', ''),
+            'transactionId'     =>  $trans_id,
+            'transactionType'   =>  Tools::getValue('transactionType', ''),
+            'paymentMethod'     =>  Tools::getValue('payment_method', ''),
+            'dmnTotal'          =>  Tools::getValue('totalAmount', ''),
+            'dmnCurrency'       =>  Tools::getValue('currency', ''),
+            'originalTotal'     =>  Tools::getValue('customField2', ''), // by open/updateOrder request
+            'originalCurrency'  =>  Tools::getValue('customField3', ''), // by open/updateOrder request
+            'clientUniqueId'    =>  Tools::getValue('clientUniqueId', ''),
+            'upoId'             =>  Tools::getValue('userPaymentOptionId', ''),
+            'userTokenId'       =>  Tools::getValue('user_token_id', ''),
+        ];
+        
+        if (!empty($additional_data)) {
+            $new_data = array_merge($new_data, $additional_data);
+        }
 		
 		// do not update empty values
 		if(!empty($auth = Tools::getValue('AuthCode', ''))) {
@@ -910,11 +789,50 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			$update_array[] = $field . "='" . $val . "'";
 		}
 		
+        // query for the old table
 		$query = "INSERT INTO safecharge_order_data ({$fields_strings}) VALUES ({$values_string}) "
 			. "ON DUPLICATE KEY UPDATE " . implode(", ", $update_array) . ";";
 		
 		try {
 			$res = Db::getInstance()->execute($query);
+            
+            # for the new table
+            $ord_data = $this->module->getNuveiOrderData($order_id);
+            
+            // we will insert data for first time
+            if (empty($ord_data['data'])) {
+                $insert_data = [
+                    'transactions' => [
+                        $trans_id => $new_data
+                    ]
+                ];
+                
+                $query = 
+                    "INSERT INTO nuvei_orders_data "
+                    . "(order_id, transaction_id, data) "
+                    . "VALUES (". (int) $order_id .", '". $trans_id ."', '" 
+                        . json_encode($insert_data) ."');";
+
+                Db::getInstance()->execute($query);
+            }
+            // update existing data
+            else {
+                $exist_data = json_decode($ord_data['data'], true);
+                
+                if (!empty($exist_data) || !is_array($exist_data)) {
+                    $exist_data = [];
+                }
+                
+                $exist_data['transactions'][$trans_id] = $new_data;
+                
+                $query = 
+                    "UPDATE nuvei_orders_data "
+                    . "SET transaction_id = '" . $trans_id . "', data = '" . json_encode($exist_data) . "' "
+                    . "WHERE order_id = " . (int) $order_id;
+
+                Db::getInstance()->execute($query);
+            }
+            # /for the new table
 		}
 		catch (Exception $e) {
 			$this->module->createLog([
@@ -931,7 +849,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 '$query'                                    => $query,
             ]);
 		}
-		
+        
 		return $res;
     }
 	
@@ -1057,7 +975,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     private function dmnSaleAuth($merchant_unique_id, $req_status)
     {
         // REST and WebSDK
-        $this->module->createLog($merchant_unique_id, 'dmnSaleAuth()');
+        $this->module->createLog('dmnSaleAuth()');
 
         // exit
         if(empty($merchant_unique_id) || !is_numeric($merchant_unique_id)) {
@@ -1177,11 +1095,25 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
         // /check for transaction Id after sdk Order
 
-        // wrong amount check
-        $order_amount	= round(floatval($order_info->total_paid), 2);
-        $dmn_amount		= round(Tools::getValue('totalAmount', 0), 2);
+        // wrong amount/currency check
+        $order_amount           = round((float) $order_info->total_paid, 2);
+        $dmn_amount             = round(Tools::getValue('totalAmount', 0), 2);
+        $dmn_original_amount    = round(Tools::getValue('customField2', ''), 2);
+        
+        $currency           = new Currency($order_info->id_currency);
+        $order_curr         = $currency->iso_code;
+        $dmn_curr           = Tools::getValue('currency');
+        $dmn_original_curr  = Tools::getValue('customField3');
+        
+//        $this->module->createLog(
+//            [$order_info, $currency, $order_curr]
+//        );
+        
+        $additional_transaction_data = [];
 
-        if($order_amount != $dmn_amount) {
+        if(!in_array($order_amount, [$dmn_amount, $dmn_original_amount])
+            || !in_array($order_curr, [$dmn_curr, $dmn_original_curr])
+        ) {
             $this->module->createLog(
                 array(
                     'DMN totalAmount' => $dmn_amount,
@@ -1189,6 +1121,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 ),
                 'DMN totalAmount does not mutch Order Amount.'
             );
+            
+            $additional_transaction_data['totalCurrAlert'] = true;
         }
         // wrong amount check
 
@@ -1209,21 +1143,22 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
         # check for previous DMN data END
 
-        $this->updateCustomPaymentFields($order_id, $insert_data);
+        $this->updateCustomPaymentFields($order_id, $additional_transaction_data);
 
         if((int) $order_info->current_state != (int) Configuration::get('PS_OS_PAYMENT')
             && (int) $order_info->current_state != (int) Configuration::get('PS_OS_ERROR')
         ) {
             $this->changeOrderStatus(
-                array(
-                    'id'            => $order_id,
-                    'current_state' => $order_info->current_state,
-                    'has_invoice'	=> $order_info->hasInvoice(),
-                    'total_paid'	=> $order_info->total_paid,
-                    'id_customer'	=> $order_info->id_customer,
-                    'reference'		=> $order_info->reference,
-                )
-                ,$req_status
+//                array(
+//                    'id'            => $order_id,
+//                    'current_state' => $order_info->current_state,
+//                    'has_invoice'	=> $order_info->hasInvoice(),
+//                    'total_paid'	=> $order_info->total_paid,
+//                    'id_customer'	=> $order_info->id_customer,
+//                    'reference'		=> $order_info->reference,
+//                )
+                $order_info,
+                $req_status
             );
         }
 
@@ -1254,9 +1189,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
 
         // try to start a Subscription
-        $currency = new Currency((int)$order_info->id_currency);
-
-        $this->startSubscription($order_id, $currency->iso_code);
+        $this->startSubscription($order_id, $order_curr);
 
         $msg = 'DMN received.';
         $this->module->createLog($msg);
@@ -1343,13 +1276,14 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             $currency = new Currency((int)$order_info->id_currency);
 
             $this->changeOrderStatus(
-                array(
-                    'id'            => $order_info->id,
-                    'current_state' => $order_info->current_state,
-                    'has_invoice'	=> $order_info->hasInvoice(),
-                    'currency'      => $currency->iso_code,
-                )
-                ,$req_status
+//                array(
+//                    'id'            => $order_info->id,
+//                    'current_state' => $order_info->current_state,
+//                    'has_invoice'	=> $order_info->hasInvoice(),
+//                    'currency'      => $currency->iso_code,
+//                )
+                $order_info,
+                $req_status
             );
 
             header('Content-Type: text/plain');
@@ -1386,12 +1320,13 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             }
 
             $this->changeOrderStatus(
-                array(
-                    'id'            => $order_info->id,
-                    'current_state' => $order_info->current_state,
-                    'has_invoice'	=> $order_info->hasInvoice(),
-                )
-                ,$req_status
+//                array(
+//                    'id'            => $order_info->id,
+//                    'current_state' => $order_info->current_state,
+//                    'has_invoice'	=> $order_info->hasInvoice(),
+//                )
+                $order_info,
+                $req_status
             );
             
             if('Void' == $transactionType && 'APPROVED' == $req_status) {
@@ -1533,6 +1468,201 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         exit(json_encode(array(
             'success' => 1,
         )));
+    }
+    
+    private function dmnSubscr()
+    {
+        $subscriptionState  = strtolower(Tools::getValue('subscriptionState'));
+        $subscriptionId     = (int) Tools::getValue('subscriptionId');
+        $cri_parts          = explode('_', Tools::getValue('clientRequestId'));
+
+        // exit
+        if (empty($subscriptionState)) {
+            $this->module->createLog($subscriptionState, 'DMN Subscription Error - subscriptionState is empty.');
+
+            header('Content-Type: text/plain');
+            exit('DMN Subscription Error - subscriptionState is empty');
+        }
+
+        // exit
+        if (empty($cri_parts[0]) || !is_numeric($cri_parts[0])) {
+            $this->module->createLog($cri_parts, 'DMN Subscription Error with Client Request Id parts:');
+
+            header('Content-Type: text/plain');
+            exit('DMN Subscription Error with Client Request Id parts.');
+        }
+
+        $order_id = (int) $cri_parts[0];
+
+        $this->getOrder($order_id);
+        
+        // get the existing data from the new table
+        $order_data = $this->module->getNuveiOrderData($order_id);
+        $data       = json_decode(@$order_data['data']);
+        
+        if (empty($data) || !is_array($data)) {
+            $data = [];
+        }
+        
+        $data['subscriptions'][$subscriptionId]['state']    = $subscriptionState;
+        $data['subscriptions'][$subscriptionId]['planId']   = (int) Tools::getValue('planId');
+        // /get the existing data from the new table
+
+        if ('active' == $subscriptionState) {
+            $msg = $this->l('Subscription is Active.') . ' '
+                . $this->l('Subscription ID: ') . $subscriptionId . ' '
+                . $this->l('Plan ID: ') . Tools::getValue('planId');
+
+            // check for repeating DMN
+            $ord_subscr_ids = '';
+            $sql            = "SELECT subscr_ids FROM safecharge_order_data WHERE order_id = " . $order_id;
+            $res            = Db::getInstance()->executeS($sql);
+
+            if($res && is_array($res)) {
+                $first_res = current($res);
+
+                if(is_array($first_res) && !empty($first_res['subscr_ids'])) {
+//                        $ord_subscr_ids = $first_res['subscr_ids'];
+                    $this->module->createLog($res, 'There is already Active Subscription for this Order! '
+                        . 'Possible repeating DMN or wrong Rebilling.', 'WARN');
+
+                    header('Content-Type: text/plain');
+                    exit('DMN received.');
+                }
+            }
+
+            // just add the ID without the details, we need only the ID to cancel the Subscription
+//                if (!in_array($subscriptionId, $ord_subscr_ids)) {
+//                    $ord_subscr_ids = $subscriptionId;
+//                }
+            // /check for repeating DMN
+
+            if(!$res) {
+                $this->module->createLog(
+                    array(
+                        'subscriptionId'    => $subscriptionId,
+                        'order_id'          => $order_id,
+                    ),
+                    'DMN Error - the subscription ID was not added to the Order data',
+                    'WARN'
+                );
+            }
+            // save the Subscription ID END
+        }
+        elseif ('inactive' == $subscriptionState) {
+            $msg = $this->l('Subscription is Inactive.') . ' '
+                . $this->l('Subscription ID: ') . $subscriptionId;
+        }
+        elseif ('canceled' == $subscriptionState) {
+            $msg = $this->l('Subscription was canceled.') . ' '
+                .$this->l('Subscription ID: ') . $subscriptionId;
+        }
+
+        $message            = new MessageCore();
+        $message->id_order  = $order_id;
+        $message->private   = true;
+        $message->message   = $msg;
+        $resp = $message->add();
+
+        $this->module->createLog([$order_id, $msg, $resp], 'Message to save', 'DEBUG');
+
+        // for the old table, save the state
+        $sql = "UPDATE `safecharge_order_data` "
+            . "SET subscr_state = '" . $subscriptionState . "' "
+            . "WHERE order_id = " . $order_id;
+        
+        $res = Db::getInstance()->execute($sql);
+
+        // update the new table
+        $sql = "UPDATE `nuvei_orders_data` "
+            . "SET data = '" . json_encode($data) . "' "
+            . "WHERE order_id = " . $order_id;
+        
+        $res = Db::getInstance()->execute($sql);
+        
+        if(!$res) {
+            $this->module->createLog(
+                array(
+                    'subscriptionId'    => $subscriptionId,
+                    'order_id'          => $order_id,
+                    'message'           => Db::getInstance()->getMsgError(),
+                ),
+                'DMN Error - the Subscription State was not added to the Order data',
+                'WARN'
+            );
+        }
+
+        header('Content-Type: text/plain');
+        exit('DMN received.');
+    }
+    
+    private function dmnSubscrPayment($req_status)
+    {
+        $cri_parts = explode('_', Tools::getValue('clientRequestId'));
+
+        if (empty($cri_parts) || empty($cri_parts[0]) || !is_numeric($cri_parts[0])) {
+            $this->module->createLog($cri_parts, 'DMN Subscription Error with Client Request Id parts:');
+
+            header('Content-Type: text/plain');
+            exit('DMN Subscription Error with Client Request Id parts.');
+        }
+
+        $order_id   = (int) $cri_parts[0];
+        $order_info = $this->getOrder($order_id);
+        $currency   = new Currency((int)$order_info->id_currency);
+
+        $msg = sprintf(
+            /* translators: %s: the status of the Payment */
+            $this->l('Subscription Payment with Status %s was made. '),
+            $req_status
+        )
+            . $this->l('Plan ID: ') . Tools::getValue('planId') . '. '
+            . $this->l('Subscription ID: ') . Tools::getValue('subscriptionId') . '. '
+            . $this->l('Amount: ') . $this->module->formatMoney(Tools::getValue('totalAmount'), $currency->iso_code) . ' '
+            . $this->l('TransactionId: ') . Tools::getValue('TransactionID') . '.';
+
+        $this->module->createLog($msg, 'Subscription DMN Payment');
+        
+        # update Nuvei table
+        $order_data = $this->module->getNuveiOrderData($order_id);
+        $data       = json_decode(@$order_data['data']);
+        
+        if (empty($data) || !is_array($data)) {
+            $data = [];
+        }
+        
+        // group in payments block by transaction id
+        $data['subscriptions'][Tools::getValue('subscriptionId')]['payments'][Tools::getValue('TransactionID')] = [
+            'total'     => (float) Tools::getValue('totalAmount'),
+            'currency'  => Tools::getValue('currency'),
+        ];
+        
+        $sql = "UPDATE `nuvei_orders_data` "
+            . "SET data = '" . json_encode($data) . "' "
+            . "WHERE order_id = " . $order_id;
+        
+        $res = Db::getInstance()->execute($sql);
+        
+        if(!$res) {
+            $this->module->createLog(
+                array(
+                    'order_id'          => $order_id,
+                    'message'           => Db::getInstance()->getMsgError(),
+                ),
+                'DMN Error - the Subscription Payment was not added to the Order data',
+                'WARN'
+            );
+        }
+        # /update Nuvei table
+
+        $message            = new MessageCore();
+        $message->id_order  = $order_id;
+        $message->private   = true;
+        $message->message   = $msg;
+        $message->add();
+
+        header('Content-Type: text/plain');
+        exit('DMN received.');
     }
     
 }
