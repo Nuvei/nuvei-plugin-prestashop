@@ -12,7 +12,7 @@ class Nuvei_Checkout extends PaymentModule
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $version                     = '1.1.1';
+    public $version                     = '1.2.0';
     public $ps_versions_compliancy      = array(
         'min' => '1.7.7.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
@@ -205,7 +205,7 @@ class Nuvei_Checkout extends PaymentModule
          *              'payments': {
          *                  {transaction_id}: {
          *                      'total'     => {total},
-         *                      'currency'  => {currency},
+         *                      'currency'  => {total},
          *                  }
          *              }
          *          }
@@ -1844,6 +1844,12 @@ class Nuvei_Checkout extends PaymentModule
             $oo_params['request_params']['billingAddress']  = $addresses['billingAddress'];
         }
         
+        $useDCC = Configuration::get('NUVEI_USE_DCC');
+        
+        if (0 == $oo_params['request_params']['amount']) {
+            $useDCC = 'false';
+        }
+        
         $checkout_params = [
             'sessionToken'              => $oo_params['sessionToken'],
 			'env'                       => 'yes' == Configuration::get('SC_TEST_MODE') ? 'test' : 'prod',
@@ -1853,7 +1859,7 @@ class Nuvei_Checkout extends PaymentModule
 			'currency'                  => $oo_params['request_params']['currency'],
 			'amount'                    => (string) $oo_params['request_params']['amount'],
 			'renderTo'                  => '#nuvei_checkout',
-			'useDCC'                    => Configuration::get('NUVEI_USE_DCC'),
+			'useDCC'                    => $useDCC,
 			'strict'                    => false,
 			'savePM'                    => $save_pm,
 			'showUserPaymentOptions'    => $use_upos,

@@ -8,6 +8,7 @@
     Fix for the module Reset exception.
     Added new table for Nuvei Order data. It will be used in future.
     Added an Order marker if the original amount/currency is different than the Prestshop amount/currency.
+    Disable DCC when Order total is Zero.
 ```
 
 # 1.1.0
