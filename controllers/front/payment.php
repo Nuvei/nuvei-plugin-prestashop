@@ -505,13 +505,15 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 				
                 // Void
                 if('Void' == $transactionType) {
+                    $msg        = $gw_data;
                     $status_id  = Configuration::get('PS_OS_CANCELED');
                     break;
                 }
                 
                 // Refund
                 if(in_array($transactionType, array('Credit', 'Refund'))) {
-					$status_id = Configuration::get('PS_OS_REFUND');
+                    $msg        = $gw_data;
+					$status_id  = Configuration::get('PS_OS_REFUND');
                     break;
                 }
                 
