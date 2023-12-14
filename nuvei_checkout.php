@@ -2183,8 +2183,14 @@ class Nuvei_Checkout extends PaymentModule
 		
 		# Success
 		if (!empty($resp_status) && 'SUCCESS' == $resp_status) {
-            $nuvei_last_open_order_details['amount'] = $cart_amount;
-            $this->context->cookie->__set('nuvei_last_open_order_details', serialize($nuvei_last_open_order_details));
+            $products                                       = $this->context->cart->getProducts();
+            $nuvei_last_open_order_details['amount']        = $cart_amount;
+            $nuvei_last_open_order_details['productsHash']  = md5(serialize($products));
+            
+            $this->context->cookie->__set(
+                'nuvei_last_open_order_details',
+                serialize($nuvei_last_open_order_details)
+            );
 			
             $resp['request_params'] = $params;
             
