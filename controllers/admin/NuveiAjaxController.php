@@ -234,7 +234,7 @@ class NuveiAjaxController extends ModuleAdminControllerCore
     {
         $orders_params  = Tools::getValue('orders');
         $orders_str     = substr($orders_params, 1, -1);
-        $orders_arr     = array();
+        $orders_arr     = [];
         
         if(empty($orders_str)) {
             echo json_encode(array(
@@ -253,7 +253,7 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         
         $res = DB::getInstance()->executeS($query);
         
-//        $this->module->createLog($res, 'Orders list.');
+        $this->module->createLog($res, 'Orders list.');
         
         header('Content-Type: application/json');
         
@@ -263,13 +263,17 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             )));
         }
         
-//        foreach ($res as $data) {
-//            $orders_arr[] = $data['order_id'];
-//        }
-        
         foreach ($res as $data) {
-            $orders_arr[$data['order_id']]['subscr']    = empty($data['subscr_ids']) ? 0 : 1;
+            $orders_arr[$data['order_id']]['subscr']    = 0;
             $orders_arr[$data['order_id']]['fraud']     = 0;
+            
+            $nuvei_data = json_decode($data['data']);
+            
+            if (!empty($data['subscr_ids'])
+                || !empty($nuvei_data['subscriptions'])
+            ) {
+                $orders_arr[$data['order_id']]['subscr'] = 1;
+            }
             
             $transactions = json_decode($data['data'], true);
             

@@ -1500,7 +1500,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         
         // get the existing data from the new table
         $order_data = $this->module->getNuveiOrderData($order_id);
-        $data       = json_decode(@$order_data['data']);
+        $data       = json_decode(@$order_data['data'], true);
         
         if (empty($data) || !is_array($data)) {
             $data = [];
@@ -1566,14 +1566,23 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         $message->message   = $msg;
         $resp = $message->add();
 
-        $this->module->createLog([$order_id, $msg, $resp], 'Message to save', 'DEBUG');
+        $this->module->createLog(
+            [
+                '$order_id'     => $order_id,
+                'order data'    => $data,
+            ],
+            'Before update DB.'
+        );
 
         // for the old table, save the state
         $sql = "UPDATE `safecharge_order_data` "
-            . "SET subscr_state = '" . $subscriptionState . "' "
+            . "SET subscr_state = '" . $subscriptionState . "', "
+                . "subscr_ids = " . (int) $subscriptionId . " "
             . "WHERE order_id = " . $order_id;
         
         $res = Db::getInstance()->execute($sql);
+        
+        $this->module->createLog($res, 'First table update', "DEBUG");
 
         // update the new table
         $sql = "UPDATE `nuvei_orders_data` "
@@ -1587,13 +1596,15 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 array(
                     'subscriptionId'    => $subscriptionId,
                     'order_id'          => $order_id,
-                    'message'           => Db::getInstance()->getMsgError(),
+                    'message'           => @Db::getInstance()->getMsgError(),
                 ),
-                'DMN Error - the Subscription State was not added to the Order data',
+                'DMN Error - the Subscription info was not saved.',
                 'WARN'
             );
         }
 
+        $this->module->createLog('End of DMN process.');
+        
         header('Content-Type: text/plain');
         exit('DMN received.');
     }

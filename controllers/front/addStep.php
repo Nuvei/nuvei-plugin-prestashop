@@ -11,8 +11,6 @@ class Nuvei_CheckoutAddStepModuleFrontController extends ModuleFrontController
         try {
             parent::initContent();
 
-//            $this->module->createLog('AddStep initContent()');
-            
             $error_url	= $this->context->link->getPageLink('order');
             $cart		= $this->context->cart;
             $error_msg  = '';
