@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.2.1
+```
+    * Fix for the "SDK translations" setting example.
+```
+
 # 1.2.0
 ```
     Set different delay time in the DMN logic according the environment.

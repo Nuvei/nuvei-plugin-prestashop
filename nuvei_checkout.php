@@ -12,7 +12,7 @@ class Nuvei_Checkout extends PaymentModule
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $version                     = '1.2.0';
+    public $version                     = '1.2.1';
     public $ps_versions_compliancy      = array(
         'min' => '1.7.7.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_

@@ -243,14 +243,8 @@
                             <label class="control-label col-lg-3"> {l s='SDK translations' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <textarea name="NUVEI_SDK_TRANSL" rows="5" class="form-control textarea-autosize"placeholder='{
-    "de": { 
-        "doNotHonor": "you dont have enough money",
-        "DECLINE": "declined"
-    },
-    "es": { 
-        "doNotHonor": "you dont have enough money",
-        "DECLINE": "declined"
-    }
+"doNotHonor": "you dont have enough money",
+"DECLINE": "declined"
 }'></textarea>
                                 
                                 <span class="help-block">{l s='This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/ui-customization/#text-and-translation" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
