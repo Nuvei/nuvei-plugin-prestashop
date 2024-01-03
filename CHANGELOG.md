@@ -3,6 +3,7 @@
 # 1.2.1
 ```
     * Fix for the "SDK translations" setting example.
+    * Added locale for Gpay button.
 ```
 
 # 1.2.0

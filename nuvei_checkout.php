@@ -1850,6 +1850,8 @@ class Nuvei_Checkout extends PaymentModule
             $useDCC = 'false';
         }
         
+        $locale = substr($this->context->language->locale, 0, 2);
+        
         $checkout_params = [
             'sessionToken'              => $oo_params['sessionToken'],
 			'env'                       => 'yes' == Configuration::get('SC_TEST_MODE') ? 'test' : 'prod',
@@ -1872,13 +1874,18 @@ class Nuvei_Checkout extends PaymentModule
 			'email'                     => $oo_params['request_params']['billingAddress']['email'],
 			'payButton'                 => Configuration::get('NUVEI_PAY_BTN_TEXT'),
 			'showResponseMessage'       => false, // shows/hide the response popups
-			'locale'                    => substr($this->context->language->locale, 0, 2),
+			'locale'                    => $locale,
 			'autoOpenPM'                => (bool) Configuration::get('NUVEI_AUTO_EXPAND_PMS'),
 			'logLevel'                  => Configuration::get('NUVEI_SDK_LOG_LEVEL'),
 			'maskCvv'                   => true,
 			'i18n'                      => Configuration::get('NUVEI_SDK_TRANSL'),
 			'theme'                     => Configuration::get('NUVEI_SDK_THEME'),
 			'apmWindowType'             => Configuration::get('NUVEI_APM_WINDOW_TYPE'),
+            'apmConfig'                 => [
+                'googlePay' => [
+                    'locale' => $locale
+                ]
+            ],
         ];
         
         if($this->is_rebilling_order) {
