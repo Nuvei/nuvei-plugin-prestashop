@@ -1878,7 +1878,7 @@ class Nuvei_Checkout extends PaymentModule
 			'autoOpenPM'                => (bool) Configuration::get('NUVEI_AUTO_EXPAND_PMS'),
 			'logLevel'                  => Configuration::get('NUVEI_SDK_LOG_LEVEL'),
 			'maskCvv'                   => true,
-			'i18n'                      => Configuration::get('NUVEI_SDK_TRANSL'),
+			'i18n'                      => json_decode(Configuration::get('NUVEI_SDK_TRANSL'), true),
 			'theme'                     => Configuration::get('NUVEI_SDK_THEME'),
 			'apmWindowType'             => Configuration::get('NUVEI_APM_WINDOW_TYPE'),
             'apmConfig'                 => [
@@ -1894,6 +1894,8 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         $sdk_url = $this->getSdkLibUrl();
+        
+        $this->createLog($checkout_params, 'SDK params.');
         
         $this->context->smarty->assign('nuveiSdkUrl',       $sdk_url);
         $this->context->smarty->assign('showNuveoOnly',     $this->is_rebilling_order);

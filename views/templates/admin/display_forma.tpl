@@ -243,9 +243,9 @@
                             <label class="control-label col-lg-3"> {l s='SDK translations' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <textarea name="NUVEI_SDK_TRANSL" rows="5" class="form-control textarea-autosize"placeholder='{
-"doNotHonor": "you dont have enough money",
-"DECLINE": "declined"
-}'></textarea>
+"doNotHonor":"you dont have enough money",
+"DECLINE":"declined"
+}'>{Configuration::get('NUVEI_SDK_TRANSL')}</textarea>
                                 
                                 <span class="help-block">{l s='This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/ui-customization/#text-and-translation" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
                             </div>
@@ -297,13 +297,6 @@
                         <option value="0" {if Configuration::get('NUVEI_SAVE_ORDER_AFTER_APM_PAYMENT') eq 0}selected{/if}>{l s='NO (Default Prestashop flow, with better security)' mod='nuvei'}</option>
                         <option value="1" {if Configuration::get('NUVEI_SAVE_ORDER_AFTER_APM_PAYMENT') eq 1}selected{/if}>{l s='YES (Less secure, better user experience in case of cancel the Order.)' mod='nuvei'}</option>
                     </select>
-                </div>
-            </div>*}
-					
-			{*<div class="form-group">
-                <label class="control-label col-lg-3 required">{l s='Apple Pay label' mod='nuvei'}</label>
-                <div class="col-lg-9">
-                    <input type="text" name="NUVEI_APPLE_PAY_LABEL" value="{Configuration::get('NUVEI_APPLE_PAY_LABEL')}" required="" />
                 </div>
             </div>*}
         </div><!-- /.form-wrapper -->
