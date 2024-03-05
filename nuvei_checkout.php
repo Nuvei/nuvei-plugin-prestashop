@@ -24,8 +24,8 @@ class Nuvei_Checkout extends PaymentModule
     public $need_instance               = 1;
     public $is_eu_compatible            = 1;
     
-//    private $sdkLibDevUrl               = 'https://srv-bsf-devpppjs.gw-4u.com/checkoutNext/checkout.js';
     private $sdkLibProdUrl              = 'https://cdn.safecharge.com/safecharge_resources/v1/checkout/checkout.js';
+    private $sdkLibTagUrl               = 'https://devmobile.sccdev-qa.com/checkoutNext/checkout.js';
     private $apmPopupAutoCloseUrl       = 'https://cdn.safecharge.com/safecharge_resources/v1/websdk/autoclose.html';
     private $restApiIntUrl              = 'https://ppp-test.nuvei.com/ppp/api/v1/';
     private $restApiProdUrl             = 'https://secure.safecharge.com/ppp/api/v1/';
@@ -2117,6 +2117,13 @@ class Nuvei_Checkout extends PaymentModule
      */
     private function getSdkLibUrl()
     {
+        if (!empty($_SERVER['SERVER_NAME']) 
+            && 'prestashopautomation.gw-4u.com' == $_SERVER['SERVER_NAME']
+            && defined('NUVEI_SDK_URL_TAG')
+        ) {
+            return $this->sdkLibTagUrl;
+        }
+        
         return $this->sdkLibProdUrl;
     }
 	
