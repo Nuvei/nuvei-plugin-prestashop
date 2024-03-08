@@ -2117,9 +2117,9 @@ class Nuvei_Checkout extends PaymentModule
      */
     private function getSdkLibUrl()
     {
-        if (!empty($_SERVER['SERVER_NAME']) 
+        if (!empty($_SERVER['SERVER_NAME'])
+            && !empty($this->sdkLibTagUrl)
             && 'prestashopautomation.gw-4u.com' == $_SERVER['SERVER_NAME']
-            && defined('NUVEI_SDK_URL_TAG')
         ) {
             return $this->sdkLibTagUrl;
         }
