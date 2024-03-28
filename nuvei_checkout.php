@@ -1401,7 +1401,7 @@ class Nuvei_Checkout extends PaymentModule
                 // clean possible objects inside array
                 $data = json_decode(json_encode($data), true);
 
-                array_walk_recursive($data, [$this, 'maskData'], $this->$fieldsToMask);
+                array_walk_recursive($data, [$this, 'maskData'], $this->fieldsToMask);
             }
             
             $data_tmp   = print_r($data, true);
