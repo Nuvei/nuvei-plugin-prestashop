@@ -35,6 +35,21 @@ class Nuvei_Checkout extends PaymentModule
     private $html                       = '';
     private $is_rebilling_order         = false;
     private $plugin_git_changelog       = 'https://raw.githubusercontent.com/Nuvei/nuvei-plugin-prestashop/main/CHANGELOG.md';
+    
+    private $fieldsToMask = [
+        'ips'       => ['ipAddress'],
+        'names'     => ['firstName', 'lastName', 'first_name', 'last_name', 'shippingFirstName', 'shippingLastName'],
+        'emails'    => [
+            'userTokenId',
+            'email',
+            'shippingMail', // from the DMN
+            'userid', // from the DMN
+            'user_token_id', // from the DMN
+        ],
+        'address'   => ['address', 'phone', 'zip'],
+        'others'    => ['userAccountDetails', 'userPaymentOption', 'paymentOption'],
+    ];
+    
     private $trace_id;
     
     public function __construct()
@@ -1318,8 +1333,13 @@ class Nuvei_Checkout extends PaymentModule
             return;
         }
         
-        $beauty_log = ('yes' == $test_mode) ? true : false;
-        $tab        = '    '; // 4 spaces
+        $mask_details   = true; // true if the setting is not set
+        $beauty_log     = ('yes' == $test_mode) ? true : false;
+        $tab            = '    '; // 4 spaces
+        
+        if(Configuration::get('SC_CREATE_LOGS') == 'no') {
+            $mask_details = false;
+        }
         
         # prepare log parts
         $utimestamp     = microtime(true);
@@ -1361,6 +1381,13 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         if(is_array($data)) {
+            if ($mask_details) {
+                // clean possible objects inside array
+                $data = json_decode(json_encode($data), true);
+
+                array_walk_recursive($data, [$this, 'maskData'], $this->fieldsToMask);
+            }
+            
             // paymentMethods can be very big array
             if(!empty($data['paymentMethods'])) {
                 $exception = json_encode($data);
@@ -1370,6 +1397,13 @@ class Nuvei_Checkout extends PaymentModule
             }
         }
         elseif(is_object($data)) {
+            if ($mask_details) {
+                // clean possible objects inside array
+                $data = json_decode(json_encode($data), true);
+
+                array_walk_recursive($data, [$this, 'maskData'], $this->$fieldsToMask);
+            }
+            
             $data_tmp   = print_r($data, true);
             $exception  = $beauty_log 
                 ? json_encode($data_tmp, JSON_PRETTY_PRINT) : json_encode($data_tmp);
@@ -2667,6 +2701,30 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         return $callUpdateOrder;
+    }
+    
+    /**
+     * A callback function for arraw_walk_recursive.
+     * 
+     * @param mixed $value
+     * @param mixed $key
+     * @param array $fields
+     */
+    private function maskData(&$value, $key, $fields)
+    {
+        if (!empty($value)) {
+            if (in_array($key, $fields['ips'])) {
+                $value = rtrim(long2ip(ip2long($value) & (~255)), "0")."x";
+            } elseif (in_array($key, $fields['names'])) {
+                $value = substr($value, 0, 1) . '****';
+            } elseif (in_array($key, $fields['emails'])) {
+                $value = '****' . substr($value, 4);
+            } elseif (in_array($key, $fields['address'])
+                || in_array($key, $fields['others'])
+            ) {
+                $value = '****';
+            }
+        }
     }
     
 }

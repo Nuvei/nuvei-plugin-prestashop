@@ -1,5 +1,11 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.2.2
+```
+    * Added Tag SDK URL for test cases.
+    * Add option to mask/unmask user details in the log.
+```
+
 # 1.2.1
 ```
     * Fix for the "SDK translations" setting example.

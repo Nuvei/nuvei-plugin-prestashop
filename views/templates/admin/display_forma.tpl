@@ -132,18 +132,6 @@
                             </div>
                         </div>
                         
-                        {*<div class="form-group">
-                            <label class="control-label col-lg-3">{l s='SDK version' mod='nuvei'}</label>
-                            <div class="col-lg-9">
-                                <select name="NUVEI_SDK_VERSION">
-                                    <option value="prod" {if Configuration::get('NUVEI_SDK_VERSION') eq 'prod'}selected{/if}>{l s='Prod (Recommended)' mod='nuvei'}</option>
-                                    <option value="dev" {if Configuration::get('NUVEI_SDK_VERSION') eq 'dev'}selected{/if}>{l s='Dev' mod='nuvei'}</option>
-                                </select>
-                                
-                                <span class="help-block">{l s='It is not recommended to use Dev version on Production sites.' mod='nuvei'}</span>
-                            </div>
-                        </div>*}
-                            
                         <div class="form-group">
                             <label class="control-label col-lg-3">{l s='Use currency conversion' mod='nuvei'}</label>
                             <div class="col-lg-9">
@@ -221,6 +209,16 @@
                                 </div>
                             </div>
                         {/if}
+                        
+                        <div class="form-group">
+                            <label class="control-label col-lg-3"> {l s='Mask user details in the log' mod='nuvei'}</label>
+                            <div class="col-lg-9">
+                                <select name="NUVEI_MASK_LOG">
+                                    <option value="yes" {if !Configuration::get('NUVEI_MASK_LOG') || Configuration::get('NUVEI_MASK_LOG') eq 'yes'}selected{/if}>{l s='Yes' mod='nuvei'}</option>
+                                    <option value="no" {if Configuration::get('NUVEI_MASK_LOG') eq 'no'}selected{/if}>{l s='No' mod='nuvei'}</option>
+                                </select>
+                            </div>
+                        </div>
                                 
                         <div class="form-group">
                             <label class="control-label col-lg-3"> {l s='Checkout Log level' mod='nuvei'}</label>
