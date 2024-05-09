@@ -27,14 +27,14 @@
                 <div class="tab-content">
                     <div class="tab-pane fade in active" id="nuvei_general">
                         <div class="form-group">
-                            <label class="control-label col-lg-3">{l s='Default title' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3">{l s='Default Title' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <input type="text" name="SC_FRONTEND_NAME" value="{if Configuration::get('SC_FRONTEND_NAME')}{Configuration::get('SC_FRONTEND_NAME')}{else}{l s='Secure Payment with Nuvei' mod='nuvei'}{/if}" />
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label class="control-label col-lg-3 required"> {l s='Test mode' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3 required"> {l s='Test Mode' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="SC_TEST_MODE" required="">
                                     <option value="">{l s='Please, select an option...' mod='nuvei'}</option>
@@ -45,14 +45,14 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="control-label col-lg-3 required"> {l s='Merchant Id' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3 required"> {l s='Merchant ID' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <input type="text" name="SC_MERCHANT_ID" value="{Configuration::get('SC_MERCHANT_ID')}" required="" />
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label class="control-label col-lg-3 required"> {l s='Merchant Site Id' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3 required"> {l s='Merchant Site ID' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <input type="text" name="SC_MERCHANT_SITE_ID" value="{Configuration::get('SC_MERCHANT_SITE_ID')}" required="" />
                             </div>
@@ -66,7 +66,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="control-label col-lg-3 required"> {l s='Hash type' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3 required"> {l s='Hash Type' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="SC_HASH_TYPE" required="">
                                     <option value="">{l s='Please, select an option...' mod='nuvei'}</option>
@@ -88,7 +88,7 @@
                         </div>
                                 
                         <div class="form-group">
-                            <label class="control-label col-lg-3" for="SC_CREATE_LOGS">{l s='Save logs' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3" for="SC_CREATE_LOGS">{l s='Save Logs' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="SC_CREATE_LOGS">
                                     <option value="yes" {if Configuration::get('SC_CREATE_LOGS') eq 'yes'}selected{/if}>{l s='Yes' mod='nuvei'}</option>
@@ -122,7 +122,7 @@
                         </div>
                                 
                         <div class="form-group">
-                            <label class="control-label col-lg-3"> {l s='SDK theme' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3"> {l s='SDK Theme' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="NUVEI_SDK_THEME">
                                     <option value="accordion"> {if Configuration::get('SC_USE_UPOS') eq 'accordion'}selected{/if}{l s='Accordion' mod='nuvei'}</option>
@@ -133,7 +133,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <label class="control-label col-lg-3">{l s='Use currency conversion' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3">{l s='Use Currency Conversion' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="NUVEI_USE_DCC">
                                     <option value="enable" {if Configuration::get('NUVEI_USE_DCC') eq 'enable'}selected{/if}>{l s='Enabled' mod='nuvei'}</option>
@@ -144,7 +144,7 @@
                         </div>
                             
                         <div class="form-group">
-                            <label class="control-label col-lg-3">{l s='Block cards' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3">{l s='Block Cards' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <input name="NUVEI_BLOCK_CARDS" type="text" value="{Configuration::get('NUVEI_BLOCK_CARDS')}" />
                                 <span class="help-block">{l s='For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/payment-customization/#Card_Processing" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
@@ -166,7 +166,7 @@
                         </div>
                             
                         <div class="form-group">
-                            <label class="control-label col-lg-3"> {l s='Choose the Text on the Pay button' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3"> {l s='Choose the Text on the Pay Button' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="NUVEI_PAY_BTN_TEXT">
                                     <option value="amountButton" {if Configuration::get('NUVEI_PAY_BTN_TEXT') eq 'amountButton'}selected{/if}>{l s='Shows the amount' mod='nuvei'}</option>
@@ -176,7 +176,7 @@
                         </div>
                                 
                         <div class="form-group">
-                            <label class="control-label col-lg-3"> {l s='Auto expand PMs' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3"> {l s='Auto-expand PMs' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="NUVEI_AUTO_EXPAND_PMS">
                                     <option value="1" {if Configuration::get('NUVEI_AUTO_EXPAND_PMS') eq 1}selected{/if}>{l s='Yes' mod='nuvei'}</option>
@@ -186,7 +186,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <label class="control-label col-lg-3"> {l s='APMs window type' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3"> {l s='APMs Window Type' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="NUVEI_APM_WINDOW_TYPE">
                                     <option value="" {if Configuration::get('NUVEI_APM_WINDOW_TYPE') eq ''}selected{/if}>{l s='Popup' mod='nuvei'}</option>
@@ -198,7 +198,7 @@
                                 
                         {if Configuration::get('SC_TEST_MODE') eq 'yes'}
                             <div class="form-group">
-                                <label class="control-label col-lg-3"> {l s='Auto close APM popup' mod='nuvei'}</label>
+                                <label class="control-label col-lg-3"> {l s='Auto-close APM Pop-Up' mod='nuvei'}</label>
                                 <div class="col-lg-9">
                                     <select name="NUVEI_AUTO_CLOSE_APM_POPUP">
                                         <option value="1" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 1}selected{/if}>{l s='Yes' mod='nuvei'}</option>
@@ -211,7 +211,7 @@
                         {/if}
                         
                         <div class="form-group">
-                            <label class="control-label col-lg-3"> {l s='Mask user details in the log' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3"> {l s='Mask User Details in the Log' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <select name="NUVEI_MASK_LOG">
                                     <option value="yes" {if !Configuration::get('NUVEI_MASK_LOG') || Configuration::get('NUVEI_MASK_LOG') eq 'yes'}selected{/if}>{l s='Yes' mod='nuvei'}</option>
@@ -238,7 +238,7 @@
                         </div>
                                 
                         <div class="form-group">
-                            <label class="control-label col-lg-3"> {l s='SDK translations' mod='nuvei'}</label>
+                            <label class="control-label col-lg-3"> {l s='SDK Translations' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <textarea name="NUVEI_SDK_TRANSL" rows="5" class="form-control textarea-autosize"placeholder='{
 "doNotHonor":"you dont have enough money",
@@ -287,16 +287,6 @@
                     <!-- tools -->
                 </div>
             </div>
-                    
-            {*<div class="form-group">
-                <label class="control-label col-lg-3"> {l s='Save Order after the APM payment' mod='nuvei'}</label>
-                <div class="col-lg-9">
-                    <select name="NUVEI_SAVE_ORDER_AFTER_APM_PAYMENT">
-                        <option value="0" {if Configuration::get('NUVEI_SAVE_ORDER_AFTER_APM_PAYMENT') eq 0}selected{/if}>{l s='NO (Default Prestashop flow, with better security)' mod='nuvei'}</option>
-                        <option value="1" {if Configuration::get('NUVEI_SAVE_ORDER_AFTER_APM_PAYMENT') eq 1}selected{/if}>{l s='YES (Less secure, better user experience in case of cancel the Order.)' mod='nuvei'}</option>
-                    </select>
-                </div>
-            </div>*}
         </div><!-- /.form-wrapper -->
         
         <div class="panel-footer">

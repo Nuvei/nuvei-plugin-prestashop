@@ -16,9 +16,9 @@
         NuveiPaymentPlanDetails : '<?= $this->l('Nuvei Payment Plan Details'); ?>',
         PlanID                  : '<?= $this->l('Plan ID'); ?>',
         RecurringAmount         : '<?= $this->l('Recurring Amount'); ?>',
-        RecurringEvery          : '<?= $this->l('Recurring every'); ?>',
-        RecurringEndAfter       : '<?= $this->l('Recurring end after'); ?>',
-        TrialPeriod             : '<?= $this->l('Trial period'); ?>',
+        RecurringEvery          : '<?= $this->l('Recurring Every'); ?>',
+        RecurringEndAfter       : '<?= $this->l('Recurring End After'); ?>',
+        TrialPeriod             : '<?= $this->l('Trial Period'); ?>',
         Day                     : '<?= $this->l('Day'); ?>',
         Month                   : '<?= $this->l('Month'); ?>',
         Year                    : '<?= $this->l('Year'); ?>'
