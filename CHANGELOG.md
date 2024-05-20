@@ -5,6 +5,7 @@
     * Added Tag SDK URL for test cases.
     * Add option to mask/unmask user details in the log.
     * Fixed typos in the plugin settings.
+    * Fix for the sourceApplication parameter.
 ```
 
 # 1.2.1

@@ -31,7 +31,7 @@ class Nuvei_Checkout extends PaymentModule
     private $restApiProdUrl             = 'https://secure.safecharge.com/ppp/api/v1/';
     private $paymentPlanGroup           = 'Nuvei Payment Plan';
     private $pmAllowedVoidSettle        = ['cc_card', 'apmgw_expresscheckout'];
-    private $nuvei_source_application   = 'Prestashop_Plugin';
+    private $nuvei_source_application   = 'PRESTASHOP_PLUGIN';
     private $html                       = '';
     private $is_rebilling_order         = false;
     private $plugin_git_changelog       = 'https://raw.githubusercontent.com/Nuvei/nuvei-plugin-prestashop/main/CHANGELOG.md';
