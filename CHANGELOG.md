@@ -6,6 +6,7 @@
     * Add option to mask/unmask user details in the log.
     * Fixed typos in the plugin settings.
     * Fix for the sourceApplication parameter.
+    * Pass sourceApplication to Simply Connect.
 ```
 
 # 1.2.1

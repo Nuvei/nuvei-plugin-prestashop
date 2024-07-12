@@ -1920,6 +1920,7 @@ class Nuvei_Checkout extends PaymentModule
                     'locale' => $locale
                 ]
             ],
+            'sourceApplication'         => $this->nuvei_source_application,
         ];
         
         if($this->is_rebilling_order) {
