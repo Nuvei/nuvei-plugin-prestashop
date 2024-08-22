@@ -7,6 +7,7 @@
     * Fixed typos in the plugin settings.
     * Fix for the sourceApplication parameter.
     * Pass sourceApplication to Simply Connect.
+    * Formatted the readme.
 ```
 
 # 1.2.1

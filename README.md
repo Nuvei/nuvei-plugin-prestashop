@@ -1,20 +1,22 @@
 # Nuvei Prestashop
-Nuvei PlugIn for PrestaShop v 1.7.7.0 and above
+Nuvei Plugin for PrestaShop v 1.7.7.0 and above
 
-If you have previously installed Nuvei (Web SDK) plugin:
+If you have an old PrestaShop version of the plugin:
 
-1. Create backup of your site.
-2. Finish all actions over its Orders;
-3. Uninstall it and remove ROOT/modules/nuvei directory, if it is still there after the installation.
+1. Create a backup of your site.
+2. Complete all actions related to any orders for the current plugin before installing the plugin again.
+3. Uninstall the current version and remove ROOT/modules/nuvei directory (if it is still there after the uninstall).
 
-How to install:
+Automatic install:
 
-1. Download the plugin and extract the zip.
+1. Download the plugin and extract the ZIP file.
 2. Rename the folder to "nuvei_checkout" and zip it again.
-3. Go to admin page Modules > Modules & Services, click on Upload Module button and pass the zip file.
+3. Go to admin page Modules > Modules & Services.
+4. Press the **Upload** Module button and upload the zip file.
 
 Manual install:
 
-Follow the above points 1 and 2 then upload the folder to your ROOT/modules directory.
+1. Follow Steps 1 and 2 above.
+2. Upload the folder to your ROOT/modules directory.
 
-If you upgrade the module, backup your settings and reset the module.
+If you are upgrading the module directory, back up your settings and reset the module.
