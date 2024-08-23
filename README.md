@@ -18,7 +18,7 @@ The correct payment methods at the checkout page can bring you global reach, hel
 - If using the Rebilling plugin functionality, please provide the DMN endpoint to the Integration and Technical Support teams, so it can be added to the merchant configuration.
 
 
-If you have an old PrestaShop version of the plugin:
+If you have an old PrestaShop version of the plugin, with WebSDK:
 
 1. Create a backup of your site.
 2. Complete all actions related to any orders for the current plugin before installing the plugin again.
