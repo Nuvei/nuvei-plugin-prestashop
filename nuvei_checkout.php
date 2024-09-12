@@ -12,7 +12,7 @@ class Nuvei_Checkout extends PaymentModule
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $version                     = '1.2.1';
+    public $version                     = '1.2.3';
     public $ps_versions_compliancy      = array(
         'min' => '1.7.7.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
@@ -705,7 +705,7 @@ class Nuvei_Checkout extends PaymentModule
         
         return $this->display(__FILE__, 'views/templates/admin/order_notes.tpl');
     }
-
+    
     /**
      * This hook is executed after the Slip record is created.
      * We use it to request Refund to Nuvei
@@ -841,59 +841,66 @@ class Nuvei_Checkout extends PaymentModule
         return true;
     }
 
+    /**
+     * DOES NOT WORK in v8.1.*
+     * We will try to move all logic in hookDisplayBackOfficeHeader()
+     * 
+     * @param array $params
+     * @return string
+     */
     public function hookDisplayAdminProductsCombinationBottom($params)
     {
-        $this->createLog('hookDisplayAdminProductsCombinationBottom');
+        $this->createLog($params, 'hookDisplayAdminProductsCombinationBottom');
         
-        $product        = new Product((int) $params['id_product']);
-        $id_lang        = Context::getContext()->language->id;
-        $combinations   = $product->getAttributeCombinations((int) $id_lang, true);
-        $comb_ids_arr   = array();
-        
-        ob_start();
-        
-        // get Nuvei Payment Plan group IDs
-        $group_ids_arr = $this->getNuvePaymentPlanGroupIds();
-        
-        foreach($combinations as $data) {
-            if(in_array($data['id_attribute_group'], $group_ids_arr)
-                && !in_array($data['id_attribute_group'], $comb_ids_arr)
-            ) {
-                $comb_ids_arr[] = $data['id_product_attribute'];
-            }
-        }
-        
-        // load Nuvei Payment Plans data
-        $npp_data   = '';
-        $file       = _PS_ROOT_DIR_ . '/var/logs/' . $this->paymentPlanJson;
-        
-        
-        if(is_readable($file)) {
-            $npp_data = stripslashes(file_get_contents($file));
-        }
-        
-        // load the Payment details for the products
-        $prod_pans              = array();
-        $id_product_attribute   = (int) $params['id_product_attribute'];
-        
-        if(isset($params['id_product_attribute'], $params['id_product'])) {
-            $sql = "SELECT plan_details "
-                . "FROM nuvei_product_payment_plan_details "
-                . "WHERE id_product_attribute = " . $id_product_attribute;
-
-            $res = Db::getInstance()->getRow($sql);
-            
-            if($res && !empty($res['plan_details'])) {
-                $prod_pans = $res['plan_details'];
-                
-                $this->createLog($id_product_attribute);
-                $this->createLog($prod_pans);
-            }
-        }
-        
-        require_once dirname(__FILE__) . '/views/js/admin/nuveiProductCombData.php';
-        
-        return ob_get_flush();
+//        $product        = new Product((int) $params['id_product']);
+//        $id_lang        = Context::getContext()->language->id;
+//        $combinations   = $product->getAttributeCombinations((int) $id_lang, true);
+//        $comb_ids_arr   = array();
+//        
+//        ob_start();
+//        
+//        // get Nuvei Payment Plan group IDs
+//        $group_ids_arr = $this->getNuvePaymentPlanGroupIds();
+//        
+//        foreach($combinations as $data) {
+//            if(in_array($data['id_attribute_group'], $group_ids_arr)
+//                && !in_array($data['id_attribute_group'], $comb_ids_arr)
+//            ) {
+//                $comb_ids_arr[] = $data['id_product_attribute'];
+//            }
+//        }
+//        
+//        // load Nuvei Payment Plans data
+//        $npp_data   = '';
+//        $file       = _PS_ROOT_DIR_ . '/var/logs/' . $this->paymentPlanJson;
+//        
+//        
+//        if(is_readable($file)) {
+//            $npp_data = stripslashes(file_get_contents($file));
+//        }
+//        
+//        // load the Payment details for the products
+//        $prod_pans              = array();
+//        $id_product_attribute   = (int) $params['id_product_attribute'];
+//        
+//        if(isset($params['id_product_attribute'], $params['id_product'])) {
+//            $sql = "SELECT plan_details "
+//                . "FROM nuvei_product_payment_plan_details "
+//                . "WHERE id_product_attribute = " . $id_product_attribute;
+//
+//            $res = Db::getInstance()->getRow($sql);
+//            
+//            if($res && !empty($res['plan_details'])) {
+//                $prod_pans = $res['plan_details'];
+//                
+//                $this->createLog($id_product_attribute);
+//                $this->createLog($prod_pans);
+//            }
+//        }
+//        
+//        require_once dirname(__FILE__) . '/views/js/admin/nuveiProductCombData.php';
+//        
+//        return ob_get_flush();
     }
     
     /**
@@ -955,26 +962,99 @@ class Nuvei_Checkout extends PaymentModule
     }
     
     /**
-     * Admin hook.
-     * Add a JS file or print the script in the Header.
+     * An admin hook.
+     * Use it to add a JS files or print scripts.
      */
     public function hookDisplayBackOfficeHeader()
     {
         $this->createLog(null, 'hookDisplayBackOfficeHeader', 'INFO');
         
-        $code = '';
-        
         // insert this script only on Products page
         if(isset($_SERVER['PATH_INFO'])) {
-            $path_info = filter_var($_SERVER['PATH_INFO']);
+            $path_info = stripslashes($_SERVER['PATH_INFO']);
+            
+            $this->createLog($path_info, 'hookDisplayBackOfficeHeader', 'DEBUG');
             
             if(strpos($path_info, 'sell/catalog/products') >= 0) {
-                $this->context->controller->addJS(dirname(__FILE__) . '/views/js/admin/nuveiProductScript.js');
+                // try to get the product id
+                $matches    = array();
+                $prodId     = null;
+                
+                preg_match('/(\/sell\/catalog\/products(-v2)?\/)(\d+)(\/edit)?/', $path_info, $matches);
+                
+                foreach ($matches as $match) {
+                    if (is_numeric($match)) {
+                        $prodId = $match;
+                        break;
+                    }
+                }
+                
+                $this->createLog([$matches, $prodId], 'hookDisplayBackOfficeHeader', 'DEBUG');
+                
+                // get Nuvei Payment Plan group IDs
+                if (!is_null($prodId)) {
+//                    $this->context->controller->addJS(dirname(__FILE__) . '/views/js/admin/nuveiProductScript.js');
+                    $this->context->controller->addJS('modules/nuvei_checkout/views/js/admin/nuveiProductScript.js');
+                    
+                    $product        = new Product((int) $prodId);
+                    $id_lang        = Context::getContext()->language->id;
+                    $combinations   = $product->getAttributeCombinations((int) $id_lang, true);
+                    $comb_ids_arr   = array();
+                    
+                    ob_start();
+        
+                    // get Nuvei Payment Plan group IDs
+                    $group_ids_arr = $this->getNuvePaymentPlanGroupIds();
+                    
+                    $this->createLog($group_ids_arr, 'hookDisplayBackOfficeHeader $group_ids_arr', 'DEBUG');
+
+                    foreach($combinations as $data) {
+                        if(in_array($data['id_attribute_group'], $group_ids_arr)
+                            && !in_array($data['id_attribute_group'], $comb_ids_arr)
+                        ) {
+                            $comb_ids_arr[] = (string) $data['id_product_attribute'];
+                        }
+                    }
+
+                    // load Nuvei Payment Plans data
+                    $npp_data   = '';
+                    $file       = _PS_ROOT_DIR_ . '/var/logs/' . $this->paymentPlanJson;
+
+                    if(is_readable($file)) {
+                        $npp_data = stripslashes(file_get_contents($file));
+                    }
+
+                    // load the Payment details for the products
+                    $prod_pans  = array();
+                    $sql        = "SELECT id_product_attribute, plan_details "
+                        . "FROM nuvei_product_payment_plan_details "
+                        . "WHERE id_product_attribute IN (" . join(',', $comb_ids_arr) . ")";
+
+                    $res = Db::getInstance()->executeS($sql);
+                       
+                    if(is_array($res)) {
+                        foreach ($res as $details) {
+                            if (empty($details['id_product_attribute'])) {
+                                continue;
+                            }
+                            
+                            $prod_pans[$details['id_product_attribute']] = json_decode($details['plan_details'], true);
+                        }
+                    }
+                    
+                    $this->createLog([$sql, $res, $prod_pans], 'hookDisplayBackOfficeHeader', 'DEBUG');
+
+                    require_once dirname(__FILE__) . '/views/js/admin/nuveiProductCombData.php';
+
+                    return ob_get_flush();
+                }
             }
         }
         
         // try to add this JS only on Orders List page
         if(Tools::getValue('controller') == 'AdminOrders' && !Tools::getValue('id_order')) {
+            $code = '';
+            
             ob_start();
             
             $nuvei_ajax_url = $this->context->link
@@ -984,9 +1064,9 @@ class Nuvei_Checkout extends PaymentModule
 
             $code .= ob_get_contents();
             ob_end_clean();
+            
+            return $code;
         }
-        
-        return $code;
     }
     
     /**
@@ -1030,11 +1110,6 @@ class Nuvei_Checkout extends PaymentModule
      */
     public function hookActionCartUpdateQuantityBefore($params)
     {
-//        $this->createLog(
-////            $params['quantity'],
-//            'hookActionCartUpdateQuantityBefore()'
-//        );
-        
         try {
             $products                   = $params['cart']->getProducts(); // array
             $group_ids_arr              = $this->getNuvePaymentPlanGroupIds(); // get Nuvei Payment Plan group IDs

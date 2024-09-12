@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 1.2.3
+```
+    * Fix the problem who prevents the merchant to add Nuvei Payment plan to the product.
+```
+
 # 1.2.2
 ```
     * Added Tag SDK URL for test cases.
