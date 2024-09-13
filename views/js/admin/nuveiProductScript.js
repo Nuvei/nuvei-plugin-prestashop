@@ -8,7 +8,7 @@
  */
 function nuveiPopulatePlanFields(_parentId, _planId) {
     // before Presta v8.1.*
-    if (810 > nuveiPrestaVersion) {
+    if (!nuveiIsIframePrestaVersion) {
         var parent = $('#form').find(_parentId);
     }
     // Presta v8.1.* and up
@@ -17,10 +17,10 @@ function nuveiPopulatePlanFields(_parentId, _planId) {
             .find('#combination_form').find(_parentId);
     }
     
-    console.log(nuveiPrestaVersion, _parentId, _planId, parent);
+    console.log(_parentId, _planId, parent);
 
 	if(parent.length < 1) {
-		console.error('Nuvei Error - can not find container with ID ', _parentId);
+		console.error('Nuvei Error - can not find container with ID ', _parentId, nuveiPrestaVersion);
 		return;
 	}
 
@@ -448,17 +448,16 @@ function nuveiCheckConditions() {
 
 	// click on Combinations tab or on Edit Combination icon
 	$(document).on('click', '.nav-link, .btn-open.tooltip-link', function() {
-        console.log('click on Combinations tab or on Edit Combination icon');
-        
-//		if($('.combination-form.row').length > 0) {
 		if($('.combination-form').length > 0) {
 			insertNuveiPlansFields();
             return;
 		}
 	});
     
-    // for v8.1.*
+    // for v8.1.*, it use Iframe
     $(document).on('DOMNodeInserted', '.combination-modal', function() {
+		nuveiIsIframePrestaVersion = true;
+		
         insertNuveiPlansFieldsIframe();
         return;
     });
