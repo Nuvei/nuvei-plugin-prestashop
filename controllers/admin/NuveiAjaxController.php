@@ -26,19 +26,22 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         
         if(!$action) {
             header('Content-Type: application/json');
-            echo json_encode(array('status' => 0, 'msg' => 'There is no action.'));
+            echo json_encode(array(
+                'status'    => 0, 
+                'msg'       => 'There is no action.'
+            ));
             exit;
         }
         
         if(is_numeric(Tools::getValue('scOrder'))
-            && intval(Tools::getValue('scOrder')) > 0
+            && (int) Tools::getValue('scOrder') > 0
             && in_array($action, array('settle', 'void'))
         ) {
             $this->order_void_settle($action);
         }
         
         if(is_numeric(Tools::getValue('scOrder'))
-            && intval(Tools::getValue('scOrder')) > 0
+            && (int) Tools::getValue('scOrder') > 0
             && 'cancelSubscription' == $action
         ) {
             $this->cancel_subscription();
@@ -52,7 +55,14 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             $this->getOrdersList();
         }
         
-        exit;
+        if($action == 'getProductWithPaymentPlan' && Tools::getValue('combId')) {
+            $this->getProductWithPaymentPlan();
+        }
+        
+        exit(json_encode(array(
+            'status'    => 0, 
+            'msg'       => 'The Action is not recognized.'
+        )));
     }
     
     /**
@@ -295,6 +305,25 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         exit(json_encode(array(
             'orders' => $orders_arr,
         )));
+    }
+    
+    private function getProductWithPaymentPlan()
+    {
+        $sql = "SELECT plan_details "
+            . "FROM nuvei_product_payment_plan_details "
+            . "WHERE id_product_attribute = " . (int) Tools::getValue('combId');
+
+        $res = Db::getInstance()->getRow($sql);
+
+        $this->module->createLog([$sql, $res, gettype($res['plan_details'])], 'getProductWithPaymentPlan', 'DEBUG');
+        
+        // success
+        if (!empty($res['plan_details'])) {
+            exit((($res['plan_details'])));
+        }
+        
+        // error
+        exit([]);
     }
     
 }

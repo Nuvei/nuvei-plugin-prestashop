@@ -8,7 +8,7 @@ A wide selection of region-specific payment methods can help your business grow 
 The correct payment methods at the checkout page can bring you global reach, help you increase conversions, and create a seamless experience for your customers.
 
 ## System Requirements
-- Prestashop v1.7.7.0 and above  
+- Prestashop v8.1.* and above  
 - Working PHP cURL module
 
 ## Nuvei Requirements

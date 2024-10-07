@@ -3,11 +3,10 @@
  * 
  * @param string _parentId
  * @param int _planId
- * 
- * @returns
  */
 function nuveiPopulatePlanFields(_parentId, _planId) {
     // before Presta v8.1.*
+    // TODO - remove it in next version!
     if (!nuveiIsIframePrestaVersion) {
         var parent = $('#form').find(_parentId);
     }
@@ -80,6 +79,12 @@ function nuveiPopulatePlanFields(_parentId, _planId) {
 	}
 }
 
+/**
+ * @param {int} combId
+ * @returns {String}
+ * 
+ * @deprecated since version 1.2.3
+ */
 function getNuveiFields(combId) {
 	console.log('getNuveiFields()');
 
@@ -239,10 +244,66 @@ function getNuveiFields(combId) {
  * @param int combId
  * @returns void
  */
-function getNuveiFieldsIframe(combId) {
-    console.log('getNuveiFieldsIframe() combination id', combId);
+//function getNuveiFieldsIframe(combId) {
+//    console.log('getNuveiFieldsIframe combination id', combId, nuveiIsSaveBtnClicked, nuveiProductsWithPaymentPlans);
+//    
+////    if (!nuveiIsSaveBtnClicked || nuveiProductsWithPaymentPlans) {
+//    if (nuveiProductsWithPaymentPlans) {
+//        console.log('do not create ajax call');
+//        return nuveiBuildIframeFields(combId);
+//    }
+//    
+//    // if the merchant changed something, update nuveiProductsWithPaymentPlans via Ajax
+//    var nuveiAjax   = new XMLHttpRequest();
+//    var nuveiParams = '&scAction=getProductWithPaymentPlan&combId=' + combId;
+//
+//    nuveiAjax.open(
+//        "GET", 
+//        nuveiAjaxUrl + '&scAction=getProductWithPaymentPlan&combId=' + combId, 
+//        true
+//    );
+//    nuveiAjax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+//
+//    console.log(nuveiProductsWithPaymentPlans);
+//
+//    nuveiAjax.onreadystatechange = function() {
+//        if (nuveiAjax.readyState == XMLHttpRequest.DONE && nuveiAjax.status == 200) {
+//            console.log('response', nuveiAjax.response);
+//            
+//            var nuveiResp = JSON.parse(nuveiAjax.response);
+//            
+//
+//            nuveiIsSaveBtnClicked = false;
+//
+//            // error
+//            if (typeof nuveiResp != 'object' || !nuveiResp.hasOwnProperty('planId')) {
+//                alert('The Nuvei Payment Plan fields were not updated. Please, refresh the page!');
+//                return;
+//            }
+//
+//            nuveiProductsWithPaymentPlans[combId] = nuveiResp;
+//
+//            console.log(nuveiProductsWithPaymentPlans);
+//
+//            nuveiIsIfremeFieldsLoaded = true;
+//
+//            return nuveiBuildIframeFields(combId);
+//        }
+//    };
+//
+//    nuveiAjax.send();
+//}
+
+/**
+ * A common method for few other methods.
+ * 
+ * @param int combId Product Combinantion ID
+ * @returns string
+ */
+function nuveiBuildIframeFields(combId) {
+    console.log('nuveiBuildIframeFields()');
     
-	// fill saved plan details
+    // fill saved plan details
 	var curr_prod_plan_id = null;
 	if(nuveiProductsWithPaymentPlans.hasOwnProperty(combId)) {
 		curr_prod_plan_id = nuveiProductsWithPaymentPlans[combId].planId;
@@ -282,7 +343,7 @@ function getNuveiFieldsIframe(combId) {
 	// fill saved plan details END
 
 	var html = 
-        '<div class="form-group" id="nuveiPaymentFieldsRow_'+ combId +'">'
+        '<div class="form-group nuvei_rebilling_plan_group" id="nuveiPaymentFieldsRow_'+ combId +'" data-comb-id="'+ combId +'">'
             + '<h3>'+ nuveiTexts.NuveiPaymentPlanDetails +'</h3>'
     
             + '<div class="form-columns-3">'
@@ -312,7 +373,7 @@ function getNuveiFieldsIframe(combId) {
                             + '<span class="input-group-text">'+ currency.iso_code +'</span>'
                         + '</div>'
 
-                        + '<input type="text" name="nuvei_payment_plan_attr['+ combId +'][rec_amount]" data-display-price-precision="2" class="js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_amount" value="'+ ( null !== curr_rec_amount ? curr_rec_amount : 1 ) +'">'
+                        + '<input type="text" name="nuvei_payment_plan_attr['+ combId +'][rec_amount]" data-display-price-precision="2" class="js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_amount" value="'+ ( null !== curr_rec_amount ? curr_rec_amount : 1 ) +'" onchange="window.top.nuveiProductsWithPaymentPlans['+ combId +'].recurringAmount = this.value;">'
                     + '</div>'
                 + '</div>'
         
@@ -320,12 +381,12 @@ function getNuveiFieldsIframe(combId) {
         
                 + '<div class="form-group number-widget">'
                     + '<label>'+ nuveiTexts.RecurringEvery +'</label>'
-                    + '<input type="number" name="nuvei_payment_plan_attr['+ combId +'][rec_period]" aria-label="input" class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_period" min="1" value="'+ ( null !== curr_rec_period ? curr_rec_period : 1 ) +'">'
+                    + '<input type="number" name="nuvei_payment_plan_attr['+ combId +'][rec_period]" aria-label="input" class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_period" min="1" value="'+ ( null !== curr_rec_period ? curr_rec_period : 1 ) +'" onchange="window.top.nuveiUpdateRecUnitPeriod('+ combId +')">'
                 + '</div>'
         
                 + '<div class="form-group text-widget">'
                     + '<label>&nbsp;</label>'
-                    + '<select name="nuvei_payment_plan_attr['+ combId +'][rec_unit]" class="custom-select form-control nuvei-rebilling-form nuvei_rec_unit" required="">'
+                    + '<select name="nuvei_payment_plan_attr['+ combId +'][rec_unit]" class="custom-select form-control nuvei-rebilling-form nuvei_rec_unit" required="" onchange="window.top.nuveiUpdateRecUnitPeriod('+ combId +')">'
                         + '<option value="day" '+ ( curr_rec_unit == "day" ? 'selected=""' : "" ) +'>'
                             + nuveiTexts.Day +'</option>'
                         + '<option value="month" '+ ( curr_rec_unit == "month" ? 'selected=""' : "" ) +'>'
@@ -339,12 +400,12 @@ function getNuveiFieldsIframe(combId) {
         
                 + '<div class="form-group number-widget">'
                     + '<label>'+ nuveiTexts.RecurringEndAfter +'</label>'
-                    + '<input type="number" name="nuvei_payment_plan_attr['+ combId +'][rec_end_after_period]" aria-label="input" class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_end_after_period" min="1" value="'+ ( null !== curr_rec_end_after_period ? curr_rec_end_after_period : 1 ) +'">'
+                    + '<input type="number" name="nuvei_payment_plan_attr['+ combId +'][rec_end_after_period]" aria-label="input" class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_end_after_period" min="1" value="'+ ( null !== curr_rec_end_after_period ? curr_rec_end_after_period : 1 ) +'" onchange="window.top.nuveiUpdateRecEndAfterUnitPeriod('+ combId +')">'
                 + '</div>'
         
                 + '<div class="form-group text-widget">'
                     + '<label>&nbsp;</label>'
-                    + '<select name="nuvei_payment_plan_attr['+ combId +'][rec_end_after_unit]" class="custom-select form-control nuvei-rebilling-form nuvei_rec_end_after_unit" required="">'
+                    + '<select name="nuvei_payment_plan_attr['+ combId +'][rec_end_after_unit]" class="custom-select form-control nuvei-rebilling-form nuvei_rec_end_after_unit" required="" onchange="window.top.nuveiUpdateRecEndAfterUnitPeriod('+ combId +')">'
                         + '<option value="day" '+ ( curr_rec_unit == "day" ? 'selected=""' : "" ) +'>'
                             + nuveiTexts.Day +'</option>'
                         + '<option value="month" '+ ( curr_rec_unit == "month" ? 'selected=""' : "" ) +'>'
@@ -358,12 +419,12 @@ function getNuveiFieldsIframe(combId) {
                 
                 + '<div class="form-group number-widget">'
                     + '<label>'+ nuveiTexts.TrialPeriod +'</label>'
-                    + '<input type="number" name="nuvei_payment_plan_attr['+ combId +'][trial_period]" aria-label="input" class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_trial_period" min="0" value="'+ ( null !== curr_rec_trial_period ? curr_rec_trial_period : 0 ) +'">'
+                    + '<input type="number" name="nuvei_payment_plan_attr['+ combId +'][trial_period]" aria-label="input" class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_trial_period" min="0" value="'+ ( null !== curr_rec_trial_period ? curr_rec_trial_period : 0 ) +'" onchange="window.top.nuveiUpdateRecTrialrUnitPeriod('+ combId +')">'
                 + '</div>'
                 
                 + '<div class="form-group text-widget">'
                     + '<label>&nbsp;</label>'
-                    + '<select name="nuvei_payment_plan_attr['+ combId +'][rec_trial_unit]" class="custom-select form-control nuvei-rebilling-form nuvei_trial_unit" required="">'
+                    + '<select name="nuvei_payment_plan_attr['+ combId +'][rec_trial_unit]" class="custom-select form-control nuvei-rebilling-form nuvei_trial_unit" required="" onchange="window.top.nuveiUpdateRecTrialrUnitPeriod('+ combId +')">'
                         + '<option value="day" '+ ( curr_rec_unit == "day" ? 'selected=""' : "" ) +'>'
                             + nuveiTexts.Day +'</option>'
                         + '<option value="month" '+ ( curr_rec_unit == "month" ? 'selected=""' : "" ) +'>'
@@ -378,6 +439,67 @@ function getNuveiFieldsIframe(combId) {
     return html;
 }
 
+/**
+ * When change Nuvei recurring fields in the iframe, update the obecjt with the plans details.
+ * 
+ * @param int combId
+ * @returns void
+ */
+function nuveiUpdateRecUnitPeriod(combId) {
+    console.log('nuveiUpdateRecUnitPeriod');
+    
+    var iFrameCont  = $('.combination-modal .combination-iframe').contents();
+    var container   = iFrameCont.find('#nuveiPaymentFieldsRow_' + combId);
+    var newObj      = {};
+    
+    newObj[container.find('.nuvei_rec_unit').val()] 
+        = container.find('.nuvei_rec_period').val();
+    
+    nuveiProductsWithPaymentPlans[combId].recurringPeriod = newObj;
+}
+
+/**
+ * When change Nuvei recurring fields in the iframe, update the obecjt with the plans details.
+ * 
+ * @param int combId
+ * @returns void
+ */
+function nuveiUpdateRecEndAfterUnitPeriod(combId) {
+    console.log('nuveiUpdateRecEndAfterUnitPeriod');
+    
+    var iFrameCont  = $('.combination-modal .combination-iframe').contents();
+    var container   = iFrameCont.find('#nuveiPaymentFieldsRow_' + combId);
+    var newObj      = {};
+    
+    newObj[container.find('.nuvei_rec_end_after_unit').val()] 
+        = container.find('.nuvei_rec_end_after_period').val();
+    
+    nuveiProductsWithPaymentPlans[combId].endAfter = newObj;
+}
+
+/**
+ * When change Nuvei recurring fields in the iframe, update the obecjt with the plans details.
+ * 
+ * @param int combId
+ * @returns void
+ */
+function nuveiUpdateRecTrialrUnitPeriod(combId) {
+    console.log('nuveiUpdateRecEndAfterUnitPeriod');
+    
+    var iFrameCont  = $('.combination-modal .combination-iframe').contents();
+    var container   = iFrameCont.find('#nuveiPaymentFieldsRow_' + combId);
+    var newObj      = {};
+    
+    newObj[container.find('.nuvei_trial_unit').val()] 
+        = container.find('.nuvei_trial_period').val();
+    
+    nuveiProductsWithPaymentPlans[combId].startAfter = newObj;
+}
+
+/**
+ * @returns void
+ * @deprecated since version 1.2.3
+ */
 function insertNuveiPlansFields() {
 	console.log('insertNuveiPlansFields()');
 
@@ -406,15 +528,16 @@ function insertNuveiPlansFields() {
 
 function insertNuveiPlansFieldsIframe() {
     console.log('insertNuveiPlansFieldsIframe()');
-    
+
     if ($('.combination-modal .combination-iframe').contents().find('#combination_form').length == 0) {
+        console.log('abort insertNuveiPlansFieldsIframe');
         return;
     }
     
     var matches = $('.combination-modal .combination-iframe').attr('src').match(/\/combinations\/(.*)\/edit\?/);
     
     if (typeof matches != 'object' || matches.length < 2) {
-        console.log(typeof matches, matches.length);
+        console.log('this is not the combinantion edit modal', typeof matches, matches.length);
         return;
     }
     
@@ -428,11 +551,17 @@ function insertNuveiPlansFieldsIframe() {
     
     // add combination_form_rebilling_details_
     if (iFrameCont.find('#combination_form #combination_form_rebilling_details_' + combId).length == 0) {
-        iFrameCont.find('#combination_form').append(getNuveiFieldsIframe(combId));
+//        iFrameCont.find('#combination_form').append(getNuveiFieldsIframe(combId));
+        iFrameCont.find('#combination_form').append(nuveiBuildIframeFields(combId));
         
         // enable modal Save button when change some of Nuvei Rebilling paramters
         iFrameCont.find('#combination_form .nuvei-rebilling-form').on('change', function() {
-            $('.modal-content .modal-footer button.btn-primary').prop('disabled', false);
+            $('.modal-content .modal-footer button.btn-primary').removeAttr('disabled');
+            
+            // when click on the Save button rise a flag.
+//            $('.modal-content .modal-footer button.btn-primary').on('click', function() {
+//                nuveiIsSaveBtnClicked = true;
+//            });
         });
     }
     
@@ -456,6 +585,8 @@ function nuveiCheckConditions() {
     
     // for v8.1.*, it use Iframe
     $(document).on('DOMNodeInserted', '.combination-modal', function() {
+        console.log('combination-modal inserted');
+        
 		nuveiIsIframePrestaVersion = true;
 		
         insertNuveiPlansFieldsIframe();

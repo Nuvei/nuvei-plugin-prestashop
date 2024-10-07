@@ -1,4 +1,6 @@
 <script>
+    var nuveiAjaxUrl = "<?= $nuvei_ajax_url; ?>";
+    
     window.addEventListener('load', function() {
         console.log('nuvei getOrdersWithPlans');
         var nuveiOrdersList = [];
@@ -8,7 +10,6 @@
             nuveiOrdersList.push(Number.parseInt(_row.find('td:nth-child(2)').text()));
         });
 
-        var nuveiAjaxUrl    = "<?= $nuvei_ajax_url; ?>";
         var nuveiAjax       = new XMLHttpRequest();
         var nuveiParams     = 'scAction=getOrdersList&orders=' + JSON.stringify(nuveiOrdersList);
 
@@ -49,15 +50,7 @@
 
                 return;
             }
-//            else {
-//                console.log('Problem with the response', nuveiAjax.response);
-//            }
-        }
-
-        // If an error occur during the nuveiAjax call.
-//        if (nuveiAjax.status == 404) {
-//            console.error('Nuvei Ajax call error.');
-//        }
+        };
 
         nuveiAjax.send(nuveiParams);
     });

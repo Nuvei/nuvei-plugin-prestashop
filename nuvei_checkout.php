@@ -908,7 +908,7 @@ class Nuvei_Checkout extends PaymentModule
      * Save Payment plan details for the product if any.
      * 
      * @param array $params
-     * @return
+     * @return void
      */
     public function hookActionProductSave($params)
     {
@@ -938,8 +938,6 @@ class Nuvei_Checkout extends PaymentModule
                     filter_var($data['rec_end_after_unit']) => (int) $data['rec_end_after_period']
                 ),
             );
-                    
-            $this->createLog($plan_details, 'hookActionProductSave $plan_details');
             
             $sql = "INSERT INTO nuvei_product_payment_plan_details "
                 . "(id_product_attribute, id_product, plan_details ) "
@@ -950,13 +948,19 @@ class Nuvei_Checkout extends PaymentModule
             
             $res = Db::getInstance()->execute($sql);
             
+            $this->createLog($plan_details, 'hookActionProductSave $plan_details');
+            
+            // on error
             if(!$res) {
                 $this->createLog(
-                    Db::getInstance()->getMsgError(),
+                    [
+                        'error msg' => Db::getInstance()->getMsgError(),
+                        'the post'  => $_POST
+                    ],
                     'hookActionProductSave Error when try to insert the payment plan data for a product.'
                 );
                 
-                $this->createLog($_POST, 'hookActionProductSave post');
+                return;
             }
         }
     }
@@ -1004,7 +1008,9 @@ class Nuvei_Checkout extends PaymentModule
                     ob_start();
         
                     // get Nuvei Payment Plan group IDs
-                    $group_ids_arr = $this->getNuvePaymentPlanGroupIds();
+                    $group_ids_arr  = $this->getNuvePaymentPlanGroupIds();
+                    $nuvei_ajax_url = $this->context->link->getAdminLink("NuveiAjax") 
+                        . '&security_key=' . $this->getModuleSecurityKey();
                     
                     $this->createLog($group_ids_arr, 'hookDisplayBackOfficeHeader $group_ids_arr', 'DEBUG');
 

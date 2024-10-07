@@ -4,7 +4,9 @@
     var nuveiPaymentPlanGroupIds        = <?= json_encode($group_ids_arr); ?>;
     var nuveiPaymentPlanCombinations    = <?= json_encode($comb_ids_arr); ?>;
     var nuveiPaymentPlansData           = <?= $npp_data; ?>;
+    var nuveiAjaxUrl                    = "<?= $nuvei_ajax_url; ?>";
     var nuveiIsIframePrestaVersion      = false;
+//    var nuveiIsSaveBtnClicked           = false;
     
     if(typeof nuveiProductsWithPaymentPlans == "undefined") {
         var nuveiProductsWithPaymentPlans = {};
