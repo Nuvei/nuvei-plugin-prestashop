@@ -1117,44 +1117,112 @@ class Nuvei_Checkout extends PaymentModule
     
     /**
      * Store hook in Product page.
-     * Keep the product with a Payment plan be alone in the Cart.
+     * Be sure the product with a Payment plan be alone in the Cart.
      * 
      * @param type $params
-     * @return type
+     * @return bool
      */
     public function hookActionCartUpdateQuantityBefore($params)
     {
+        $this->createLog($params, 'hookActionCartUpdateQuantityBefore.');
+        
         try {
             $products                   = $params['cart']->getProducts(); // array
-            $group_ids_arr              = $this->getNuvePaymentPlanGroupIds(); // get Nuvei Payment Plan group IDs
-            $id_lang                    = $this->context->language->id;
-            $is_user_logged             = (bool)$this->context->customer->isLogged();
-            $combinations               = $params['product']->getAttributeCombinations((int) $id_lang);
+//            $group_ids_arr              = $this->getNuvePaymentPlanGroupIds(); // get Nuvei Payment Plan group IDs
+//            $id_lang                    = $this->context->language->id;
+//            $is_user_logged             = (bool)$this->context->customer->isLogged();
+//            $combinations               = $params['product']->getAttributeCombinations((int) $id_lang);
+            
+            // If the Cart is empty just add the product
+            if (empty($products)) {
+                return true;
+            }
+            
+            // Prepare the query who search for the product in the Nuvei table
+            $sql = "SELECT COUNT(id_product_attribute) as cnt "
+                . "FROM nuvei_product_payment_plan_details "
+                . "WHERE id_product_attribute = ";
+            
+            # 1. The Incoming product does not have an attribute. We have to check the product into the Cart.
+            if (0 == $params['id_product_attribute']) {
+                
+                $this->createLog($products, 'hookActionCartUpdateQuantityBefore.');
+                
+                foreach ($products as $product) {
+                    if (0 == $product['id_product_attribute']) {
+                        continue;
+                    }
+                    
+                    $sql    .= (int) $product['id_product_attribute'];
+                    $res= Db::getInstance()->getRow($sql);
+                    
+                    // Do not add the product into the cart.
+                    if (isset($res['cnt']) && (int) $res['cnt'] > 0) {
+                        $this->context->controller->errors[] = $this->l('This product cannot be added to the cart.');
+                        
+                        $params['product']->available_for_order = false;
+                        
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+            
+            # 2. The Incoming product has an attribute. We have to check the product into the Cart.
+            $sql    .= (int) $product['id_product_attribute'];
+            $res    = Db::getInstance()->getRow($sql);
+            
+            // Do not add the product into the cart.
+            if (isset($res['cnt']) && (int) $res['cnt'] > 0) {
+                $this->createLog('hookActionCartUpdateQuantityBefore - do not add the product.');
+                
+//                if (Tools::getValue('ajax')) {
+//                    $response = [
+//                        'hasError' => true,
+//                        'errors' => [$this->l('This product cannot be added to the cart.')]
+//                    ];
+//                    
+//                    exit(Tools::jsonEncode($response));
+//                }
+//                else {
+//                    $params['quantity'] = 0;
+//                }
+                
+                $this->context->controller->errors[] = $this->l('This product cannot be added to the cart.');
+                
+                $params['product']->available_for_order = false;
+                
+                return false;
+            }
+            
+            return true;
+            
             
             // if current combination is part of Nuvei Payment Plan group 
             // and the user is not logged in and Guests rebilling - do not add the product
-            foreach($combinations as $data) {
-                if($data['id_product_attribute'] == $params['id_product_attribute']
-                    && in_array($data['id_attribute_group'], $group_ids_arr)
-                    && !$is_user_logged
-                ) {
-                    $params['product']->available_for_order = false;
-                    return false;
-                }
-            }
-            
-            # if the Cart is empty just add the product
-            if(empty($products)) {
-                $this->createLog('hookActionCartUpdateQuantityBefore() - The Cart is empty.');
-                return;
-            }
-            
-            $prod_with_plan = $this->getProdsWithPlansFromCart($params, $group_ids_arr);
-            
-            if(!empty($prod_with_plan)) {
-                $params['product']->available_for_order = false;
-                return false;
-            }
+//            foreach($combinations as $data) {
+//                if($data['id_product_attribute'] == $params['id_product_attribute']
+//                    && in_array($data['id_attribute_group'], $group_ids_arr)
+//                    && !$is_user_logged
+//                ) {
+//                    $params['product']->available_for_order = false;
+//                    return false;
+//                }
+//            }
+//            
+//            # if the Cart is empty just add the product
+//            if(empty($products)) {
+//                $this->createLog('hookActionCartUpdateQuantityBefore() - The Cart is empty.');
+//                return true;
+//            }
+//            
+//            $prod_with_plan = $this->getProdsWithPlansFromCart($params, $group_ids_arr);
+//            
+//            if(!empty($prod_with_plan)) {
+//                $params['product']->available_for_order = false;
+//                return false;
+//            }
             // 2 if the incoming product does not have Nuvei Payment Plan - check the Cart END
         }
         catch (Exception $e) {
@@ -1717,13 +1785,6 @@ class Nuvei_Checkout extends PaymentModule
                 $resp_status    = $this->getRequestStatus($resp);
                 
                 if (!empty($resp_status) && 'SUCCESS' == $resp_status) {
-//                    if ($is_ajax) {
-//                        exit(json_encode(array(
-//                            'status'        => 1,
-//                            'sessionToken'	=> $resp['sessionToken']
-//                        )));
-//                    }
-
                     $this->context->smarty->assign('sessionToken', $resp['sessionToken']);
 
                     // pass billing country
@@ -2613,13 +2674,15 @@ class Nuvei_Checkout extends PaymentModule
      */
     private function getProdsWithPlansFromCart($params = array(), $group_ids_arr = null)
     {
+        $this->createLog([$params, $group_ids_arr], 'getProdsWithPlansFromCart', 'DEBUG');
+        
         // must be only one
         $products = !empty($params['cart']) 
             ? $params['cart']->getProducts() : $this->context->cart->getProducts();
         
-        if(count($products) > 1) {
-            $this->createLog(count($products), 'getProdsWithPlansFromCart() - did not expect products to be more than 1.');
-        }
+//        if(count($products) > 1) {
+//            $this->createLog(count($products), 'getProdsWithPlansFromCart() - did not expect products to be more than 1.');
+//        }
         
         // get Nuvei Payment Plan group IDs
         if(!is_array($group_ids_arr) || empty($group_ids_arr)) {
@@ -2640,16 +2703,26 @@ class Nuvei_Checkout extends PaymentModule
                 . "WHERE pac.id_product_attribute = ". (int) $data['id_product_attribute'] ." "
                     . "AND ". _DB_PREFIX_ ."attribute.id_attribute_group IN (". implode(',', $group_ids_arr) .");";
 
-            $quantity           = $data['quantity'];
+            $quantity           = (float) $data['quantity'];
             $res                = Db::getInstance()->executeS($sql);
             $currency           = new Currency($this->context->cart->id_currency);
-            $conversion_rate    = $currency->getConversationRate();
+            $conversion_rate    = (float) $currency->getConversationRate();
+            
+            $this->createLog([
+                '$sql' => $sql, 
+                '$res' => $res,
+            ], 'getProdsWithPlansFromCart', 'DEBUG');
             
             // we have product with a Nuvei Payment Plan into the Cart
             if(!empty($res) && is_array($res)) {
                 $details                            = current($res);
                 $plan_details                       = json_decode($details['plan_details'], true);
-                $plan_details['recurringAmount']    = round($quantity * $plan_details['recurringAmount'] * $conversion_rate, 2);
+                
+                $plan_details['recurringAmount']    = number_format(
+                    ($quantity * (float) $plan_details['recurringAmount'] * $conversion_rate),
+                    2,
+                    '.'
+                );
                 $details['plan_details']            = json_encode($plan_details);
                 
                 return $details;

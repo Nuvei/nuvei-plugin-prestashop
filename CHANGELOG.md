@@ -3,6 +3,7 @@
 # 1.2.3
 ```
     * Fix the problem who prevents the merchant to add Nuvei Payment plan to the product in Prestasho v8.1.*.
+    * Fix the problem where the client can combine ordinary product with Nuvei Rebilling product.
     * This version of the plugin does not support the versions before Prestashop v8.1.*.
 ```
 
