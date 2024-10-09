@@ -3,8 +3,9 @@
  * 
  * @param string _parentId
  * @param int _planId
+ * @param int combId
  */
-function nuveiPopulatePlanFields(_parentId, _planId) {
+function nuveiPopulatePlanFields(_parentId, _planId, combId) {
     // before Presta v8.1.*
     // TODO - remove it in next version!
     if (!nuveiIsIframePrestaVersion) {
@@ -12,6 +13,8 @@ function nuveiPopulatePlanFields(_parentId, _planId) {
     }
     // Presta v8.1.* and up
     else {
+        console.log('nuveiPopulatePlanFields', combId);
+        
         var parent = $('.combination-modal .combination-iframe').contents()
             .find('#combination_form').find(_parentId);
     }
@@ -77,6 +80,13 @@ function nuveiPopulatePlanFields(_parentId, _planId) {
 		}
 		// recurring trial period END
 	}
+    
+    // update the object with the populated data.
+    nuveiUpdateRecEndAfterUnitPeriod(combId);
+    nuveiUpdateRecTrialrUnitPeriod(combId);
+    nuveiUpdateRecUnitPeriod(combId);
+    nuveiProductsWithPaymentPlans[combId].recurringAmount 
+        = Number.parseInt(parent.find('.nuvei_rec_amount').val());
 }
 
 /**
@@ -134,7 +144,7 @@ function getNuveiFields(combId) {
 				+ '<div class="col-md-3">'
 					+ '<fieldset class="form-group">'
 						+ '<label class="form-control-label">'+ nuveiTexts.PlanID +'</label>'
-						+ '<select name="nuvei_payment_plan_attr['+ combId +'][plan_id]" class="form-control nuvei_plan_id" onchange="nuveiPopulatePlanFields(\'#nuveiPaymentFieldsRow_'+ combId +'\', this.value)" required="">';
+						+ '<select name="nuvei_payment_plan_attr['+ combId +'][plan_id]" class="form-control nuvei_plan_id" onchange="nuveiPopulatePlanFields(\'#nuveiPaymentFieldsRow_'+ combId +'\', this.value, '+ combId +')" required="">';
 
 	if(typeof nuveiPaymentPlansData == 'object') {
 		try {
@@ -349,7 +359,7 @@ function nuveiBuildIframeFields(combId) {
             + '<div class="form-columns-3">'
                 + '<div class="form-group text-widget">'
                     + '<label>'+ nuveiTexts.PlanID +'</label>'
-                    + '<select name="nuvei_payment_plan_attr['+ combId +'][plan_id]" class="custom-select form-control nuvei-rebilling-form" onchange="window.top.nuveiPopulatePlanFields(\'#nuveiPaymentFieldsRow_'+ combId +'\', this.value)" required="">';
+                    + '<select name="nuvei_payment_plan_attr['+ combId +'][plan_id]" class="custom-select form-control nuvei-rebilling-form" onchange="window.top.nuveiPopulatePlanFields(\'#nuveiPaymentFieldsRow_'+ combId +'\', this.value, '+ combId +')" required="">';
     
     if(typeof nuveiPaymentPlansData == 'object') {
 		try {

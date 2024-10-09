@@ -997,7 +997,6 @@ class Nuvei_Checkout extends PaymentModule
                 
                 // get Nuvei Payment Plan group IDs
                 if (!is_null($prodId)) {
-//                    $this->context->controller->addJS(dirname(__FILE__) . '/views/js/admin/nuveiProductScript.js');
                     $this->context->controller->addJS('modules/nuvei_checkout/views/js/admin/nuveiProductScript.js');
                     
                     $product        = new Product((int) $prodId);
@@ -1029,22 +1028,31 @@ class Nuvei_Checkout extends PaymentModule
                     if(is_readable($file)) {
                         $npp_data = stripslashes(file_get_contents($file));
                     }
-
+                    
                     // load the Payment details for the products
                     $prod_pans  = array();
-                    $sql        = "SELECT id_product_attribute, plan_details "
-                        . "FROM nuvei_product_payment_plan_details "
-                        . "WHERE id_product_attribute IN (" . join(',', $comb_ids_arr) . ")";
+                    
+                    if (!empty($comb_ids_arr)) {
+                        $sql        = "SELECT id_product_attribute, plan_details "
+                            . "FROM nuvei_product_payment_plan_details "
+                            . "WHERE id_product_attribute IN (" . join(',', $comb_ids_arr) . ")";
 
-                    $res = Db::getInstance()->executeS($sql);
-                       
-                    if(is_array($res)) {
-                        foreach ($res as $details) {
-                            if (empty($details['id_product_attribute'])) {
-                                continue;
-                            }
+                        try {
+                            $res = Db::getInstance()->executeS($sql);
                             
-                            $prod_pans[$details['id_product_attribute']] = json_decode($details['plan_details'], true);
+                            if(is_array($res) && !empty($res)) {
+                                foreach ($res as $details) {
+                                    if (empty($details['id_product_attribute'])) {
+                                        continue;
+                                    }
+
+                                    $prod_pans[$details['id_product_attribute']] 
+                                        = json_decode($details['plan_details'], true);
+                                }
+                            }
+                        }
+                        catch(\Exception $e) {
+                            $this->createLog($e->getMessage(), 'hookDisplayBackOfficeHeader test', 'DEBUG');
                         }
                     }
                     
