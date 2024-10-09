@@ -263,7 +263,7 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         
         $res = DB::getInstance()->executeS($query);
         
-        $this->module->createLog($res, 'Orders list.');
+//        $this->module->createLog($res, 'Orders list.');
         
         header('Content-Type: application/json');
         

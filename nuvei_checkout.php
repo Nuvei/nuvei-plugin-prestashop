@@ -1636,7 +1636,6 @@ class Nuvei_Checkout extends PaymentModule
 	 * 
 	 * @return boolean
 	 */
-//	public function openOrder($is_ajax = false)
 	public function openOrder()
     {
 		$this->createLog('openOrder()');
@@ -1656,7 +1655,6 @@ class Nuvei_Checkout extends PaymentModule
         
         $this->is_rebilling_order       = false;
         $nuvei_last_open_order_details  = [];
-//        $products_data                  = [];
 
 		try {
 			$cart                           = $this->context->cart;

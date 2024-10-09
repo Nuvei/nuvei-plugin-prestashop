@@ -2,7 +2,8 @@
 
 # 1.2.3
 ```
-    * Fix the problem who prevents the merchant to add Nuvei Payment plan to the product in Prestasho v8.1.*. This version of the plugin is not support the versions before Prestashop v8.1.*.
+    * Fix the problem who prevents the merchant to add Nuvei Payment plan to the product in Prestasho v8.1.*.
+    * This version of the plugin does not support the versions before Prestashop v8.1.*.
 ```
 
 # 1.2.2

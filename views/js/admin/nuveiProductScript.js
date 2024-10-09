@@ -373,7 +373,7 @@ function nuveiBuildIframeFields(combId) {
                             + '<span class="input-group-text">'+ currency.iso_code +'</span>'
                         + '</div>'
 
-                        + '<input type="text" name="nuvei_payment_plan_attr['+ combId +'][rec_amount]" data-display-price-precision="2" class="js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_amount" value="'+ ( null !== curr_rec_amount ? curr_rec_amount : 1 ) +'" onchange="window.top.nuveiProductsWithPaymentPlans['+ combId +'].recurringAmount = this.value;">'
+                        + '<input type="number" name="nuvei_payment_plan_attr['+ combId +'][rec_amount]" data-display-price-precision="2" class="js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_amount" value="'+ ( null !== curr_rec_amount ? curr_rec_amount : "1.00" ) +'" onchange="window.top.nuveiProductsWithPaymentPlans['+ combId +'].recurringAmount = Number.parseInt(this.value);" min="1" step="1">'
                     + '</div>'
                 + '</div>'
         
@@ -453,7 +453,7 @@ function nuveiUpdateRecUnitPeriod(combId) {
     var newObj      = {};
     
     newObj[container.find('.nuvei_rec_unit').val()] 
-        = container.find('.nuvei_rec_period').val();
+        = Number.parseInt(container.find('.nuvei_rec_period').val());
     
     nuveiProductsWithPaymentPlans[combId].recurringPeriod = newObj;
 }
@@ -472,7 +472,7 @@ function nuveiUpdateRecEndAfterUnitPeriod(combId) {
     var newObj      = {};
     
     newObj[container.find('.nuvei_rec_end_after_unit').val()] 
-        = container.find('.nuvei_rec_end_after_period').val();
+        = Number.parseInt(container.find('.nuvei_rec_end_after_period').val());
     
     nuveiProductsWithPaymentPlans[combId].endAfter = newObj;
 }
@@ -491,7 +491,7 @@ function nuveiUpdateRecTrialrUnitPeriod(combId) {
     var newObj      = {};
     
     newObj[container.find('.nuvei_trial_unit').val()] 
-        = container.find('.nuvei_trial_period').val();
+        = Number.parseInt(container.find('.nuvei_trial_period').val());
     
     nuveiProductsWithPaymentPlans[combId].startAfter = newObj;
 }
