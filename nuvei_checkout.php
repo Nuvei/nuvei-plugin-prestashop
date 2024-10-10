@@ -14,7 +14,7 @@ class Nuvei_Checkout extends PaymentModule
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
     public $version                     = '1.2.3';
     public $ps_versions_compliancy      = array(
-        'min' => '1.7.7.0', 
+        'min' => '8.1.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
     );
     public $controllers                 = array('payment', 'validation');
@@ -90,6 +90,7 @@ class Nuvei_Checkout extends PaymentModule
             || !$this->registerHook('displayAdminOrderTop')
             || !$this->registerHook('actionGetAdminOrderButtons')
             || !$this->registerHook('displayAdminOrderMain')
+            || !$this->registerHook('header') // for the strore front
             || !$this->installTab('AdminCatalog', 'NuveiAjax', 'SafeChargeAjax')
             || !$this->addOrderState()
         ) {
@@ -390,6 +391,22 @@ class Nuvei_Checkout extends PaymentModule
             ));
 	}
 	
+    /**
+     * Add custom JS to show error when the module decline to add a product in the Cart.
+     * Looks like Prestashop 8 and up do not show by default.
+     */
+    public function hookHeader()
+    {
+        $this->context->controller->registerJavascript(
+            'module-nuvei-frontend-js', // Unique ID for the script
+            'modules/'.$this->name.'/views/js/front/storeMsg.js', // Path to your JS file
+            [
+                'position' => 'bottom', // 'top' for <head>, 'bottom' for before </body>
+                'priority' => 20 // Priority, lower loads first
+            ]
+        );
+    }
+    
     public function hookPaymentOptions($params)
     {
 //        $this->createLog(
@@ -1170,7 +1187,7 @@ class Nuvei_Checkout extends PaymentModule
             }
             
             # 2. The Incoming product has an attribute. We have to check the product into the Cart.
-            $sql    .= (int) $product['id_product_attribute'];
+            $sql    .= (int) $params['id_product_attribute'];
             $res    = Db::getInstance()->getRow($sql);
             
             // Do not add the product into the cart.
