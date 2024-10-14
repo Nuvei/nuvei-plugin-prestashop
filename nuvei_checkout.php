@@ -1141,7 +1141,10 @@ class Nuvei_Checkout extends PaymentModule
      */
     public function hookActionCartUpdateQuantityBefore($params)
     {
-        $this->createLog($params, 'hookActionCartUpdateQuantityBefore.');
+        $this->createLog(
+//            $params, 
+            'hookActionCartUpdateQuantityBefore.'
+        );
         
         try {
             $products                   = $params['cart']->getProducts(); // array
@@ -1150,70 +1153,114 @@ class Nuvei_Checkout extends PaymentModule
 //            $is_user_logged             = (bool)$this->context->customer->isLogged();
 //            $combinations               = $params['product']->getAttributeCombinations((int) $id_lang);
             
-            // If the Cart is empty just add the product
+            // Prepare the query who search for the product in the Nuvei table
+            $sql = "SELECT COUNT(id_product_attribute) as cnt "
+                . "FROM nuvei_product_payment_plan_details "
+//                . "WHERE id_product_attribute = ";
+                . "WHERE id_product_attribute ";
+            
+            $productsAttributes = [];
+            
+            # 1. If the Cart is empty just add the product
             if (empty($products)) {
                 return true;
             }
             
-            // Prepare the query who search for the product in the Nuvei table
-            $sql = "SELECT COUNT(id_product_attribute) as cnt "
-                . "FROM nuvei_product_payment_plan_details "
-                . "WHERE id_product_attribute = ";
+            # 2. If Cart is not empty, we have to check all products for Rebilling
+            // Get the attribute of the incoming product if any
+            if ((int) $params['id_product_attribute'] > 0) {
+                $productsAttributes[] = (int) $params['id_product_attribute'];
+            }
             
-            # 1. The Incoming product does not have an attribute. We have to check the product into the Cart.
-            if (0 == $params['id_product_attribute']) {
-                
-                $this->createLog($products, 'hookActionCartUpdateQuantityBefore.');
-                
-                foreach ($products as $product) {
-                    if (0 == $product['id_product_attribute']) {
-                        continue;
-                    }
-                    
-                    $sql    .= (int) $product['id_product_attribute'];
-                    $res= Db::getInstance()->getRow($sql);
-                    
-                    // Do not add the product into the cart.
-                    if (isset($res['cnt']) && (int) $res['cnt'] > 0) {
-                        $this->context->controller->errors[] = $this->l('This product cannot be added to the cart.');
-                        
-                        $params['product']->available_for_order = false;
-                        
-                        return false;
-                    }
+            // Check the products in the Cart for attributes
+            foreach ($products as $product) {
+                if (0 == (int) $product['id_product_attribute']) {
+                    continue;
                 }
                 
+                $productsAttributes[] = (int) $product['id_product_attribute'];
+            }
+            
+            // If non of the products have attributes, just add the new one to the Cart
+            if (empty($productsAttributes)) {
                 return true;
             }
             
-            # 2. The Incoming product has an attribute. We have to check the product into the Cart.
-            $sql    .= (int) $params['id_product_attribute'];
-            $res    = Db::getInstance()->getRow($sql);
+            if (count($productsAttributes) == 1) {
+                $sql .= "= " . (int) $productsAttributes[0];
+            }
+            else {
+                $sql .= "IN (" . implode(', ', $productsAttributes) . ")";
+            }
             
+            $res= Db::getInstance()->getRow($sql);
+                    
             // Do not add the product into the cart.
             if (isset($res['cnt']) && (int) $res['cnt'] > 0) {
-                $this->createLog('hookActionCartUpdateQuantityBefore - do not add the product.');
-                
-//                if (Tools::getValue('ajax')) {
-//                    $response = [
-//                        'hasError' => true,
-//                        'errors' => [$this->l('This product cannot be added to the cart.')]
-//                    ];
-//                    
-//                    exit(Tools::jsonEncode($response));
-//                }
-//                else {
-//                    $params['quantity'] = 0;
-//                }
-                
                 $this->context->controller->errors[] = $this->l('This product cannot be added to the cart.');
-                
+
                 $params['product']->available_for_order = false;
-                
+
                 return false;
             }
             
             return true;
+            
+//            # 1. The Incoming product does not have an attribute. We have to check the product into the Cart.
+//            if (0 == $params['id_product_attribute']) {
+//                $this->createLog($products, 'hookActionCartUpdateQuantityBefore - the product does not have an attribte.');
+//                
+//                foreach ($products as $product) {
+//                    if (0 == $product['id_product_attribute']) {
+//                        continue;
+//                    }
+//                    
+//                    $sql    .= (int) $product['id_product_attribute'];
+//                    $res= Db::getInstance()->getRow($sql);
+//                    
+//                    // Do not add the product into the cart.
+//                    if (isset($res['cnt']) && (int) $res['cnt'] > 0) {
+//                        $this->context->controller->errors[] = $this->l('This product cannot be added to the cart.');
+//                        
+//                        $params['product']->available_for_order = false;
+//                        
+//                        return false;
+//                    }
+//                }
+//                
+//                return true;
+//            }
+//            
+//            # 2. The Incoming product has an attribute. We have to check the product into the Cart.
+//            $this->createLog($products, 'hookActionCartUpdateQuantityBefore - the product  has an attribte.');
+//            
+//            $sql    .= (int) $params['id_product_attribute'];
+//            $res    = Db::getInstance()->getRow($sql);
+//            
+//            // Do not add the product into the cart.
+//            if (isset($res['cnt']) && (int) $res['cnt'] > 0) {
+//                $this->createLog('hookActionCartUpdateQuantityBefore - do not add the product.');
+//                
+////                if (Tools::getValue('ajax')) {
+////                    $response = [
+////                        'hasError' => true,
+////                        'errors' => [$this->l('This product cannot be added to the cart.')]
+////                    ];
+////                    
+////                    exit(Tools::jsonEncode($response));
+////                }
+////                else {
+////                    $params['quantity'] = 0;
+////                }
+//                
+//                $this->context->controller->errors[] = $this->l('This product cannot be added to the cart.');
+//                
+//                $params['product']->available_for_order = false;
+//                
+//                return false;
+//            }
+//            
+//            return true;
             
             
             // if current combination is part of Nuvei Payment Plan group 
