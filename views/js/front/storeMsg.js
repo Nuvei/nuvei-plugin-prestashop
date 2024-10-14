@@ -1,4 +1,4 @@
-window.onload = function() {
+$(function() {
     if (typeof prestashop !== 'undefined') {
         prestashop.on('handleError',(function (e) {
             console.log('handleError', e.eventType, e.resp.hasError, $('.alert.alert-danger.ajax-error').length)
@@ -17,4 +17,4 @@ window.onload = function() {
             $('.alert.alert-danger.ajax-error').remove();
         }));
     }
-}  
+}); 

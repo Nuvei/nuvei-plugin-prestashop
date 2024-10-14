@@ -15,7 +15,7 @@ class Nuvei_Checkout extends PaymentModule
     public $version                     = '1.2.3';
     public $ps_versions_compliancy      = array(
         'min' => '8.1.0', 
-        'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
+        'max' => '8.1.7' // _PS_VERSION_ // for curent version - _PS_VERSION_
     );
     public $controllers                 = array('payment', 'validation');
     public $bootstrap                   = true;
