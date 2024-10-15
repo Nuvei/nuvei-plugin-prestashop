@@ -445,7 +445,7 @@ function nuveiBuildIframeFields(combId) {
                 + '</div>'
             + '</div>'
 	
-			+ '<input type="hiden" name="id_product" value="'+ nuveiProdId +'" />'
+			+ '<input type="hidden" name="id_product" value="'+ nuveiProdId +'" />'
         + '</div>';
     
     return html;
