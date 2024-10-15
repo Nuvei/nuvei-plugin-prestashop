@@ -1023,6 +1023,7 @@ class Nuvei_Checkout extends PaymentModule
                     
                     ob_start();
         
+                    $tplProdId      = $prodId;
                     // get Nuvei Payment Plan group IDs
                     $group_ids_arr  = $this->getNuvePaymentPlanGroupIds();
                     $nuvei_ajax_url = $this->context->link->getAdminLink("NuveiAjax") 
@@ -1147,32 +1148,21 @@ class Nuvei_Checkout extends PaymentModule
         );
         
         try {
-            $products                   = $params['cart']->getProducts(); // array
+            $products           = $params['cart']->getProducts(); // array
 //            $group_ids_arr              = $this->getNuvePaymentPlanGroupIds(); // get Nuvei Payment Plan group IDs
 //            $id_lang                    = $this->context->language->id;
-//            $is_user_logged             = (bool)$this->context->customer->isLogged();
+            $is_user_logged     = (bool) $this->context->customer->isLogged();
 //            $combinations               = $params['product']->getAttributeCombinations((int) $id_lang);
-            
-            // Prepare the query who search for the product in the Nuvei table
-            $sql = "SELECT COUNT(id_product_attribute) as cnt "
-                . "FROM nuvei_product_payment_plan_details "
-//                . "WHERE id_product_attribute = ";
-                . "WHERE id_product_attribute ";
-            
             $productsAttributes = [];
+            $attrIdsWithPlan    = [];
             
-            # 1. If the Cart is empty just add the product
-            if (empty($products)) {
-                return true;
-            }
-            
-            # 2. If Cart is not empty, we have to check all products for Rebilling
-            // Get the attribute of the incoming product if any
+            # 1. Collect the attribute ID of all items and check for them in Nuvei Payment plan table
+            // 1.1. The incoming product
             if ((int) $params['id_product_attribute'] > 0) {
                 $productsAttributes[] = (int) $params['id_product_attribute'];
             }
             
-            // Check the products in the Cart for attributes
+            // 1.2. The products in the Cart
             foreach ($products as $product) {
                 if (0 == (int) $product['id_product_attribute']) {
                     continue;
@@ -1181,10 +1171,10 @@ class Nuvei_Checkout extends PaymentModule
                 $productsAttributes[] = (int) $product['id_product_attribute'];
             }
             
-            // If non of the products have attributes, just add the new one to the Cart
-            if (empty($productsAttributes)) {
-                return true;
-            }
+            // 1.3. Prepare the query who search for the product in the Nuvei table
+            $sql = "SELECT id_product_attribute "
+                . "FROM nuvei_product_payment_plan_details "
+                . "WHERE id_product_attribute ";
             
             if (count($productsAttributes) == 1) {
                 $sql .= "= " . (int) $productsAttributes[0];
@@ -1193,15 +1183,43 @@ class Nuvei_Checkout extends PaymentModule
                 $sql .= "IN (" . implode(', ', $productsAttributes) . ")";
             }
             
-            $res= Db::getInstance()->getRow($sql);
-                    
-            // Do not add the product into the cart.
-            if (isset($res['cnt']) && (int) $res['cnt'] > 0) {
-                $this->context->controller->errors[] = $this->l('This product cannot be added to the cart.');
+            $ids = Db::getInstance()->executeS($sql);
+            
+            if (is_array($ids) && !empty($ids)) {
+                foreach($ids as $col => $id) {
+                    $attrIdsWithPlan[] = $id['id_product_attribute'];
+                }
+            }
+            
+//            $this->createLog(
+//                [$ids, $attrIdsWithPlan], 
+//                'hookActionCartUpdateQuantityBefore.'
+//            );
+
+            # 2. If the user is Guest, do not add the product if it is with Nuvei Payment plan!
+            if (!$is_user_logged && in_array((int) $params['id_product_attribute'], $attrIdsWithPlan)) {
+                $this->context->controller->errors[] = $this->l('You have to login to add this product.');
 
                 $params['product']->available_for_order = false;
+            }
+            
+            // From here we assume the user is logged.
+            # 3. If the Cart is empty just add the product
+            if (empty($products)) {
+                return true;
+            }
+            
+            # 4. If Cart is not empty, we have to check all of them for Rebilling
+            // Check the products in the Cart for attributes
+            foreach ($products as $product) {
+                // If we find even on with Payment plan - do not add the product!
+                if (in_array((int) $product['id_product_attribute'], $attrIdsWithPlan)) {
+                    $this->context->controller->errors[] = $this->l('This product cannot be added to the cart.');
 
-                return false;
+                    $params['product']->available_for_order = false;
+
+                    return false;
+                }
             }
             
             return true;
@@ -1304,85 +1322,107 @@ class Nuvei_Checkout extends PaymentModule
      */
     public function hookDisplayProductButtons ($params)
     {
-//        $this->createLog('hookDisplayProductButtons()');
+        // TODO - if you log the parameters - unset smarty, it is huge!
+//        unset($params['smarty']);
+        $this->createLog(
+//            $params, 
+            'hookDisplayProductButtons()', "DEBUG"
+        );
         
-        if(empty($params['product']['id']) || empty($params['product']['attributes'])) {
-            $this->createLog('hookDisplayProductButtons() - missing mandatory product data.');
+        if(empty($params['product']['id']) 
+            || empty($params['product']['attributes']) 
+            || empty($params['product']['combination_specific_data'])
+        ) {
+            $this->createLog('hookDisplayProductButtons() - missing product combination data.');
             return;
         }
         
         $is_cart_empty      = true;
-        $disable_add_btn    = false; // use it in case there is product with a Plan in the Cart
-        $is_user_logged     = (bool)$this->context->customer->isLogged();
+//        $disable_add_btn    = false; // use it in case there is product with a Plan in the Cart
+        $is_user_logged     = (bool) $this->context->customer->isLogged();
         
-        if(isset($params['cart']) && is_object($params['cart'])) {
-            try {
-                $products = $params['cart']->getProducts(); // the cart products
-                
-                // cart is not empty
-                if(is_array($products) && !empty($products)) {
-                    $is_cart_empty  = false;
-                    
-                    foreach($products as $product) {
-                        $sql = "SELECT plan_details "
-                        . "FROM nuvei_product_payment_plan_details "
-                        . "WHERE id_product = " . (int) $product['id_product'] . " "
-                            . "AND id_product_attribute = '". (int) $product['id_product_attribute'] ."' ";
-
-                        $res = Db::getInstance()->executeS($sql);
-                        
-                        if($res) {
-                            $disable_add_btn = true;
-                            break;
-                        }
-                    }
-                }
-            } catch (Exception $ex) {
-                $this->createLog($ex->getMessage(), 'hookDisplayProductButtons Exception');
-            }
-        }
+//        if(isset($params['cart']) && is_object($params['cart'])) {
+//            try {
+//                $products = $params['cart']->getProducts(); // the cart products
+//                
+//                // cart is not empty
+//                if(is_array($products) && !empty($products)) {
+//                    $this->createLog(null, 'hookDisplayProductButtons() cart is not empty', "DEBUG");
+//                    
+//                    $is_cart_empty  = false;
+//                    
+//                    foreach($products as $product) {
+//                        $sql = "SELECT plan_details "
+//                        . "FROM nuvei_product_payment_plan_details "
+//                        . "WHERE id_product = " . (int) $product['id_product'] . " "
+//                            . "AND id_product_attribute = '". (int) $product['id_product_attribute'] ."' ";
+//
+//                        $res = Db::getInstance()->executeS($sql);
+//                        
+//                        if($res) {
+//                            $disable_add_btn = true;
+//                            break;
+//                        }
+//                    }
+//                }
+//            } catch (Exception $ex) {
+//                $this->createLog($ex->getMessage(), 'hookDisplayProductButtons Exception');
+//            }
+//        }
             
         // get nuvei payment plan details for the prduct
-        $sql = "SELECT npppd.*, "
-                . "pac.id_attribute, "
-                . "agl.id_attribute_group "
-            . "FROM nuvei_product_payment_plan_details AS npppd "
-            
-            . "LEFT JOIN " . _DB_PREFIX_ . "product_attribute_combination AS pac "
-            . "ON npppd.id_product_attribute = pac.id_product_attribute "
-            
-            . "LEFT JOIN " . _DB_PREFIX_ . "attribute AS a "
-            . "ON a.id_attribute = pac.id_attribute "
-            
-            . "LEFT JOIN " . _DB_PREFIX_ . "attribute_group_lang AS agl "
-            . "ON agl.id_attribute_group = a.id_attribute_group "
-            
-            . "WHERE npppd.id_product = " . (int) $params['product']['id'] . " "
-                . "AND agl.name = '". $this->paymentPlanGroup ."' ";
+//        $sql = "SELECT npppd.*, "
+//                . "pac.id_attribute, "
+//                . "agl.id_attribute_group "
+//            . "FROM nuvei_product_payment_plan_details AS npppd "
+//            
+//            . "LEFT JOIN " . _DB_PREFIX_ . "product_attribute_combination AS pac "
+//            . "ON npppd.id_product_attribute = pac.id_product_attribute "
+//            
+//            . "LEFT JOIN " . _DB_PREFIX_ . "attribute AS a "
+//            . "ON a.id_attribute = pac.id_attribute "
+//            
+//            . "LEFT JOIN " . _DB_PREFIX_ . "attribute_group_lang AS agl "
+//            . "ON agl.id_attribute_group = a.id_attribute_group "
+//            
+//            . "WHERE npppd.id_product = " . (int) $params['product']['id'] . " "
+//                . "AND agl.name = '". $this->paymentPlanGroup ."' ";
         
+        $attrId         = (int) $params['product']['combination_specific_data']['id_attribute'];
+        $attrIdGroup    = (int) $params['product']['combination_specific_data']['id_attribute_group'];
+        
+        $sql = "SELECT npppd.*, pac.id_attribute "
+            . "FROM nuvei_product_payment_plan_details AS npppd "
+            . "LEFT JOIN " . _DB_PREFIX_ . "product_attribute_combination AS pac "
+                . "ON npppd.id_product_attribute = pac.id_product_attribute "
+            . "WHERE npppd.id_product = " . (int) $params['product']['id'] . " "
+//                . "AND pac.id_attribute = " . $attrId;
+  ;
         $res = Db::getInstance()->executeS($sql);
         
+//        $this->createLog([$sql, $res], 'hookDisplayProductButtons()', "DEBUG");
+        
         if(!$res) {
-            // in this case hide "Add to Cart" button and show our message
-            if($disable_add_btn) {
-                ob_start();
-                
-                $data['error_msg'] = $this->l('You can not add this product, to a Product with a Payment Plan.');
-                include dirname(__FILE__) . '/views/templates/front/hide_add_to_cart_btn.php';
-                
-                return ob_end_flush();
-            }
-            
+//            // in this case hide "Add to Cart" button and show our message
+////            if($disable_add_btn) {
+////                ob_start();
+////                
+////                $data['error_msg'] = $this->l('You can not add this product, to a Product with a Payment Plan.');
+////                include dirname(__FILE__) . '/views/templates/front/hide_add_to_cart_btn.php';
+////                
+////                return ob_end_flush();
+////            }
+//            
             return;
         }
-        elseif(!$is_user_logged) {
-            ob_start();
-                
-            $data['error_msg'] = $this->l('Guests can not add Products with a Payment Plan.');
-            include dirname(__FILE__) . '/views/templates/front/hide_add_to_cart_btn.php';
-
-            return ob_end_flush();
-        }
+//        elseif(!$is_user_logged) {
+//            ob_start();
+//                
+//            $data['error_msg'] = $this->l('Guests can not add Products with a Payment Plan.');
+//            include dirname(__FILE__) . '/views/templates/front/hide_add_to_cart_btn.php';
+//
+//            return ob_end_flush();
+//        }
         
         $product_plans      = array();
         $gr_ids             = array();
@@ -1396,14 +1436,16 @@ class Nuvei_Checkout extends PaymentModule
             $data['plan_details']['recurringAmount']    *= $conversion_rate;
             $product_plans[$data['id_attribute']]       = $data;
             
-            if(!in_array($data['id_attribute_group'], $gr_ids)) {
-                $gr_ids[] = $data['id_attribute_group'];
-            }
+//            if(!in_array($data['id_attribute_group'], $gr_ids)) {
+//                $gr_ids[] = $data['id_attribute_group'];
+//            }
         }
         
-        if(!empty($gr_ids)) {
-            $gr_ids = max($gr_ids);
-        }
+//        if(!empty($gr_ids)) {
+//            $gr_ids = max($gr_ids);
+//        }
+        
+//        $this->createLog($data['plan_details'], 'hookDisplayProductButtons()', "DEBUG");
         
         ob_start();
         
@@ -1421,9 +1463,10 @@ class Nuvei_Checkout extends PaymentModule
             'Recurring_amount'  => $this->l('Recurring Amount'),
             'Trial_period'      => $this->l('Trial Period'),
             'product_plans'     => $product_plans,
-            'gr_ids'            => $gr_ids,
+//            'gr_ids'            => $gr_ids,
+            'gr_ids'            => $attrIdGroup,
             'is_cart_empty'     => $is_cart_empty,
-            'disable_add_btn'   => $disable_add_btn,
+//            'disable_add_btn'   => $disable_add_btn,
         );
         
         include dirname(__FILE__) . '/views/templates/front/product_payment_plan_details.php';
@@ -1606,7 +1649,9 @@ class Nuvei_Checkout extends PaymentModule
                 // clean possible objects inside array
                 $data = json_decode(json_encode($data), true);
 
-                array_walk_recursive($data, [$this, 'maskData'], $this->fieldsToMask);
+                if (is_array($data)) {
+                    array_walk_recursive($data, [$this, 'maskData'], $this->fieldsToMask);
+                }
             }
             
             // paymentMethods can be very big array
@@ -1622,7 +1667,9 @@ class Nuvei_Checkout extends PaymentModule
                 // clean possible objects inside array
                 $data = json_decode(json_encode($data), true);
 
-                array_walk_recursive($data, [$this, 'maskData'], $this->fieldsToMask);
+                if (is_array($data)) {
+                    array_walk_recursive($data, [$this, 'maskData'], $this->fieldsToMask);
+                }
             }
             
             $data_tmp   = print_r($data, true);

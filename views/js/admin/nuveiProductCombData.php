@@ -1,10 +1,11 @@
 <script>
     console.log('nuveiProductCombData');
     
-    var nuveiPaymentPlanGroupIds        = <?= json_encode($group_ids_arr); ?>;
-    var nuveiPaymentPlanCombinations    = <?= json_encode($comb_ids_arr); ?>;
-    var nuveiPaymentPlansData           = <?= $npp_data; ?>;
-    var nuveiAjaxUrl                    = "<?= $nuvei_ajax_url; ?>";
+    const nuveiProdId                   = "<?= $tplProdId; ?>";
+//    var nuveiPaymentPlanGroupIds        = <?= json_encode($group_ids_arr); ?>;
+    const nuveiPaymentPlanCombinations  = <?= json_encode($comb_ids_arr); ?>;
+    const nuveiPaymentPlansData         = <?= $npp_data; ?>;
+    const nuveiAjaxUrl                  = "<?= $nuvei_ajax_url; ?>";
     var nuveiIsIframePrestaVersion      = false;
 //    var nuveiIsSaveBtnClicked           = false;
     
