@@ -2,7 +2,7 @@
 
 # 2.0.0
 ```
-    * This version of the plugin was tested and works on Prestashop v8.1.*.
+    * This version of the plugin was tested and works on Prestashop v8.1.* only.
     * Fix the problem who prevents the merchant to add Nuvei Payment plan to the product in Prestasho v8.1.*.
     * Fix the problem where the client can combine ordinary product with Nuvei Rebilling product.
     * In case the plugin cancel to add a product to the Cart, and there is error, show first error message.
