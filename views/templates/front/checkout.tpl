@@ -17,6 +17,7 @@
             background: lightpink;
             padding: 10px;
             display: none;
+            margin-bottom: 5px;
         }
         
         #nuvei_error_msg {

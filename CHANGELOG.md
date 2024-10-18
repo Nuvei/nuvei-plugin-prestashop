@@ -1,17 +1,26 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 2.0.1
+```
+    * Plugin was tested on Prestashop v8.2.0.
+    * The maximum supported version was changed.
+    * When a not approved DMN come, for Auth or Sale transaction, try only once to find the Order.
+    * Added small margin under the plugin messages on Simply Connect page.
+```
+
 # 2.0.0
 ```
-    * This version of the plugin was tested and works on Prestashop v8.1.* only.
+    * This version of the plugin was tested and works on Prestashop v8.1.*.
     * Fix the problem who prevents the merchant to add Nuvei Payment plan to the product in Prestasho v8.1.*.
     * Fix the problem where the client can combine ordinary product with Nuvei Rebilling product.
     * In case the plugin cancel to add a product to the Cart, and there is error, show first error message.
     * Removed old commened parts of code.
-    * Removed an hook not working in Prestashop 8.1.*.
+    * Removed a hook not working in Prestashop 8.1.* an up.
 ```
 
 # 1.2.2
 ```
+    * This version of the plugin was tested and works on Prestashop up to v8.0.*.
     * Added Tag SDK URL for test cases.
     * Add option to mask/unmask user details in the log.
     * Fixed typos in the plugin settings.

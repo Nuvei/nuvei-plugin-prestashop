@@ -995,6 +995,10 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         $max_tries	= 'yes' == Configuration::get('SC_TEST_MODE') ? 10 : 4;
         $order_id	= false;
         
+        if ('approved' != strtolower($req_status)) {
+            $max_tries = 0;
+        }
+        
         do {
             $tries++;
             $order_id = Order::getIdByCartId($merchant_unique_id);
@@ -1028,7 +1032,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         // the order was not found
         if(!$order_id) {
             // exit, do not create order for Declined transaction
-            if(strtolower($this->getRequestStatus()) != 'approved') {
+            if(strtolower($req_status) != 'approved') {
                 $msg = 'Not Approved DMN for not existing order - stop process.';
                 $this->module->createLog(Tools::getValue('TransactionID'), $msg);
 
