@@ -6,6 +6,7 @@
     * Admin php javascripts were removed. Now only real javascript files are used.
     * The option to auto-close or not the APM popup was removed.
     * In the plugin settings, "Merchant Secret Key" field was masked.
+    * Removed unused hooks.
 ```
 
 # 2.0.1
