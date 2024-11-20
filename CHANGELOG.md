@@ -1,5 +1,13 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 2.1.0
+```
+    * Nuvei rebilling fileds were added in a modified combination modal template.
+    * Admin php javascripts were removed. Now only real javascript files are used.
+    * The option to auto-close or not the APM popup was removed.
+    * In the plugin settings, "Merchant Secret Key" field was masked.
+```
+
 # 2.0.1
 ```
     * Plugin was tested on Prestashop v8.2.0.

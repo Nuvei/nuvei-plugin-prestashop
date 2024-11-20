@@ -1,0 +1,125 @@
+{% extends '@!PrestaShop/Admin/Sell/Catalog/Product/Combination/edit.html.twig' %}
+
+{% block content %}
+    {{ form_start(combinationForm, {'attr': {'class': 'form-horizontal combination-page', 'novalidate': 'novalidate'}}) }}
+        {{ form_row(combinationForm) }}
+        
+        <div class="form-group nuvei_rebilling_plan_group" id="nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }}" data-comb-id="{{ combinationForm.vars.value.id }}">
+            <h3>{{ 'Nuvei Payment Plan Details'|trans }}</h3>
+
+            <div class="form-columns-3">
+                <div class="form-group text-widget">
+                    <label>{{ 'Plan ID'|trans }}</label>
+
+                    <select name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][plan_id]" 
+                            class="custom-select form-control nuvei-rebilling-form nuvei_plans_list" 
+{#                            onchange="window.top.nuveiPopulatePlanFields(this.value, {{ combinationForm.vars.value.id }})" #}
+                            required="">
+                    </select>
+                </div>
+
+                <div class="form-group money-widget">
+                    <label>{{ 'Recurring Amount'|trans }}</label>
+
+                    <div class="input-group money-type">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">{{ default_currency.sign }}</span>
+                        </div>
+
+                        <input type="number" 
+                               name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][rec_amount]" 
+                               data-display-price-precision="2" 
+                               class="js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_amount" 
+                               value="1.00" 
+                               onchange="window.top.nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}].recurringAmount = Number.parseInt(this.value);" 
+                               min="1" 
+                               step="1">
+                    </div>
+                </div>
+
+                <div class="form-group form-column-breaker"></div>
+
+                <div class="form-group number-widget">
+                    <label>{{ 'Recurring Every'|trans }}</label>
+
+                    <input type="number" 
+                           name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][rec_period]" 
+                           aria-label="input" 
+                           class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_period" 
+                           min="1" 
+                           value="1" 
+                           onchange="window.top.nuveiUpdateRecUnitPeriod({{ combinationForm.vars.value.id }})">
+                </div>
+
+                <div class="form-group text-widget">
+                    <label>&nbsp;</label>
+
+                    <select name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][rec_unit]" 
+                            class="custom-select form-control nuvei-rebilling-form nuvei_rec_unit" 
+                            required="" 
+                            onchange="window.top.nuveiUpdateRecUnitPeriod({{ combinationForm.vars.value.id }})">
+                        <option value="day">{{ 'Day'|trans }}</option>
+                        <option value="month">{{ 'Month'|trans }}</option>
+                        <option value="year">{{ 'Year'|trans }}</option>
+                    </select>
+                </div>
+
+                <div class="form-group form-column-breaker"></div>
+
+                <div class="form-group number-widget">
+                    <label>{{ 'Recurring End After'|trans }}</label>
+
+                    <input type="number" 
+                           name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][rec_end_after_period]" 
+                           aria-label="input" 
+                           class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_end_after_period" 
+                           min="1" 
+                           value="1" 
+                           onchange="window.top.nuveiUpdateRecEndAfterUnitPeriod({{ combinationForm.vars.value.id }})">
+                </div>
+
+                <div class="form-group text-widget">
+                    <label>&nbsp;</label>
+
+                    <select name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][rec_end_after_unit]" 
+                            class="custom-select form-control nuvei-rebilling-form nuvei_rec_end_after_unit" 
+                            required="" 
+                            onchange="window.top.nuveiUpdateRecEndAfterUnitPeriod({{ combinationForm.vars.value.id }})">
+                        <option value="day">{{ 'Day'|trans }}</option>
+                        <option value="month">{{ 'Month'|trans }}</option>
+                        <option value="year">{{ 'Year'|trans }}</option>
+                    </select>
+                </div>
+
+                <div class="form-group form-column-breaker"></div>
+
+                <div class="form-group number-widget">
+                    <label>{{ 'Trial Period'|trans }}</label>
+
+                    <input type="number" 
+                           name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][trial_period]" 
+                           aria-label="input" 
+                           class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_trial_period" 
+                           min="0" 
+                           value="0" 
+                           onchange="window.top.nuveiUpdateRecTrialrUnitPeriod({{ combinationForm.vars.value.id }})">
+                </div>
+
+                <div class="form-group text-widget">
+                    <label>&nbsp;</label>
+
+                    <select name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][rec_trial_unit]" 
+                            class="custom-select form-control nuvei-rebilling-form nuvei_trial_unit" 
+                            required="" 
+                            onchange="window.top.nuveiUpdateRecTrialrUnitPeriod({{ combinationForm.vars.value.id }})">
+                        <option value="day">{{ 'Day'|trans }}</option>
+                        <option value="month">{{ 'Month'|trans }}</option>
+                        <option value="year">{{ 'Year'|trans }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <input type="hidden" name="id_product" value="{{ combinationForm.vars.value.product_id }}">
+        </div>
+    {{ form_end(combinationForm) }}
+{% endblock %}

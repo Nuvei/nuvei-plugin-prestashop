@@ -61,7 +61,7 @@
                         <div class="form-group">
                             <label class="control-label col-lg-3 required"> {l s='Merchant Secret Key' mod='nuvei'}</label>
                             <div class="col-lg-9">
-                                <input type="text" name="SC_SECRET_KEY" value="{Configuration::get('SC_SECRET_KEY')}" required="" />
+                                <input type="password" name="SC_SECRET_KEY" value="{Configuration::get('SC_SECRET_KEY')}" required="" />
                             </div>
                         </div>
 
@@ -196,7 +196,7 @@
                             </div>
                         </div>
                                 
-                        {if Configuration::get('SC_TEST_MODE') eq 'yes'}
+                        {* if Configuration::get('SC_TEST_MODE') eq 'yes'}
                             <div class="form-group">
                                 <label class="control-label col-lg-3"> {l s='Auto-close APM Pop-Up' mod='nuvei'}</label>
                                 <div class="col-lg-9">
@@ -208,7 +208,7 @@
                                     <span class="help-block">{l s='Works only when APMs window type is New Tab or Popup' mod='nuvei'}</span>
                                 </div>
                             </div>
-                        {/if}
+                        {/if *}
                         
                         <div class="form-group">
                             <label class="control-label col-lg-3"> {l s='Mask User Details in the Log' mod='nuvei'}</label>
