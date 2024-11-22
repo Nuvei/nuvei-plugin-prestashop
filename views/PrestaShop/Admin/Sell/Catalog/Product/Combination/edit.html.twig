@@ -13,7 +13,7 @@
 
                     <select name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][plan_id]" 
                             class="custom-select form-control nuvei-rebilling-form nuvei_plans_list" 
-{#                            onchange="window.top.nuveiPopulatePlanFields(this.value, {{ combinationForm.vars.value.id }})" #}
+                            onchange="nuveiPopulatePlanFields(this.value)"
                             required="">
                     </select>
                 </div>
@@ -31,7 +31,7 @@
                                data-display-price-precision="2" 
                                class="js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_amount" 
                                value="1.00" 
-                               onchange="window.top.nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}].recurringAmount = Number.parseInt(this.value);" 
+                               {#onchange="nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}].recurringAmount = Number.parseFloat(this.value);" #}
                                min="1" 
                                step="1">
                     </div>
@@ -48,7 +48,7 @@
                            class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_period" 
                            min="1" 
                            value="1" 
-                           onchange="window.top.nuveiUpdateRecUnitPeriod({{ combinationForm.vars.value.id }})">
+                           onchange="nuveiUpdateRecUnitPeriod()">
                 </div>
 
                 <div class="form-group text-widget">
@@ -57,7 +57,7 @@
                     <select name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][rec_unit]" 
                             class="custom-select form-control nuvei-rebilling-form nuvei_rec_unit" 
                             required="" 
-                            onchange="window.top.nuveiUpdateRecUnitPeriod({{ combinationForm.vars.value.id }})">
+                            onchange="nuveiUpdateRecUnitPeriod()">
                         <option value="day">{{ 'Day'|trans }}</option>
                         <option value="month">{{ 'Month'|trans }}</option>
                         <option value="year">{{ 'Year'|trans }}</option>
@@ -75,7 +75,7 @@
                            class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_rec_end_after_period" 
                            min="1" 
                            value="1" 
-                           onchange="window.top.nuveiUpdateRecEndAfterUnitPeriod({{ combinationForm.vars.value.id }})">
+                           onchange="nuveiUpdateRecEndAfterUnitPeriod()">
                 </div>
 
                 <div class="form-group text-widget">
@@ -84,7 +84,7 @@
                     <select name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][rec_end_after_unit]" 
                             class="custom-select form-control nuvei-rebilling-form nuvei_rec_end_after_unit" 
                             required="" 
-                            onchange="window.top.nuveiUpdateRecEndAfterUnitPeriod({{ combinationForm.vars.value.id }})">
+                            onchange="nuveiUpdateRecEndAfterUnitPeriod()">
                         <option value="day">{{ 'Day'|trans }}</option>
                         <option value="month">{{ 'Month'|trans }}</option>
                         <option value="year">{{ 'Year'|trans }}</option>
@@ -102,7 +102,7 @@
                            class="small-input js-comma-transformer form-control nuvei-rebilling-form nuvei_trial_period" 
                            min="0" 
                            value="0" 
-                           onchange="window.top.nuveiUpdateRecTrialrUnitPeriod({{ combinationForm.vars.value.id }})">
+                           onchange="nuveiUpdateRecTrialrUnitPeriod()">
                 </div>
 
                 <div class="form-group text-widget">
@@ -111,7 +111,7 @@
                     <select name="nuvei_payment_plan_attr[{{ combinationForm.vars.value.id }}][rec_trial_unit]" 
                             class="custom-select form-control nuvei-rebilling-form nuvei_trial_unit" 
                             required="" 
-                            onchange="window.top.nuveiUpdateRecTrialrUnitPeriod({{ combinationForm.vars.value.id }})">
+                            onchange="nuveiUpdateRecTrialrUnitPeriod()">
                         <option value="day">{{ 'Day'|trans }}</option>
                         <option value="month">{{ 'Month'|trans }}</option>
                         <option value="year">{{ 'Year'|trans }}</option>
@@ -121,5 +121,290 @@
 
             <input type="hidden" name="id_product" value="{{ combinationForm.vars.value.product_id }}">
         </div>
+        
+        <script>
+            var nuveiPaymentPlanCombinations    = [];
+            var nuveiPaymentPlansData           = [];
+            var nuveiProductsWithPaymentPlans   = {};
+            var nuveiTexts                      = {};
+            
+            /**
+             * Fill Nuvei fields with the data passed from a hook to the script.
+             */
+            function nuveiFillIframeFields() {
+                console.log('nuveiFillIframeFields', nuveiProductsWithPaymentPlans);
+
+                var currProdPlanId          = null;
+                var currRecaAmount          = "1.00";
+                var currRecPeriod           = 1;
+                var currRecUnit             = null;
+                var currRecEndAfterPeriod   = 1;
+                var currRecEndAfterUnit		= null;
+                var currRecTrialPeriod      = 0;
+                var currRecTrialUnit        = null;
+
+                // fill saved plan details
+                if(nuveiProductsWithPaymentPlans.hasOwnProperty({{ combinationForm.vars.value.id }})) {
+                    let currObj = nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}];
+                    
+                    currProdPlanId  = currObj.planId;
+                    currRecaAmount  = currObj.recurringAmount;
+                
+                    let firstKey    = Object.keys(currObj.recurringPeriod)[0];
+                    currRecUnit     = firstKey;
+                    currRecPeriod   = currObj.recurringPeriod[firstKey];
+                
+                    firstKey                = Object.keys(currObj.endAfter)[0];
+                    currRecEndAfterUnit     = firstKey;
+                    currRecEndAfterPeriod   = currObj.endAfter[firstKey];
+                    
+                    firstKey            = Object.keys(currObj.startAfter)[0];
+                    currRecTrialUnit    = firstKey;
+                    currRecTrialPeriod  = currObj.startAfter[firstKey];
+                }
+
+                // generate plans list
+                try {
+                    var html = '';
+
+                    for(var i in nuveiPaymentPlansData) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_plans_list').append(
+                            '<option value="'+ nuveiPaymentPlansData[i].planId +'" '
+                                + ( nuveiPaymentPlansData[i].planId == currProdPlanId ? 'selected=""' : '' )  
+                            +'>' + nuveiPaymentPlansData[i].name +'</option>'
+                        );
+                    }
+                } catch(_e) {
+                    console.log(_e);
+                }
+                
+                // set recurring amount
+                $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_amount').val(currRecaAmount);
+
+                // set recurring period
+                $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_period').val(currRecPeriod);
+
+                // set recurring unit
+                $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_unit option').each(function() {
+                    var _self = $(this);
+
+                    if (currRecUnit === _self.prop('value')) {
+                        _self.prop('selected', true);
+                        return;
+                    }
+                });
+
+                // set recurring end after period
+                $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_period')
+                    .val(currRecEndAfterPeriod);
+
+                // set recurring end after unit
+                $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_unit option')
+                    .each(function() {
+                        var _self = $(this);
+
+                        if (currRecEndAfterUnit === _self.prop('value')) {
+                            _self.prop('selected', true);
+                            return;
+                        }
+                    });
+
+                // set trail period
+                $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_period')
+                    .val(currRecTrialPeriod);
+
+                // set trail period unit
+                $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_unit option').each(function() {
+                    var _self = $(this);
+
+                    if (currRecTrialUnit === _self.prop('value')) {
+                        _self.prop('selected', true);
+                        return;
+                    }
+                });
+            }
+            
+            /**
+             * When change the Plan Id select fill the plan attributes.
+             * 
+             * @param int _planId
+             */
+            function nuveiPopulatePlanFields(_planId) {
+                console.log('nuveiPopulatePlanFields()', _planId);
+
+                for(var i in nuveiPaymentPlansData) {
+                    if(nuveiPaymentPlansData[i].planId != _planId) {
+                        continue;
+                    }
+
+                    console.log('fill parameters');
+
+                    $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_amount')
+                        .val(nuveiPaymentPlansData[i].recurringAmount);
+
+                    // recurring period
+                    if(nuveiPaymentPlansData[i].recurringPeriod.day != 0) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_period')
+                            .val(nuveiPaymentPlansData[i].recurringPeriod.day);
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_unit').val('day');
+                    }
+                    if(nuveiPaymentPlansData[i].recurringPeriod.month != 0) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_period')
+                            .val(nuveiPaymentPlansData[i].recurringPeriod.month);
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_unit').val('month');
+                    }
+                    if(nuveiPaymentPlansData[i].recurringPeriod.year != 0) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_period')
+                            .val(nuveiPaymentPlansData[i].recurringPeriod.year);
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_unit').val('year');
+                    }
+                    // recurring period END
+
+                    // recurring end after period
+                    if(nuveiPaymentPlansData[i].endAfter.day != 0) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_period')
+                            .val(nuveiPaymentPlansData[i].endAfter.day);
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_unit')
+                            .val('day');
+                    }
+                    if(nuveiPaymentPlansData[i].endAfter.month != 0) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_period')
+                            .val(nuveiPaymentPlansData[i].endAfter.month);
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_unit')
+                            .val('month');
+                    }
+                    if(nuveiPaymentPlansData[i].endAfter.year != 0) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_period')
+                            .val(nuveiPaymentPlansData[i].endAfter.year);
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_unit')
+                            .val('year');
+                    }
+                    // recurring end after period END
+
+                    // recurring trial period
+                    if(nuveiPaymentPlansData[i].startAfter.day != 0) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_period')
+                            .val(nuveiPaymentPlansData[i].startAfter.day);
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_unit').val('day');
+                    }
+                    if(nuveiPaymentPlansData[i].startAfter.month != 0) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_period')
+                            .val(nuveiPaymentPlansData[i].startAfter.month);
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_unit').val('month');
+                    }
+                    if(nuveiPaymentPlansData[i].startAfter.year != 0) {
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_period')
+                            .val(nuveiPaymentPlansData[i].startAfter.year);
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_unit').val('year');
+                    }
+                    // recurring trial period END
+                }
+
+                // update the object with the populated data.
+                {#nuveiUpdateRecEndAfterUnitPeriod();
+                nuveiUpdateRecTrialrUnitPeriod();
+                nuveiUpdateRecUnitPeriod();
+
+                nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}]
+                    = nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}] || {};
+                
+                nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}].recurringAmount
+                    = Number.parseFloat($('.nuvei_rec_amount').val());
+            
+                nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}].planId
+                    = Number.parseInt($('.nuvei_plans_list').val());#}
+            }
+            
+            /**
+             * When change Nuvei recurring fields, update the obecjt with the plans details.
+             */
+            function nuveiUpdateRecUnitPeriod() {
+                console.log('nuveiUpdateRecUnitPeriod');
+
+                var newObj = {};
+
+                newObj[$('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_unit').val()] 
+                    = Number.parseInt($('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_period')
+                        .val());
+
+                nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}]
+                    = nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}] || {};
+                nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}].recurringPeriod = newObj;
+            }
+
+            /**
+             * When change Nuvei recurring fields, update the obecjt with the plans details.
+             */
+            function nuveiUpdateRecEndAfterUnitPeriod() {
+                console.log('nuveiUpdateRecEndAfterUnitPeriod');
+
+                var newObj = {};
+
+                newObj[$('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_unit').val()] 
+                    = Number.parseInt(
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_rec_end_after_period').val()
+                    );
+
+                nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}]
+                    = nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}] || {};
+                nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}].endAfter = newObj;
+            }
+
+            /**
+             * When change Nuvei recurring fields, update the obecjt with the plans details.
+             */
+            function nuveiUpdateRecTrialrUnitPeriod() {
+                console.log('nuveiUpdateRecEndAfterUnitPeriod');
+
+                var newObj = {};
+
+                newObj[$('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_unit').val()] 
+                    = Number.parseInt(
+                        $('#nuveiPaymentFieldsRow_{{ combinationForm.vars.value.id }} .nuvei_trial_period').val()
+                    );
+
+                nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}]
+                    = nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}] || {};
+                nuveiProductsWithPaymentPlans[{{ combinationForm.vars.value.id }}].startAfter = newObj;
+            }
+            
+            /**
+             * Loads the data for the payment plans and combinations.
+             */
+            function nuveiGetPaymentsData() {
+                var nuveiAjax   = new XMLHttpRequest();
+                var nuveiParams = '&scAction=getPaymentsData&prodId={{ combinationForm.vars.value.product_id }}';
+
+                nuveiAjax.open("GET", window.top.nuveiAjaxUrl + nuveiParams, true);
+                nuveiAjax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+                nuveiAjax.onreadystatechange = function() {
+                    if (nuveiAjax.readyState == XMLHttpRequest.DONE && nuveiAjax.status == 200) {
+                        var nuveiResp = JSON.parse(nuveiAjax.response);
+                        
+                        if (nuveiResp.hasOwnProperty('nuveiPaymentPlansData')) {
+                            nuveiPaymentPlanCombinations    = nuveiResp.nuveiPaymentPlanCombinations;
+                            nuveiPaymentPlansData           = nuveiResp.nuveiPaymentPlansData;
+                            nuveiProductsWithPaymentPlans   = nuveiResp.nuveiProductsWithPaymentPlans;
+                            nuveiTexts                      = nuveiResp.nuveiTexts;
+                            
+                            // this combination does not belongs to Nuvei Plans
+                            if(nuveiPaymentPlanCombinations.indexOf('{{ combinationForm.vars.value.id }}') < 0) {
+                                console.log('This is not Nuvei Plan combination product.', nuveiPaymentPlanCombinations, {{ combinationForm.vars.value.id }});
+                                return;
+                            
+                            nuveiFillIframeFields();
+                        }
+                    }
+                };
+
+                nuveiAjax.send(nuveiParams);
+            }
+            
+            document.addEventListener('DOMContentLoaded', () => {
+                nuveiGetPaymentsData();
+            });
+        </script>
+        
     {{ form_end(combinationForm) }}
 {% endblock %}

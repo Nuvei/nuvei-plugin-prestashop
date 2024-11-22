@@ -59,6 +59,10 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             $this->getProductWithPaymentPlan();
         }
         
+        if($action == 'getPaymentsData' && Tools::getValue('prodId')) {
+            $this->getPaymentsData();
+        }
+        
         exit(json_encode(array(
             'status'    => 0, 
             'msg'       => 'The Action is not recognized.'
@@ -324,6 +328,90 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         
         // error
         exit([]);
+    }
+    
+    /**
+     * We call this method from the combination modal.
+     */
+    private function getPaymentsData()
+    {
+        $prodId = Tools::getValue('prodId');
+        
+        // error
+        if (!is_numeric($prodId) || $prodId < 1) {
+            exit([]);
+        }
+        
+        $product        = new Product((int) $prodId);
+        $id_lang        = Context::getContext()->language->id;
+        $combinations   = $product->getAttributeCombinations((int) $id_lang, true);
+        $comb_ids_arr   = array();
+        // get Nuvei Payment Plan group IDs
+        $group_ids_arr  = $this->module->getNuvePaymentPlanGroupIds();
+
+        $this->module->createLog($group_ids_arr, 'getPaymentsData() $group_ids_arr', 'DEBUG');
+
+        foreach($combinations as $data) {
+            if(in_array($data['id_attribute_group'], $group_ids_arr)
+                && !in_array($data['id_attribute_group'], $comb_ids_arr)
+            ) {
+                $comb_ids_arr[] = (string) $data['id_product_attribute'];
+            }
+        }
+
+        // load Nuvei Payment Plans data
+        $npp_data   = '';
+        $file       = _PS_ROOT_DIR_ . '/var/logs/' . $this->module->paymentPlanJson;
+
+        if(is_readable($file)) {
+            $npp_data = file_get_contents($file);
+        }
+
+        // load the Payment details for the products
+        $prod_plans  = array();
+
+        if (!empty($comb_ids_arr)) {
+            $sql = "SELECT id_product_attribute, plan_details "
+                . "FROM nuvei_product_payment_plan_details "
+                . "WHERE id_product_attribute IN (" . join(',', $comb_ids_arr) . ")";
+
+            try {
+                $res = Db::getInstance()->executeS($sql);
+
+                if(is_array($res) && !empty($res)) {
+                    foreach ($res as $details) {
+                        if (empty($details['id_product_attribute'])) {
+                            continue;
+                        }
+
+                        $prod_plans[$details['id_product_attribute']] 
+                            = json_decode($details['plan_details'], true);
+                    }
+                }
+            }
+            catch(\Exception $e) {
+                $this->module->createLog($e->getMessage(), 'hookDisplayBackOfficeHeader test', 'DEBUG');
+            }
+        }
+
+        $this->module->createLog([$sql, $res, $prod_plans], 'hookDisplayBackOfficeHeader', 'DEBUG');
+
+        exit(json_encode([
+            'nuveiPaymentPlanCombinations'  => $comb_ids_arr,
+            'nuveiPaymentPlansData'         => json_decode($npp_data, true),
+            'nuveiProductsWithPaymentPlans' => (object) $prod_plans,
+            'nuveiTexts'                    => [
+                'NuveiPaymentPlanDetails'       => $this->l('Nuvei Payment Plan Details'),
+                'PlanID'                        => $this->l('Plan ID'),
+                'RecurringAmount'               => $this->l('Recurring Amount'),
+                'RecurringEvery'                => $this->l('Recurring Every'),
+                'RecurringEndAfter'             => $this->l('Recurring End After'),
+                'TrialPeriod'                   => $this->l('Trial Period'),
+                'Day'                           => $this->l('Day'),
+                'Month'                         => $this->l('Month'),
+                'Year'                          => $this->l('Year'),
+            ],
+        ]));
     }
     
 }
