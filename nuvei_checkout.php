@@ -13,7 +13,6 @@ class Nuvei_Checkout extends PaymentModule
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
     public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $version                     = '2.1.0';
     public $ps_versions_compliancy      = array(
         'min' => '8.1.0', 
         'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
@@ -1152,7 +1151,7 @@ class Nuvei_Checkout extends PaymentModule
         $logs_path              = _PS_ROOT_DIR_ . '/var/logs/';
         $allowed_controllers    = array('AdminDashboard', 'AdminOrders');
         $git_version            = 0;
-        $plug_curr_ver          = str_replace('.', '', trim($this->version));
+        $plug_curr_ver          = str_replace('.', '', trim($this->getModuleVersion()));
         
         if(!in_array(Tools::getValue('controller'), $allowed_controllers)) {
             return;
@@ -1184,6 +1183,13 @@ class Nuvei_Checkout extends PaymentModule
                     A new version of Nuvei Plugin is available. <a href="'. $this->plugin_git_changelog .'" target="_blank">View version details.</a>
                 </div>';
         }
+    }
+    
+    public function getModuleVersion()
+    {
+        $xml = simplexml_load_file('./config.xml');
+        
+        return (string) $xml->version;
     }
     
     /**
@@ -1282,7 +1288,7 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         $machine_name       = '';
-        $service_name       = 'Nuvei Prestashop Checkout ' . $this->version . '|';
+        $service_name       = 'Nuvei Prestashop Checkout ' . $this->getModuleVersion() . '|';
         $source_file_name   = '';
         $member_name        = '';
         $source_line_number = '';
@@ -1429,8 +1435,8 @@ class Nuvei_Checkout extends PaymentModule
                 'clientRequestId'   => $time . '_' . uniqid(),
                 
                 'timeStamp'         => $time,
-                'deviceDetails'     => NuveiRequest::get_device_details($this->version),
-                'webMasterId'       => 'PrestaShop ' . _PS_VERSION_ . '; Plugin v' . $this->version,
+                'deviceDetails'     => NuveiRequest::get_device_details($this->getModuleVersion()),
+                'webMasterId'       => 'PrestaShop ' . _PS_VERSION_ . '; Plugin v' . $this->getModuleVersion(),
                 'sourceApplication' => $this->nuvei_source_application,
                 'url'               => $notificationUrl, // a custom parameter for the checksum
             ),
@@ -1676,7 +1682,7 @@ class Nuvei_Checkout extends PaymentModule
         
         return hash(
             $merchant_hash_alg,
-            $this->name . '_' . $this->version . '_' . $user_id
+            $this->name . '_' . $this->getModuleVersion() . '_' . $user_id
         ); 
     }
     
@@ -1790,6 +1796,11 @@ class Nuvei_Checkout extends PaymentModule
             ],
             'sourceApplication'         => $this->nuvei_source_application,
         ];
+        
+        // for the QA site pass a specific parameter
+        if ($this->isQaSite()) {
+            $checkout_params['webSdkEnv'] = 'devmobile';
+        }
         
         if($this->is_rebilling_order) {
             unset($checkout_params['pmBlacklist']);
@@ -2020,14 +2031,23 @@ class Nuvei_Checkout extends PaymentModule
      */
     private function getSdkLibUrl()
     {
-        if (!empty($_SERVER['SERVER_NAME'])
-            && !empty($this->sdkLibTagUrl)
-            && 'prestashopautomation.gw-4u.com' == $_SERVER['SERVER_NAME']
-        ) {
+        if ($this->isQaSite()) {
             return $this->sdkLibTagUrl;
         }
         
         return $this->sdkLibProdUrl;
+    }
+    
+    private function isQaSite()
+    {
+        if (!empty($_SERVER['SERVER_NAME'])
+            && !empty($this->sdkLibTagUrl)
+            && 'prestaautomation.gw-4u.com' == $_SERVER['SERVER_NAME']
+        ) {
+            return true;
+        }
+        
+        return false;
     }
 	
 	/**

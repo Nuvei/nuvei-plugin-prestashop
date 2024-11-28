@@ -1,5 +1,11 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 2.1.1
+```
+    * Removed the version paramter from the main file. A getter method was created, who get the version from config.xml.
+    * For the QA site add a specific parameter when call Simply Connect.
+```
+
 # 2.1.0
 ```
     * Nuvei rebilling fileds were added in a modified combination modal template.
