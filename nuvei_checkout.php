@@ -57,15 +57,22 @@ class Nuvei_Checkout extends PaymentModule
         require_once _PS_MODULE_DIR_ . $this->name . DIRECTORY_SEPARATOR 
             . 'classes' . DIRECTORY_SEPARATOR . 'NuveiRequest.php';
         
-        $this->tab = 'payments_gateways';
+        $this->tab      = $this->getConfigData('tab');
+        $this->version  = $this->getModuleVersion();
         
         parent::__construct();
 
         $this->page				= basename(__FILE__, '.php'); // ?
-        $this->description		= $this->l('Accepts payments by Nuvei.');
-        $this->confirmUninstall	= $this->l('Are you sure you want to delete your details?');
+        $this->description		= $this->l($this->getConfigData('description'));
+        $this->confirmUninstall = $this->l($this->getConfigData('confirmUninstall'));
         
-        if (!isset($this->owner) || !isset($this->details) || !isset($this->address)) {
+        // if the plugin is not configured show, add it to alert tab.
+        if (empty(Configuration::get('SC_MERCHANT_ID')) 
+            || empty(Configuration::get('SC_MERCHANT_SITE_ID'))
+            || empty(Configuration::get('SC_SECRET_KEY'))
+            || empty(Configuration::get('SC_TEST_MODE'))
+            || empty(Configuration::get('SC_HASH_TYPE'))
+        ) {
             $this->warning = $this->l('Merchant account details must be configured before using this module.');
         }
     }
@@ -76,10 +83,8 @@ class Nuvei_Checkout extends PaymentModule
             || !Configuration::updateValue('SC_MERCHANT_SITE_ID', '')
             || !Configuration::updateValue('SC_MERCHANT_ID', '')
             || !Configuration::updateValue('SC_SECRET_KEY', '')
-//            || !$this->registerHook('payment')
             || !$this->registerHook('paymentOptions')
             || !$this->registerHook('actionOrderSlipAdd')
-//            || !$this->registerHook('actionModuleInstallBefore')
             || !$this->registerHook('actionProductSave')
             || !$this->registerHook('displayBackOfficeHeader')
             || !$this->registerHook('actionAttributeCombinationDelete')
@@ -2525,6 +2530,22 @@ class Nuvei_Checkout extends PaymentModule
                 $value = '****';
             }
         }
+    }
+    
+    /**
+     * Just get some of the config parameters.
+     * 
+     * @param string $key
+     * @return string
+     */
+    private function getConfigData($key) {
+        $xml = simplexml_load_file(_PS_MODULE_DIR_ . $this->name . '/config.xml');
+        
+        if (isset($xml->{$key})) {
+            return (string) $xml->{$key};
+        }
+        
+        return '';
     }
     
 }
