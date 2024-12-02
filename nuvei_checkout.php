@@ -1187,7 +1187,7 @@ class Nuvei_Checkout extends PaymentModule
     
     public function getModuleVersion()
     {
-        $xml = simplexml_load_file('./config.xml');
+        $xml = simplexml_load_file(_PS_MODULE_DIR_ . $this->name . '/config.xml');
         
         return (string) $xml->version;
     }
