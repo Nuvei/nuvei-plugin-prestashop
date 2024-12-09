@@ -1,0 +1,18 @@
+# Front default controller
+module_nuvei_payment:
+    path: /module/nuvei/payment
+    methods: [GET, POST]
+    defaults:
+        _controller: 'NuveiCheckout\Controller\PaymentController::payment'
+        
+# Front DMN controller
+module_nuvei_dmn:
+    path: /module/nuvei/dmn
+    methods: [GET, POST]
+    controller: 'NuveiCheckout\Controller\PaymentController::processDmn'
+
+# Admin Ajax controller
+module_nuvei_admin_ajax:
+    path: /admin/nuvei/ajax
+    methods: [GET, POST]
+    controller: 'NuveiCheckout\Controller\Admin\AjaxController::handleAjaxCall'

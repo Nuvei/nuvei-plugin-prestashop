@@ -1,0 +1,14 @@
+{
+    "name": "nuvei/nuvei-checkout",
+    "description": "Nuvei Checkout module for PrestaShop",
+    "type": "prestashop-module",
+    "autoload": {
+        "psr-4": {
+            "PrestaShop\\Module\\NuveiCheckout\\": "",
+            "NuveiCheckout\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=7.2"
+    }
+}
