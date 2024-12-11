@@ -484,16 +484,13 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 		$status_id			= $order_info->current_state;
         $transactionType    = Tools::getValue('transactionType', '');
         $totalAmount        = Tools::getValue('totalAmount', 0);
-//        $default_msg_start  = $this->l('DMN '. $transactionType .' message.');
         
-        $gw_data = $this->l('Transaction Type: ') . $transactionType . '.#'
-            . $this->l('Status: ') . $this->l($status) . '.#'
-			. $this->l('PPP Transaction ID: ') . Tools::getValue('PPP_TransactionID') . '.#'
-			. $this->l('Transaction ID: ') . Tools::getValue('TransactionID') . '.#'
-			. $this->l('Payment Method: ') . Tools::getValue('payment_method') . '.#'
-            . $this->l('Total: ') . $this->module->formatMoney($totalAmount, Tools::getValue('currency')) . '.#';
-        
-//        $msg = $default_msg_start . ' ' . $gw_data;
+        $gw_data = $this->module->nuveiTrans('Transaction Type: ') . $transactionType . '.#'
+            . $this->module->nuveiTrans('Status: ') . $this->module->nuveiTrans($status) . '.#'
+			. $this->module->nuveiTrans('PPP Transaction ID: ') . Tools::getValue('PPP_TransactionID') . '.#'
+			. $this->module->nuveiTrans('Transaction ID: ') . Tools::getValue('TransactionID') . '.#'
+			. $this->module->nuveiTrans('Payment Method: ') . Tools::getValue('payment_method') . '.#'
+            . $this->module->nuveiTrans('Total: ') . $this->module->formatMoney($totalAmount, Tools::getValue('currency')) . '.#';
         
         switch($status) {
             case 'CANCELED':
@@ -518,16 +515,16 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 }
                 
                 if('Auth' == $transactionType) {
-                    $msg        = $this->l('The amount has been authorized and wait for Settle.') . '#' . $gw_data;
+                    $msg        = $this->module->nuveiTrans('The amount has been authorized and wait for Settle.') . '#' . $gw_data;
 					$status_id  = ''; // if we set the id we will have twice this status in the history
                 }
                 elseif('Settle' == $transactionType) {
-                    $msg = $this->l('The amount has been authorized and captured by Nuvei.') . '#' 
+                    $msg = $this->module->nuveiTrans('The amount has been authorized and captured by Nuvei.') . '#' 
                         . $gw_data;
                 }
 				// compare DMN amount and Order amount
 				elseif('Sale' == $transactionType) {
-                    $msg = $this->l('The amount has been authorized and captured by Nuvei.') . '#'
+                    $msg = $this->module->nuveiTrans('The amount has been authorized and captured by Nuvei.') . '#'
                         . $gw_data;
 				}
                 
@@ -540,7 +537,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 					if($dmn_amount != $order_amount
                         || $currency->iso_code != Tools::getValue('currency')
                     ) {
-						$msg .= $this->l('Attention - the DMN total/currency is different than Order total/currency!') . '#';
+						$msg .= $this->module->nuveiTrans('Attention - the DMN total/currency is different than Order total/currency!') . '#';
 					}
                 }
                 
@@ -549,12 +546,12 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             case 'ERROR':
             case 'DECLINED':
             case 'FAIL':
-                $error          = $this->l("Message: ") . Tools::getValue('message', '') . '.#';
+                $error          = $this->module->nuveiTrans("Message: ") . Tools::getValue('message', '') . '.#';
                 $reason_holders = ['reason', 'Reason', 'paymentMethodErrorReason', 'gwErrorReason'];
                 
                 foreach($reason_holders as $key) {
                     if(!empty(Tools::getValue($key))) {
-                        $error .= $this->l('Reason: ') . Tools::getValue($key, '') . '.#';
+                        $error .= $this->module->nuveiTrans('Reason: ') . Tools::getValue($key, '') . '.#';
                         break;
                     }
                 }
@@ -1413,10 +1410,10 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 
         // Error
         if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
-            $msg = $this->l('Error when try to start a Subscription by the Order.');
+            $msg = $this->module->nuveiTrans('Error when try to start a Subscription by the Order.');
 
             if (!empty($resp['reason'])) {
-                $msg .= ' ' . $this->l('Reason: ') . $resp['reason'];
+                $msg .= ' ' . $this->module->nuveiTrans('Reason: ') . $resp['reason'];
             }
 
             // save message
@@ -1426,9 +1423,9 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
 
         // On Success
-        $msg = $this->l('Subscription was created. ')  . ' '
-            . $this->l('Subscription ID: ') . $resp['subscriptionId'] . '. '
-            . $this->l('Recurring amount: ') . $this->module->formatMoney($prod_plan['recurringAmount'], $currency) . '.';
+        $msg = $this->module->nuveiTrans('Subscription was created. ')  . ' '
+            . $this->module->nuveiTrans('Subscription ID: ') . $resp['subscriptionId'] . '. '
+            . $this->module->nuveiTrans('Recurring amount: ') . $this->module->formatMoney($prod_plan['recurringAmount'], $currency) . '.';
 
         // save message
         $message->private = true;
@@ -1515,9 +1512,9 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         // /get the existing data from the new table
 
         if ('active' == $subscriptionState) {
-            $msg = $this->l('Subscription is Active.') . ' '
-                . $this->l('Subscription ID: ') . $subscriptionId . ' '
-                . $this->l('Plan ID: ') . Tools::getValue('planId');
+            $msg = $this->module->nuveiTrans('Subscription is Active.') . ' '
+                . $this->module->nuveiTrans('Subscription ID: ') . $subscriptionId . ' '
+                . $this->module->nuveiTrans('Plan ID: ') . Tools::getValue('planId');
 
             // check for repeating DMN
             $ord_subscr_ids = '';
@@ -1556,12 +1553,12 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             // save the Subscription ID END
         }
         elseif ('inactive' == $subscriptionState) {
-            $msg = $this->l('Subscription is Inactive.') . ' '
-                . $this->l('Subscription ID: ') . $subscriptionId;
+            $msg = $this->module->nuveiTrans('Subscription is Inactive.') . ' '
+                . $this->module->nuveiTrans('Subscription ID: ') . $subscriptionId;
         }
         elseif ('canceled' == $subscriptionState) {
-            $msg = $this->l('Subscription was canceled.') . ' '
-                .$this->l('Subscription ID: ') . $subscriptionId;
+            $msg = $this->module->nuveiTrans('Subscription was canceled.') . ' '
+                .$this->module->nuveiTrans('Subscription ID: ') . $subscriptionId;
         }
 
         $message            = new MessageCore();
@@ -1628,15 +1625,21 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         $order_info = $this->getOrder($order_id);
         $currency   = new Currency((int)$order_info->id_currency);
 
-        $msg = sprintf(
-            /* translators: %s: the status of the Payment */
-            $this->l('Subscription Payment with Status %s was made. '),
-            $req_status
+//        $msg = sprintf(
+//            /* translators: %s: the status of the Payment */
+//            $this->l('Subscription Payment with Status %s was made. '),
+//            $req_status
+//        );
+                
+        $msg = $this->module->nuveiTrans(
+            'Subscription Payment with Status %status% was made. ',
+            'Admin',
+            ['%status%' => $req_status]
         )
-            . $this->l('Plan ID: ') . Tools::getValue('planId') . '. '
-            . $this->l('Subscription ID: ') . Tools::getValue('subscriptionId') . '. '
-            . $this->l('Amount: ') . $this->module->formatMoney(Tools::getValue('totalAmount'), $currency->iso_code) . ' '
-            . $this->l('TransactionId: ') . Tools::getValue('TransactionID') . '.';
+            . $this->module->nuveiTrans('Plan ID: ') . Tools::getValue('planId') . '. '
+            . $this->module->nuveiTrans('Subscription ID: ') . Tools::getValue('subscriptionId') . '. '
+            . $this->module->nuveiTrans('Amount: ') . $this->module->formatMoney(Tools::getValue('totalAmount'), $currency->iso_code) . ' '
+            . $this->module->nuveiTrans('TransactionId: ') . Tools::getValue('TransactionID') . '.';
 
         $this->module->createLog($msg, 'Subscription DMN Payment');
         

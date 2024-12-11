@@ -12,17 +12,23 @@ class Nuvei_Checkout extends PaymentModule
     public $name                        = 'nuvei_checkout';
     public $author                      = 'Nuvei';
     public $displayName                 = 'Nuvei Payments'; // we see this in Prestashop Modules list
-    public $paymentPlanJson             = 'nuvei_payment_plans.json';
-    public $ps_versions_compliancy      = array(
-        'min' => '8.1.0', 
-        'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
-    );
-    public $controllers                 = array('payment', 'validation');
     public $bootstrap                   = true;
     public $currencies                  = true;
     public $currencies_mode             = 'checkbox'; // for the Payment > Preferences menu
     public $need_instance               = 1;
     public $is_eu_compatible            = 1;
+    public $controllers                 = array('payment', 'validation');
+    public $ps_versions_compliancy      = array(
+        'min' => '8.1.0', 
+        'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
+    );
+    public $tab;
+    public $version;
+    public $page;
+    public $description;
+    public $confirmUninstall;
+    
+    public $paymentPlanJson             = 'nuvei_payment_plans.json';
     
     private $sdkLibProdUrl              = 'https://cdn.safecharge.com/safecharge_resources/v1/checkout/checkout.js';
     private $sdkLibTagUrl               = 'https://devmobile.sccdev-qa.com/checkoutNext/checkout.js';
@@ -63,17 +69,21 @@ class Nuvei_Checkout extends PaymentModule
         parent::__construct();
 
         $this->page				= basename(__FILE__, '.php'); // ?
-        $this->description		= $this->l($this->getConfigData('description'));
-        $this->confirmUninstall = $this->l($this->getConfigData('confirmUninstall'));
+        $this->description		= $this->trans($this->getConfigData('description'), [], 'Modules.NuveiCheckout.Admin');
+        $this->confirmUninstall = $this->trans($this->getConfigData('confirmUninstall'), [], 'Modules.NuveiCheckout.Admin');
         
-        // if the plugin is not configured show, add it to alert tab.
+        // if the plugin is not configured, add it to alert tab.
         if (empty(Configuration::get('SC_MERCHANT_ID')) 
             || empty(Configuration::get('SC_MERCHANT_SITE_ID'))
             || empty(Configuration::get('SC_SECRET_KEY'))
             || empty(Configuration::get('SC_TEST_MODE'))
             || empty(Configuration::get('SC_HASH_TYPE'))
         ) {
-            $this->warning = $this->l('Merchant account details must be configured before using this module.');
+            $this->warning = $this->trans(
+                'Merchant account details must be configured before using this module.', 
+                [], 
+                'Modules.NuveiCheckout.Admin'
+            );
         }
     }
 	
@@ -429,7 +439,7 @@ class Nuvei_Checkout extends PaymentModule
             $option_text    = Configuration::get('SC_FRONTEND_NAME');
 
             if(!$option_text || empty($option_text)) {
-                $option_text = $this->trans('Pay by Nuvei', [], 'Modules.nuvei');
+                $option_text = $this->trans('Pay by Nuvei', [], 'Modules.NuveiCheckout.Shop');
             }
 
             $newOption
@@ -496,7 +506,10 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         if(empty($this->context->cookie->nuvei_order_data)) {
-            $smarty->assign('nuvei_error', $this->l('Missing specific Nuvei data for this Order.'));
+            $smarty->assign(
+                'nuvei_error',
+                $this->trans('Missing specific Nuvei data for this Order.', [], 'Modules.NuveiCheckout.Admin')
+            );
             
             return $this->display(__FILE__, 'views/templates/admin/order_top_msg.tpl');
         }
@@ -504,19 +517,28 @@ class Nuvei_Checkout extends PaymentModule
         $sc_data = unserialize($this->context->cookie->nuvei_order_data);
         
         if(!empty($sc_data['error_msg'])) {
-            $smarty->assign('nuvei_error', $this->l($sc_data['error_msg']));
+            $smarty->assign(
+                'nuvei_error',
+                $this->trans($sc_data['error_msg'], [], 'Modules.NuveiCheckout.Admin')
+            );
             
             return $this->display(__FILE__, 'views/templates/admin/order_top_msg.tpl');
         }
         
         if(empty($sc_data['resp_transaction_type'])) {
-            $smarty->assign('nuvei_error', $this->l('Nuvei Error - Missing Order Transaction Type.'));
+            $smarty->assign(
+                'nuvei_error', 
+                $this->trans('Nuvei Error - Missing Order Transaction Type.', [], 'Modules.NuveiCheckout.Admin')
+            );
             
             return $this->display(__FILE__, 'views/templates/admin/order_top_msg.tpl');
         }
         // TODO do we need this check...?
         if(empty($sc_data['related_transaction_id'])) {
-            $smarty->assign('nuvei_error', $this->l('Nuvei Error - Missing Order Transaction ID.'));
+            $smarty->assign(
+                'nuvei_error', 
+                $this->trans('Nuvei Error - Missing Order Transaction ID.', [], 'Modules.NuveiCheckout.Admin')
+            );
             
             return $this->display(__FILE__, 'views/templates/admin/order_top_msg.tpl');
         }
@@ -809,12 +831,14 @@ class Nuvei_Checkout extends PaymentModule
         );
         
         if(!$json_arr) {
-            $this->context->controller->errors[] = $this->l('Empty request response.');
+            $this->context->controller->errors[]
+                = $this->trans('Empty request response.', [], 'Modules.NuveiCheckout.Admin');
             return false;
         }
         
         if(!is_array($json_arr)) {
-            $this->context->controller->errors[] = $this->l('Invalid API response.');
+            $this->context->controller->errors[]
+                = $this->trans('Invalid API response.', [], 'Modules.NuveiCheckout.Admin');
             return false;
         }
         
@@ -826,7 +850,12 @@ class Nuvei_Checkout extends PaymentModule
         // in case we have message but without status
         if(!isset($json_arr['status']) && isset($json_arr['msg'])) {
             // save response message in the History
-            $msg = $this->l('Request for Refund #') . $last_slip_id . $this->l(' problem: ') . $json_arr['msg'];
+            $msg = $this->trans(
+                'Request for Refund #%lastSlipId% problem: ',
+                ['%lastSlipId%' => $last_slip_id],
+                'Modules.NuveiCheckout.Admin'
+            ) . $json_arr['msg'];
+            
             $this->context->controller->errors[] = $msg;
             
             $message->message = $msg;
@@ -836,7 +865,7 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         // the status of the request is ERROR
-        $msg = $this->l('Request ERROR.');
+        $msg = $this->trans('Request ERROR.', [], 'Modules.NuveiCheckout.Admin');
 
         if(!empty($json_arr['reason'])) {
             $msg .= ' - ' . $json_arr['reason'] . '. ';
@@ -1029,7 +1058,8 @@ class Nuvei_Checkout extends PaymentModule
 
             # 2. If the user is Guest, do not add the product if it is with Nuvei Payment plan!
             if (!$is_user_logged && in_array((int) $params['id_product_attribute'], $attrIdsWithPlan)) {
-                $this->context->controller->errors[] = $this->l('You have to login to add this product.');
+                $this->context->controller->errors[] 
+                    = $this->trans('You have to login to add this product.', [], 'Modules.NuveiCheckout.Shop');
 
                 $params['product']->available_for_order = false;
             }
@@ -1045,7 +1075,8 @@ class Nuvei_Checkout extends PaymentModule
             foreach ($products as $product) {
                 // If we find even on with Payment plan - do not add the product!
                 if (in_array((int) $product['id_product_attribute'], $attrIdsWithPlan)) {
-                    $this->context->controller->errors[] = $this->l('This product cannot be added to the cart.');
+                    $this->context->controller->errors[] 
+                        = $this->trans('This product cannot be added to the cart.', [], 'Modules.NuveiCheckout.Shop');
 
                     $params['product']->available_for_order = false;
 
@@ -1118,18 +1149,18 @@ class Nuvei_Checkout extends PaymentModule
         ob_start();
         
         $data = array(
-            'day'               => $this->l('day'),
-            'days'              => $this->l('days'),
-            'month'             => $this->l('month'),
-            'months'            => $this->l('months'),
-            'year'              => $this->l('year'),
-            'years'             => $this->l('years'),
-            'error_msg'         => $this->l('You can not add a Prduct with a Payment Plan to the Cart.'),
-            'tab_title'         => $this->l('Nuvei Plan Details'),
-            'Plan_duration'     => $this->l('Plan Duration'),
-            'Charge_every'      => $this->l('Charge Every'),
-            'Recurring_amount'  => $this->l('Recurring Amount'),
-            'Trial_period'      => $this->l('Trial Period'),
+            'day'               => $this->trans('day', [], 'Modules.NuveiCheckout.Shop'),
+            'days'              => $this->trans('days', [], 'Modules.NuveiCheckout.Shop'),
+            'month'             => $this->trans('month', [], 'Modules.NuveiCheckout.Shop'),
+            'months'            => $this->trans('months', [], 'Modules.NuveiCheckout.Shop'),
+            'year'              => $this->trans('year', [], 'Modules.NuveiCheckout.Shop'),
+            'years'             => $this->trans('years', [], 'Modules.NuveiCheckout.Shop'),
+            'error_msg'         => $this->trans('You can not add a Prduct with a Payment Plan to the Cart.', [], 'Modules.NuveiCheckout.Shop'),
+            'tab_title'         => $this->trans('Nuvei Plan Details', [], 'Modules.NuveiCheckout.Shop'),
+            'Plan_duration'     => $this->trans('Plan Duration', [], 'Modules.NuveiCheckout.Shop'),
+            'Charge_every'      => $this->trans('Charge Every', [], 'Modules.NuveiCheckout.Shop'),
+            'Recurring_amount'  => $this->trans('Recurring Amount', [], 'Modules.NuveiCheckout.Shop'),
+            'Trial_period'      => $this->trans('Trial Period', [], 'Modules.NuveiCheckout.Shop'),
             'product_plans'     => $product_plans,
             'gr_ids'            => $attrIdGroup,
             'is_cart_empty'     => $is_cart_empty,
@@ -1211,17 +1242,17 @@ class Nuvei_Checkout extends PaymentModule
         
         if (!Configuration::get('SC_MERCHANT_SITE_ID')) {
             $this->createLog('Error: (invalid or undefined Merchant Site ID)');
-            return $this->displayName . $this->l(' Error: (invalid or undefined Merchant Site ID)');
+            return $this->displayName . $this->trans(' Error: (invalid or undefined Merchant Site ID)', [], 'Modules.NuveiCheckout.Admin');
         }
           
         if (!Configuration::get('SC_MERCHANT_ID')) {
             $this->createLog('Error: (invalid or undefined Merchant ID)');
-            return $this->displayName . $this->l(' Error: (invalid or undefined Merchant ID)');
+            return $this->displayName . $this->trans(' Error: (invalid or undefined Merchant ID)', [], 'Modules.NuveiCheckout.Admin');
         }
         
         if (!Configuration::get('SC_SECRET_KEY')) {
             $this->createLog('Error: (invalid or undefined secure key)');
-            return $this->displayName . $this->l(' Error: (invalid or undefined Secure Key)');
+            return $this->displayName . $this->trans(' Error: (invalid or undefined Secure Key)', [], 'Modules.NuveiCheckout.Admin');
         }
           
         return true;
@@ -1855,11 +1886,12 @@ class Nuvei_Checkout extends PaymentModule
         if (!$resp || !is_array($resp) || 'SUCCESS' != $resp['status']) {
             $message			= new MessageCore();
             $message->id_order	= $order_id;
-            $msg                = $this->l('Error when try to cancel a Subscription #') 
+            
+            $msg = $this->trans('Error when try to cancel a Subscription #', [], 'Modules.NuveiCheckout.Admin') 
                 . (int) $subs_data['subscr_ids'];
 
             if (!empty($resp['reason'])) {
-                $msg .= $this->l(' Reason: ') . $resp['reason'];
+                $msg .= $this->trans(' Reason: ', [], 'Modules.NuveiCheckout.Admin') . $resp['reason'];
             }
 
             $message->private = true;
@@ -1932,6 +1964,18 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         return $ids;
+    }
+    
+    /**
+     * Expose translation functionality to other classes in the module.
+     * 
+     * @param string $text
+     * @param string $domain    Accept "Admin" or "Shop", "Admin" by default.
+     * @param array $params     An array with parameters to be replaced in the text.
+     */
+    public function nuveiTrans($text, $domain = 'Admin', $params = [])
+    {
+        return $this->trans($text, $params, 'Modules.NuveiCheckout.' . $domain);
     }
     
     private function smartyToJsObject($object, $name = 'nuveiObj')
@@ -2383,27 +2427,27 @@ class Nuvei_Checkout extends PaymentModule
     private function postValidation()
     {
         if (!Tools::getValue('SC_MERCHANT_SITE_ID')) {
-            $this->_postErrors[] = $this->l('Nuvei "Merchant site ID" is required.');
+            $this->_postErrors[] = $this->trans('Nuvei "Merchant site ID" is required.', [], 'Modules.NuveiCheckout.Admin');
         }
 
         if (!Tools::getValue('SC_MERCHANT_ID')) {
-            $this->_postErrors[] = $this->l('Nuvei "Merchant ID" is required.');
+            $this->_postErrors[] = $this->trans('Nuvei "Merchant ID" is required.', [], 'Modules.NuveiCheckout.Admin');
         }
 
         if (!Tools::getValue('SC_SECRET_KEY')) {
-            $this->_postErrors[] = $this->l('Nuvei "Secret key" is required.');
+            $this->_postErrors[] = $this->trans('Nuvei "Secret key" is required.', [], 'Modules.NuveiCheckout.Admin');
         }
         
         if (!Tools::getValue('SC_TEST_MODE')) {
-            $this->_postErrors[] = $this->l('Nuvei "Test mode" is required.');
+            $this->_postErrors[] = $this->trans('Nuvei "Test mode" is required.', [], 'Modules.NuveiCheckout.Admin');
         }
         
         if (!Tools::getValue('SC_HASH_TYPE')) {
-            $this->_postErrors[] = $this->l('Nuvei "Hash type" is required.');
+            $this->_postErrors[] = $this->trans('Nuvei "Hash type" is required.', [], 'Modules.NuveiCheckout.Admin');
         }
         
         if (!Tools::getValue('SC_PAYMENT_ACTION')) {
-            $this->_postErrors[] = $this->l('Nuvei "Payment action" is required.');
+            $this->_postErrors[] = $this->trans('Nuvei "Payment action" is required.', [], 'Modules.NuveiCheckout.Admin');
         }
     }
     

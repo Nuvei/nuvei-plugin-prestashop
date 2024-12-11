@@ -18,16 +18,19 @@ class Nuvei_CheckoutAddStepModuleFrontController extends ModuleFrontController
             // 
             if($this->module->isModuleActive() !== true){
                 $this->module->createLog(null, 'isPayment check fail.', 'WARN');
-//                Tools::redirect($error_url);
-                $error_msg = $this->l('The selected Payment Module is not active. '
-                    . 'Please go back and select another one.');
+                
+                $error_msg = $this->module->nuveiTrans(
+                    'The selected Payment Module is not active. Please go back and select another one.',
+                    'Shop'
+                );
             }
 
             if(empty($cart->delivery_option)) {
                 $this->createLog(null, 'The Cart is empty.', 'WARN');
-//                Tools::redirect($error_url);
-                $error_msg = $this->l('The delivery option is not valid. '
-                    . 'Please go back and try again.');
+                $error_msg = $this->module->nuveiTrans(
+                    'The delivery option is not valid. Please go back and try again.',
+                    'Shop'
+                );
             }
             
             // check parameters
@@ -43,8 +46,7 @@ class Nuvei_CheckoutAddStepModuleFrontController extends ModuleFrontController
                     'Secure key hash not mutch!'
                 );
 
-//                Tools::redirect($error_url);
-                $error_msg = $this->l('Cart check error. Please go back and try again.');
+                $error_msg = $this->module->nuveiTrans('Cart check error. Please go back and try again.', 'Shop');
             }
 
             if($cart->id != hash(Configuration::get('SC_HASH_TYPE'), Tools::getValue('cid'))) {
@@ -57,16 +59,15 @@ class Nuvei_CheckoutAddStepModuleFrontController extends ModuleFrontController
                     'Cart ID hash not mutch!'
                 );
 
-//                Tools::redirect($error_url);
-                $error_msg = $this->l('Cart check error. Please go back and try again.');
+                $error_msg = $this->module->nuveiTrans('Cart check error. Please go back and try again.', 'Shop');
             }
             // check parameters END
 
             if(empty($error_msg)) {
                 if(!$this->module->assignOrderData()) {
                     $this->module->createLog(null, 'assignOrderData() call return false', 'WARN');
-//                    Tools::redirect($error_url);
-                    $error_msg = $this->l('Unexpected error. Please go back and try again.');
+                    
+                    $error_msg = $this->module->nuveiTrans('Unexpected error. Please go back and try again.', 'Shop');
                 }
             }
 

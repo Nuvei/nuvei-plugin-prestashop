@@ -5,6 +5,7 @@
     * Removed the version paramter from the main file. A getter method was created, who get the version from config.xml.
     * For the QA site add a specific parameter when call Simply Connect.
     * Fixed the check if the plugin is configured.
+    * Use the new translation approach.
 ```
 
 # 2.1.0
