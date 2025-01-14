@@ -281,7 +281,7 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             $orders_arr[$data['order_id']]['subscr']    = 0;
             $orders_arr[$data['order_id']]['fraud']     = 0;
             
-            $nuvei_data = json_decode($data['data']);
+            $nuvei_data = json_decode($data['data'], true);
             
             if (!empty($data['subscr_ids'])
                 || !empty($nuvei_data['subscriptions'])

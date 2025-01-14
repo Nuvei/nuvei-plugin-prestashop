@@ -471,6 +471,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         $this->module->createLog(
             [
                 'Order'     => $order_info->id,
+                'Order info'     => $order_info,
                 'Status'    => $status,
             ],
             'changeOrderStatus()'
@@ -593,7 +594,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 
         $history = new OrderHistory();
         $history->id_order = $order_info->id;
-        $history->changeIdOrderState($status_id, $order_info->id, !$order_info->has_invoice);
+        $history->changeIdOrderState($status_id, $order_info->id, !$order_info->has_invoice());
         $history->add(true);
 
         // in case ot Payment error
@@ -1221,11 +1222,29 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
             return;
         }
         
-        if ($curr_time - $order_request_time <= 1800) {
-            $this->module->createLog("Let's wait one more DMN try.");
-            return;
+        // it is too early for auto-void
+//        if ($curr_time - $order_request_time <= 1800) {
+//            $this->module->createLog("Let's wait one more DMN try.");
+//            return;
+//        }
+        
+        $logMessage = $this->module->nuveiTrans('Nuvei Payments notification.') . ' ' 
+            . $this->module->nuveiTrans('The plugin cannot find corresponding Order for Nuvei Transaction ') 
+            . Tools::getValue('TransactionID') . '. ' 
+            . $this->module->nuveiTrans('Please, check it in the Nuvei Control Panel! You can enable/disable the "Auto Void" from the plugin settings.');
+        
+        // save log message
+        $this->saveAutoVoidAdminMsg($logMessage);
+        
+        // check if the auto-void is disabled
+        if ('yes' !== Configuration::get('NUVEI_ALLOW_AUTO_VOID')) {
+            $msg = "Auto Void logic - the auto void is disabled, but a system log was saved.";
+            $this->module->createLog($msg);
+            
+            header('Content-Type: text/plain');
+            http_response_code(200);
+            exit($msg);
         }
-        // /not allowed Auto-Void
         
         $notify_url     = $this->module->getNotifyUrl();
         $params    = [
@@ -1259,6 +1278,59 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         }
         
         return;
+    }
+    
+    /**
+     * Just a repeating code.
+     * 
+     * @param string $text
+     */
+    private function saveAutoVoidAdminMsg($text = '')
+    {
+        // try to get the Order ID
+        $order_id = current(explode('_', Tools::getValue('merchant_unique_id', '')));
+        
+        if (!is_numeric($order_id)) {
+            $order_id = 0;
+        }
+        //
+        
+        $customerThread                 = new CustomerThread();
+        $customerThread->id_shop        = $this->context->shop->id;
+        $customerThread->id_lang        = $this->context->language->id;
+        $customerThread->email          = Tools::getValue('email'); // Customer's email
+        $customerThread->status         = 'open';
+        $customerThread->token          = Tools::passwdGen(12);
+        $customerThread->id_contact     = 0;
+        $customerThread->id_customer    = Tools::getValue('customField6');
+        $customerThread->id_product     = 0; // No specific product
+        $customerThread->id_order       = $order_id;
+        $customerThread->add();
+
+        $customerMessage                        = new CustomerMessage();
+        $customerMessage->id_customer_thread    = $customerThread->id;
+        $customerMessage->message               = $text;
+        $customerMessage->private               = false; // Public message - visible for the client and in the admin
+        $customerMessage->add();
+        
+        
+//        try {
+//            // Add to ps_log table
+//            PrestaShopLogger::addLog(
+//                $text,
+//                2, // Severity level: 1 (info), 2 (warning), 3 (error)
+//                null, // Error code
+//                'Nuvei_Checkout', // Object type
+//                null, // Object ID
+//                true // Allow display in admin
+//            );
+//
+//            // Optional: Add flash message to display in admin area
+//            $this->context->controller->confirmations[] = $text;
+//        }
+//        catch (Exception $e) {
+//            $this->module->createLog($e->getMessage(), 'Auto-Void Log Exception');
+//        }
     }
     
     /**

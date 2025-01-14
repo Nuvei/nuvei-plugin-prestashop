@@ -1,7 +1,6 @@
 <?php
 
 use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -328,6 +327,7 @@ class Nuvei_Checkout extends PaymentModule
             Configuration::updateValue('SC_SECRET_KEY',             Tools::getValue('SC_SECRET_KEY'));
             Configuration::updateValue('SC_HASH_TYPE',              Tools::getValue('SC_HASH_TYPE'));
             Configuration::updateValue('SC_PAYMENT_ACTION',         Tools::getValue('SC_PAYMENT_ACTION'));
+            Configuration::updateValue('NUVEI_ALLOW_AUTO_VOID',     Tools::getValue('NUVEI_ALLOW_AUTO_VOID'));
             Configuration::updateValue('SC_USE_UPOS',               Tools::getValue('SC_USE_UPOS'));
             Configuration::updateValue('SC_TEST_MODE',              Tools::getValue('SC_TEST_MODE'));
             Configuration::updateValue('SC_CREATE_LOGS',            Tools::getValue('SC_CREATE_LOGS'));
@@ -1629,17 +1629,14 @@ class Nuvei_Checkout extends PaymentModule
                     'customField2' => $amount,
                     'customField3' => $currency->iso_code,
 					'customField5' => $prod_with_plan['plan_details'] ?? '',
+                    'customField6' => $this->context->cart->id_customer,
 				),
 			);
             
             if ('redirect' != Configuration::get('NUVEI_APM_WINDOW_TYPE')) {
-//                if (1 == Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP')
-//                    || 'no' == Configuration::get('SC_TEST_MODE')
-//                ) {
-                    $oo_params['urlDetails']['successUrl']  = $oo_params['urlDetails']['failureUrl']
-                                                            = $oo_params['urlDetails']['pendingUrl']
-                                                            = $this->apmPopupAutoCloseUrl;
-//                }
+                $oo_params['urlDetails']['successUrl']  = $oo_params['urlDetails']['failureUrl']
+                                                        = $oo_params['urlDetails']['pendingUrl']
+                                                        = $this->apmPopupAutoCloseUrl;
             }
             
 			$resp = $this->callRestApi(
@@ -2116,7 +2113,7 @@ class Nuvei_Checkout extends PaymentModule
 			$nuvei_last_open_order_details,
 			'updateOrder() - session[nuvei_last_open_order_details]'
 		);
-		
+        
 		if (empty($nuvei_last_open_order_details)
 			|| empty($nuvei_last_open_order_details['sessionToken'])
 			|| empty($nuvei_last_open_order_details['orderId'])
@@ -2149,6 +2146,7 @@ class Nuvei_Checkout extends PaymentModule
 				'customField1' => $this->context->cart->secure_key,
                 'customField2' => $cart_amount,
                 'customField3' => $currency->iso_code,
+                'customField6' => $this->context->cart->id_customer,
 			),
 		);
         

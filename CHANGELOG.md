@@ -1,5 +1,11 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 2.2.0
+```
+    * Added option to enable/disable the auto-void in the plugin settings.
+    * When the plugin receive a Transaction DMN, but cannot find an Order in the Store, a message in Customer Service > Customer Service will be saved.
+```
+
 # 2.1.1
 ```
     * Removed the version paramter from the main file. A getter method was created, who get the version from config.xml.

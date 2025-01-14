@@ -86,6 +86,18 @@
                                 </select>
                             </div>
                         </div>
+                        
+                        <div class="form-group">
+                            <label class="control-label col-lg-3">{l s='Allow Auto Void' mod='nuvei'}</label>
+                            <div class="col-lg-9">
+                                <select name="NUVEI_ALLOW_AUTO_VOID">
+                                    <option value="yes" {if Configuration::get('NUVEI_ALLOW_AUTO_VOID') eq 'yes'}selected{/if}>{l s='Yes' mod='nuvei'}</option>
+                                    <option value="no" {if Configuration::get('NUVEI_ALLOW_AUTO_VOID') neq 'yes'}selected{/if}>{l s='No' mod='nuvei'}</option>
+                                </select>
+                                
+                                <span class="help-block">{l s='Allow plugin to initiate auto Void request in case there is Payment (transaction), but there is no Order for this transaction in the Store. This logic is based on incoming DMNs. Event the auto Void is disabled, a message will be saved in the Admin logs.' mod='nuvei'}</span>
+                            </div>
+                        </div>
                                 
                         <div class="form-group">
                             <label class="control-label col-lg-3" for="SC_CREATE_LOGS">{l s='Save Logs' mod='nuvei'}</label>
