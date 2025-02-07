@@ -470,9 +470,8 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
     {
         $this->module->createLog(
             [
-                'Order'     => $order_info->id,
-                'Order info'     => $order_info,
-                'Status'    => $status,
+                'Order info'    => $order_info,
+                'Status'        => $status,
             ],
             'changeOrderStatus()'
         );
@@ -592,9 +591,12 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         // save order history
         $this->module->createLog('changeOrderStatus() - Order status will be set to ' . $status_id);
 
+        $hasInvoice = method_exists($order_info, 'hasInvoice') 
+            ? $order_info->hasInvoice() : @$order_info->has_invoice();
+        
         $history = new OrderHistory();
         $history->id_order = $order_info->id;
-        $history->changeIdOrderState($status_id, $order_info->id, !$order_info->has_invoice());
+        $history->changeIdOrderState($status_id, $order_info->id, !$hasInvoice);
         $history->add(true);
 
         // in case ot Payment error
