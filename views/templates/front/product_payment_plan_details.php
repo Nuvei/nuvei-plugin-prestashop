@@ -114,7 +114,7 @@
         nuveiShowPlanDetails(document.getElementById('group_' + nuveiAttrGroupId).value);
     }
     else {
-        <?php if($data['disable_add_btn']): ?>
+        <?php if(isset($data['disable_add_btn']) && $data['disable_add_btn']): ?>
             document.getElementsByClassName('product-add-to-cart')[0].style.display = 'none';
             document.getElementById('nuvei_add_error').style.display = 'block';
         <?php endif; ?>
