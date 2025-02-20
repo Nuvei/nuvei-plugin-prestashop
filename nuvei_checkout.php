@@ -332,18 +332,17 @@ class Nuvei_Checkout extends PaymentModule
             Configuration::updateValue('SC_TEST_MODE',              Tools::getValue('SC_TEST_MODE'));
             Configuration::updateValue('SC_CREATE_LOGS',            Tools::getValue('SC_CREATE_LOGS'));
             Configuration::updateValue('NUVEI_PRESELECT_CC',        Tools::getValue('NUVEI_PRESELECT_CC'));
-            Configuration::updateValue('NUVEI_ADD_CHECKOUT_STEP',   Tools::getValue('NUVEI_ADD_CHECKOUT_STEP'));
+            Configuration::updateValue('NUVEI_ADD_CHECKOUT_STEP',	Tools::getValue('NUVEI_ADD_CHECKOUT_STEP'));
             Configuration::updateValue('NUVEI_PRESELECT_PAYMENT',   Tools::getValue('NUVEI_PRESELECT_PAYMENT'));
-            
-            Configuration::updateValue('NUVEI_USE_DCC',                 Tools::getValue('NUVEI_USE_DCC'));
-            Configuration::updateValue('NUVEI_BLOCK_CARDS',             Tools::getValue('NUVEI_BLOCK_CARDS'));
-            Configuration::updateValue('NUVEI_PAY_BTN_TEXT',            Tools::getValue('NUVEI_PAY_BTN_TEXT'));
-            Configuration::updateValue('NUVEI_AUTO_EXPAND_PMS',         Tools::getValue('NUVEI_AUTO_EXPAND_PMS'));
-//            Configuration::updateValue('NUVEI_AUTO_CLOSE_APM_POPUP',    Tools::getValue('NUVEI_AUTO_CLOSE_APM_POPUP'));
-            Configuration::updateValue('NUVEI_SDK_LOG_LEVEL',           Tools::getValue('NUVEI_SDK_LOG_LEVEL'));
-            Configuration::updateValue('NUVEI_SDK_TRANSL',              Tools::getValue('NUVEI_SDK_TRANSL'));
-            Configuration::updateValue('NUVEI_SDK_THEME',               Tools::getValue('NUVEI_SDK_THEME'));
-            Configuration::updateValue('NUVEI_APM_WINDOW_TYPE',         Tools::getValue('NUVEI_APM_WINDOW_TYPE'));
+            Configuration::updateValue('NUVEI_USE_DCC',             Tools::getValue('NUVEI_USE_DCC'));
+            Configuration::updateValue('NUVEI_BLOCK_CARDS',         Tools::getValue('NUVEI_BLOCK_CARDS'));
+            Configuration::updateValue('NUVEI_PAY_BTN_TEXT',        Tools::getValue('NUVEI_PAY_BTN_TEXT'));
+            Configuration::updateValue('NUVEI_AUTO_EXPAND_PMS',		Tools::getValue('NUVEI_AUTO_EXPAND_PMS'));
+            Configuration::updateValue('NUVEI_SDK_LOG_LEVEL',       Tools::getValue('NUVEI_SDK_LOG_LEVEL'));
+            Configuration::updateValue('NUVEI_SDK_STYLE',			Tools::getValue('NUVEI_SDK_STYLE'));
+            Configuration::updateValue('NUVEI_SDK_TRANSL',          Tools::getValue('NUVEI_SDK_TRANSL'));
+            Configuration::updateValue('NUVEI_SDK_THEME',           Tools::getValue('NUVEI_SDK_THEME'));
+            Configuration::updateValue('NUVEI_APM_WINDOW_TYPE',     Tools::getValue('NUVEI_APM_WINDOW_TYPE'));
             
             $nuvei_block_pms = Tools::getValue('NUVEI_BLOCK_PMS');
             
@@ -1828,6 +1827,7 @@ class Nuvei_Checkout extends PaymentModule
                 ]
             ],
             'sourceApplication'         => $this->nuvei_source_application,
+            'fieldStyle'				=> json_decode(Configuration::get('NUVEI_SDK_STYLE'), true),
         ];
         
         // for the QA site pass a specific parameter

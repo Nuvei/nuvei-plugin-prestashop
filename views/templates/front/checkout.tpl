@@ -56,21 +56,20 @@
     </form>
 
     <script type="text/javascript">
-        var scAPMsErrorMsg                  = "{if !empty($scAPMsErrorMsg)}{l s=$scAPMsErrorMsg mod='nuvei'}{/if}";
-        var nuveiCheckoutSdkParams          = JSON.parse('{$nuveiSdkParams nofilter}');
+{*        var scAPMsErrorMsg                  = "{if !empty($scAPMsErrorMsg)}{l s=$scAPMsErrorMsg mod='nuvei'}{/if}";*}
+        const nuveiCheckoutSdkParams        = JSON.parse('{$nuveiSdkParams nofilter}');
         nuveiCheckoutSdkParams.onResult     = afterSdkResponse;
         nuveiCheckoutSdkParams.prePayment   = scUpdateCart;
         
         // load the SDK
-        var scWebSdkScript		= document.createElement('script');
+        const scWebSdkScript    = document.createElement('script');
         scWebSdkScript.type		= 'text/javascript';
-        scWebSdkScript.onload	= function() { nuveiLoadCheckout(); };
         scWebSdkScript.src		= '{$nuveiSdkUrl}';
+        scWebSdkScript.onload	= function() { nuveiLoadCheckout(); };
+        // append the script
         document.getElementsByTagName("head")[0].appendChild(scWebSdkScript);
 
         function nuveiLoadCheckout() {
-            console.log('showNuveiCheckout()');
-            
             {if !isset($nuveiAddStep)}
                 nuveiCheckoutSdkParams.payButton = 'noButton';
             {/if}
@@ -119,28 +118,6 @@
 
                         resolve();
                         return;
-
-                        {*if(resp.hasOwnProperty('sessionToken') && '' != resp.sessionToken) {
-                            jQuery('#lst').val(resp.sessionToken);
-
-                            if(resp.sessionToken == nuveiCheckoutSdkParams.sessionToken) {
-                                resolve();
-                                return;
-                            }
-
-                            // reload the Checkout
-                            nuveiCheckoutSdkParams.sessionToken	= resp.sessionToken;
-                            nuveiCheckoutSdkParams.amount		= resp.amount;
-
-                            nuveiLoadCheckout();
-                        }*}
-                        
-                        {*if (resp.hasOwnProperty('message')) {
-                            errorMsg = resp.message;
-                        }
-                        
-                        scFormFalse(errorMsg);
-                        reject();*}
                     });
             });
         }

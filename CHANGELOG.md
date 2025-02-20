@@ -4,6 +4,7 @@
 ```
     * Added option to enable/disable the auto-void in the plugin settings.
     * When the plugin receive a Transaction DMN, but cannot find an Order in the Store, a message in Customer Service > Customer Service will be saved.
+    * Added option to modify Simply Connect style.
 ```
 
 # 2.1.1

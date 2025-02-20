@@ -25,6 +25,7 @@
             
             <div class="panel-body">
                 <div class="tab-content">
+                    <!-- General group -->
                     <div class="tab-pane fade in active" id="nuvei_general">
                         <div class="form-group">
                             <label class="control-label col-lg-3">{l s='Default Title' mod='nuvei'}</label>
@@ -109,8 +110,8 @@
                             </div>
                         </div>
                     </div>
-                    <!-- general settings -->
                     
+                    <!-- Advanced group -->
                     <div class="tab-pane fade" id="nuvei_advanced">
                         <div class="form-group">
                             <label class="control-label col-lg-3">{l s='Preselect Nuvei Payment' mod='nuvei'}</label>
@@ -208,20 +209,6 @@
                             </div>
                         </div>
                                 
-                        {* if Configuration::get('SC_TEST_MODE') eq 'yes'}
-                            <div class="form-group">
-                                <label class="control-label col-lg-3"> {l s='Auto-close APM Pop-Up' mod='nuvei'}</label>
-                                <div class="col-lg-9">
-                                    <select name="NUVEI_AUTO_CLOSE_APM_POPUP">
-                                        <option value="1" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 1}selected{/if}>{l s='Yes' mod='nuvei'}</option>
-                                        <option value="0" {if Configuration::get('NUVEI_AUTO_CLOSE_APM_POPUP') eq 0}selected{/if}>{l s='No' mod='nuvei'}</option>
-                                    </select>
-                                    
-                                    <span class="help-block">{l s='Works only when APMs window type is New Tab or Popup' mod='nuvei'}</span>
-                                </div>
-                            </div>
-                        {/if *}
-                        
                         <div class="form-group">
                             <label class="control-label col-lg-3"> {l s='Mask User Details in the Log' mod='nuvei'}</label>
                             <div class="col-lg-9">
@@ -250,11 +237,24 @@
                         </div>
                                 
                         <div class="form-group">
+                            <label class="control-label col-lg-3"> {l s='SDK Styling' mod='nuvei'}</label>
+                            <div class="col-lg-9">
+                                <textarea name="NUVEI_SDK_STYLE" rows="5" class="form-control textarea-autosize"placeholder='{
+	"base": {
+		"iconColor": "#c4f0ff"
+	}
+ }'>{Configuration::get('NUVEI_SDK_STYLE')}</textarea>
+                                
+                                <span class="help-block">{l s='This filed is for styling Simply Connect. The valid format is JSON. For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/web-sdk/nuvei-fields/nuvei-fields-styling/#example-javascript" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
+                            </div>
+                        </div>
+                            
+                        <div class="form-group">
                             <label class="control-label col-lg-3"> {l s='SDK Translations' mod='nuvei'}</label>
                             <div class="col-lg-9">
                                 <textarea name="NUVEI_SDK_TRANSL" rows="5" class="form-control textarea-autosize"placeholder='{
-"doNotHonor":"you dont have enough money",
-"DECLINE":"declined"
+    "doNotHonor":"you dont have enough money",
+    "DECLINE":"declined"
 }'>{Configuration::get('NUVEI_SDK_TRANSL')}</textarea>
                                 
                                 <span class="help-block">{l s='This filed is the only way to translate Checkout SDK strings. Put the translations for all desired languages as shown in the placeholder. For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/ui-customization/#text-and-translation" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
@@ -273,8 +273,8 @@
                             </div>
                         </div>
                     </div>
-                    <!-- advanced settings -->
                     
+                    <!-- Help tools -->
                     <div class="tab-pane fade" id="nuvei_tools">
                         <div class="form-group">
                             <label class="control-label col-lg-3">{l s='Download Payment Plans' mod='nuvei'}</label>
@@ -296,7 +296,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- tools -->
                 </div>
             </div>
         </div><!-- /.form-wrapper -->
