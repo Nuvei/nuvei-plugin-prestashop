@@ -19,7 +19,7 @@ class Nuvei_Checkout extends PaymentModule
     public $controllers                 = array('payment', 'validation');
     public $ps_versions_compliancy      = array(
         'min' => '8.1.0', 
-        'max' => _PS_VERSION_ // for curent version - _PS_VERSION_
+        'max' => '8.999.999' // for curent version - _PS_VERSION_
     );
     public $tab;
     public $version;
@@ -1790,7 +1790,20 @@ class Nuvei_Checkout extends PaymentModule
             $useDCC = 'false';
         }
         
-        $locale = substr($this->context->language->locale, 0, 2);
+        $locale     = substr($this->context->language->locale, 0, 2);
+        $gpayConfig = [
+            'locale' => $locale
+        ];
+        
+        if (!empty($g_merchat_id = Configuration::get( 'NUVEI_GPAY_MERCHANT' ))) {
+            $gpayConfig['merchantId'] = $g_merchat_id;
+        }
+        if (!empty($g_button_color = Configuration::get( 'NUVEI_GPAY_BTN_COLOR' ))) {
+            $gpayConfig['buttonColor'] = $g_button_color;
+        }
+        if (!empty($g_button_type = Configuration::get( 'NUVEI_GPAY_BTN_TEXT' ))) {
+            $gpayConfig['buttonType'] = $g_button_type;
+        }
         
         $checkout_params = [
             'sessionToken'              => $oo_params['sessionToken'],
@@ -1822,9 +1835,10 @@ class Nuvei_Checkout extends PaymentModule
 			'theme'                     => Configuration::get('NUVEI_SDK_THEME'),
 			'apmWindowType'             => Configuration::get('NUVEI_APM_WINDOW_TYPE'),
             'apmConfig'                 => [
-                'googlePay' => [
-                    'locale' => $locale
-                ]
+                'googlePay' => $gpayConfig,
+                'applePay'  => array(
+					'locale'    => $locale,
+				),
             ],
             'sourceApplication'         => $this->nuvei_source_application,
             'fieldStyle'				=> json_decode(Configuration::get('NUVEI_SDK_STYLE'), true),

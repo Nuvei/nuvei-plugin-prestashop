@@ -272,6 +272,38 @@
                                 <span class="help-block">{l s='Please enable /Yes/ only when using a Once Step Checkout module!' mod='nuvei'}</span>
                             </div>
                         </div>
+                            
+                        <div class="form-group">
+                            <label class="control-label col-lg-3">{l s='Google Pay Merchant ID' mod='nuvei'}</label>
+                            <div class="col-lg-9">
+                                <input name="NUVEI_GPAY_MERCHANT" type="text" value="{Configuration::get('NUVEI_GPAY_MERCHANT')}" />
+                                <span class="help-block">{l s='For tests use' mod='nuvei'} BCR2DN6TZ6DP7P3X. <a href="https://docs.nuvei.com/documentation/global-guides/google-pay/google-pay-integration/google-pay-guide-checkout-sdk/#2-collect-the-card-details" target="_blank">{l s='Check the Documentation.' mod='nuvei'}</a></span>
+                            </div>
+                        </div>
+                            
+                        <div class="form-group">
+                            <label class="control-label col-lg-3">{l s='Google Button Color' mod='nuvei'}</label>
+                            <div class="col-lg-9">
+                                <select name="NUVEI_GPAY_BTN_COLOR">
+                                    <option value="black" {if Configuration::get('NUVEI_GPAY_BTN_COLOR') eq 'black'}selected{/if}>{l s='Black' mod='nuvei'}</option>
+                                    <option value="white" {if Configuration::get('NUVEI_GPAY_BTN_COLOR') eq 'white'}selected{/if}>{l s='White' mod='nuvei'}</option>
+                                </select>
+                            </div>
+                        </div>
+                                
+                        <div class="form-group">
+                            <label class="control-label col-lg-3">{l s='Google Button Text' mod='nuvei'}</label>
+                            <div class="col-lg-9">
+                                <select name="NUVEI_GPAY_BTN_TEXT">
+                                    <option value="buy" {if Configuration::get('NUVEI_GPAY_BTN_TEXT') eq 'buy'}selected{/if}>{l s='Buy' mod='nuvei'}</option>
+                                    <option value="book" {if Configuration::get('NUVEI_GPAY_BTN_TEXT') eq 'book'}selected{/if}>{l s='Book' mod='nuvei'}</option>
+                                    <option value="checkout" {if Configuration::get('NUVEI_GPAY_BTN_TEXT') eq 'checkout'}selected{/if}>{l s='Checkout' mod='nuvei'}</option>
+                                    <option value="order" {if Configuration::get('NUVEI_GPAY_BTN_TEXT') eq 'order'}selected{/if}>{l s='Order' mod='nuvei'}</option>
+                                    <option value="pay" {if Configuration::get('NUVEI_GPAY_BTN_TEXT') eq 'pay'}selected{/if}>{l s='Pay' mod='nuvei'}</option>
+                                    <option value="plain" {if Configuration::get('NUVEI_GPAY_BTN_TEXT') eq 'plain'}selected{/if}>{l s='Plain' mod='nuvei'}</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Help tools -->

@@ -1,5 +1,11 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 2.3.0
+```
+    * Version 2 of the plugin will not be available for Prestashop version 9 and above.
+    * Exposed additional settings for Google Pay.
+```
+
 # 2.2.0
 ```
     * Added option to enable/disable the auto-void in the plugin settings.
