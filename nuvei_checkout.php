@@ -343,6 +343,9 @@ class Nuvei_Checkout extends PaymentModule
             Configuration::updateValue('NUVEI_SDK_TRANSL',          Tools::getValue('NUVEI_SDK_TRANSL'));
             Configuration::updateValue('NUVEI_SDK_THEME',           Tools::getValue('NUVEI_SDK_THEME'));
             Configuration::updateValue('NUVEI_APM_WINDOW_TYPE',     Tools::getValue('NUVEI_APM_WINDOW_TYPE'));
+            Configuration::updateValue('NUVEI_GPAY_MERCHANT',       Tools::getValue('NUVEI_GPAY_MERCHANT'));
+            Configuration::updateValue('NUVEI_GPAY_BTN_COLOR',      Tools::getValue('NUVEI_GPAY_BTN_COLOR'));
+            Configuration::updateValue('NUVEI_GPAY_BTN_TEXT',       Tools::getValue('NUVEI_GPAY_BTN_TEXT'));
             
             $nuvei_block_pms = Tools::getValue('NUVEI_BLOCK_PMS');
             
