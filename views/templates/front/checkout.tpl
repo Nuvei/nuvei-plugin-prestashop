@@ -35,6 +35,10 @@
         .sfc-main-container.horizontal {
             display: grid;
         }
+        
+        .sfc-main-container div .gpay-button-fill {
+            box-sizing: border-box;
+        }
     </style>
     
     <div id="nuvei_error">
