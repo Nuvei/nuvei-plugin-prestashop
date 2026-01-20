@@ -60,10 +60,14 @@
     </form>
 
     <script type="text/javascript">
-{*        var scAPMsErrorMsg                  = "{if !empty($scAPMsErrorMsg)}{l s=$scAPMsErrorMsg mod='nuvei'}{/if}";*}
-        const nuveiCheckoutSdkParams        = JSON.parse('{$nuveiSdkParams nofilter}');
-        nuveiCheckoutSdkParams.onResult     = afterSdkResponse;
-        nuveiCheckoutSdkParams.prePayment   = scUpdateCart;
+        const nuveiCheckoutSdkParams    = JSON.parse('{$nuveiSdkParams nofilter}');
+        const nuveiWallets              = ['ppp_ApplePay', 'ppp_GooglePay', 'ppp_Paze'];
+        
+        var nuveiSimplyPaymentMethod    = '';
+        
+        nuveiCheckoutSdkParams.onResult                 = afterSdkResponse;
+        nuveiCheckoutSdkParams.prePayment               = scUpdateCart;
+        nuveiCheckoutSdkParams.onSelectPaymentMethod    = nuveiPmChange;
         
         // load the SDK
         const scWebSdkScript    = document.createElement('script');
@@ -186,6 +190,24 @@
             scFormFalse("{l s='Error with your Payment. Please try again later!' mod='nuvei'}");
         }
         
+        function nuveiPmChange(params) {
+            console.log(params.paymentMethodName);
+    
+            try {
+                nuveiSimplyPaymentMethod = params.paymentMethodName;
+
+                if (params.paymentMethodName && nuveiWallets.indexOf(params.paymentMethodName) >= 0) {
+                    $('#payment-confirmation button[type="submit"]').hide();
+                }
+                else {
+                    $('#payment-confirmation button[type="submit"]').show();
+                }
+            }
+            catch(e) {
+                console.log(e);
+            }
+        }
+        
         function scFormFalse(msg) {
             $('#nuvei_error #nuvei_error_msg').text(msg);
             $('#nuvei_error').show();
@@ -265,6 +287,13 @@
                     $('#payment-confirmation button[type="button"]')
                         .attr('type', 'submit')
                         .attr('onclick', '');
+                }
+            });
+            
+            // keep Place Order button hidden when someone play with the terms-and-conditions checkbox
+            $(document).on('change', 'input[name="conditions_to_approve[terms-and-conditions]"]', function(e) {
+                if (nuveiWallets.indexOf(nuveiSimplyPaymentMethod) >= 0) {
+                    $('#payment-confirmation button[type="submit"]').hide();
                 }
             });
             

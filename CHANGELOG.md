@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 2.3.1
+```
+    * Hide the "Place Order button", when GPay, ApplePay or Paze are selected.
+```
+
 # 2.3.0
 ```
     * Version 2 of the plugin will not be available for Prestashop version 9 and above.
