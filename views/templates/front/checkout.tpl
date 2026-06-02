@@ -61,21 +61,32 @@
 
     <script type="text/javascript">
         const nuveiCheckoutSdkParams    = JSON.parse('{$nuveiSdkParams nofilter}');
-        const nuveiWallets              = ['ppp_ApplePay', 'ppp_GooglePay', 'ppp_Paze'];
+        const nuveiTermsInput           = 'input[name="conditions_to_approve[terms-and-conditions]"]';
+        const nuveiWallets              = ['ppp_ApplePay', 'ppp_GooglePay', 'ppp_Paze', 'apmgw_Venmo', 'apmgw_VenmoPP'];
         
         var nuveiSimplyPaymentMethod    = '';
+        var nuveiIsSimplyFormValid      = false;
         
         nuveiCheckoutSdkParams.onResult                 = afterSdkResponse;
         nuveiCheckoutSdkParams.prePayment               = scUpdateCart;
         nuveiCheckoutSdkParams.onSelectPaymentMethod    = nuveiPmChange;
+        nuveiCheckoutSdkParams.onFormValidated          = nuveiCheckIsSimplyValid;
+        nuveiCheckoutSdkParams.crossBrowserApplePay     = true;
         
         // load the SDK
         const scWebSdkScript    = document.createElement('script');
         scWebSdkScript.type		= 'text/javascript';
         scWebSdkScript.src		= '{$nuveiSdkUrl}';
         scWebSdkScript.onload	= function() { nuveiLoadCheckout(); };
+        
         // append the script
         document.getElementsByTagName("head")[0].appendChild(scWebSdkScript);
+
+        function nuveiCheckIsSimplyValid(params) {
+            if (params.hasOwnProperty('isFormValid')) {
+                nuveiIsSimplyFormValid = params.isFormValid;
+            }
+        }
 
         function nuveiLoadCheckout() {
             {if !isset($nuveiAddStep)}
@@ -102,7 +113,15 @@
             console.log('scUpdateCart()');
             
             return new Promise((resolve, reject) => {
-                var errorMsg = "{l s='Payment error, please try again later!' mod='nuvei'}";
+                let errorMsg = "{l s='Payment error, please try again later!' mod='nuvei'}";
+
+                if ( ! jQuery(nuveiTermsInput).is(':checked') 
+                    || $('#payment-confirmation button[type="submit"]').is(':disabled')
+                ) {
+                    reject();
+                    scFormFalse("{l s='Please, check the Checkout form!' mod='nuvei'}");
+                    return;
+                }
 
                 jQuery.ajax({
                     type: "POST",
@@ -191,20 +210,19 @@
         }
         
         function nuveiPmChange(params) {
-            console.log(params.paymentMethodName);
-    
-            try {
-                nuveiSimplyPaymentMethod = params.paymentMethodName;
+            nuveiSimplyPaymentMethod = params?.paymentMethodName;
+            
+            console.log(nuveiSimplyPaymentMethod);
 
-                if (params.paymentMethodName && nuveiWallets.indexOf(params.paymentMethodName) >= 0) {
-                    $('#payment-confirmation button[type="submit"]').hide();
-                }
-                else {
-                    $('#payment-confirmation button[type="submit"]').show();
-                }
+            if (nuveiWallets.indexOf(nuveiSimplyPaymentMethod) >= 0) {
+                nuveiIsSimplyFormValid = true;
+                
+                $('#payment-confirmation button[type="submit"]').hide();
             }
-            catch(e) {
-                console.log(e);
+            else {
+                nuveiIsSimplyFormValid = false;
+                
+                $('#payment-confirmation button[type="submit"]').show();
             }
         }
         
@@ -291,7 +309,7 @@
             });
             
             // keep Place Order button hidden when someone play with the terms-and-conditions checkbox
-            $(document).on('change', 'input[name="conditions_to_approve[terms-and-conditions]"]', function(e) {
+            $(document).on('change', nuveiTermsInput, function(e) {
                 if (nuveiWallets.indexOf(nuveiSimplyPaymentMethod) >= 0) {
                     $('#payment-confirmation button[type="submit"]').hide();
                 }

@@ -1,5 +1,11 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+# 2.4.0
+```
+    * ApplePay and Gpay were moved into the APMs block.
+    * Fixed the bugs with the wallets on the checkout page.
+```
+
 # 2.3.1
 ```
     * Hide the "Place Order button", when GPay, ApplePay or Paze are selected.

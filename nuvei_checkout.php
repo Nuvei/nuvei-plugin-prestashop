@@ -1793,9 +1793,16 @@ class Nuvei_Checkout extends PaymentModule
             $useDCC = 'false';
         }
         
-        $locale     = substr($this->context->language->locale, 0, 2);
+        $locale = substr($this->context->language->locale, 0, 2);
+        
         $gpayConfig = [
-            'locale' => $locale
+            'locale'            => $locale,
+            'buttonLocation'    => 'gallery',
+        ];
+        
+        $applePayConfig = [
+            'locale'            => $locale,
+            'buttonLocation'    => 'gallery',
         ];
         
         if (!empty($g_merchat_id = Configuration::get( 'NUVEI_GPAY_MERCHANT' ))) {
@@ -1839,9 +1846,7 @@ class Nuvei_Checkout extends PaymentModule
 			'apmWindowType'             => Configuration::get('NUVEI_APM_WINDOW_TYPE'),
             'apmConfig'                 => [
                 'googlePay' => $gpayConfig,
-                'applePay'  => array(
-					'locale'    => $locale,
-				),
+                'applePay'  => $applePayConfig,
             ],
             'sourceApplication'         => $this->nuvei_source_application,
             'fieldStyle'				=> json_decode(Configuration::get('NUVEI_SDK_STYLE'), true),
