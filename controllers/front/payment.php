@@ -934,7 +934,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 					'$this->module->active' => $this->module->active,
 				),
 				'Validate error',
-				$this->getModuleVersion()
+				$this->module->getNuveiModuleVersion()
 			);
             
 			Tools::redirect($this->context->link->getPageLink('order'));
@@ -961,7 +961,7 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
         $customer = new Customer($cart->id_customer);
         
         if (!Validate::isLoadedObject($customer)) {
-            $this->module->createLog($customer, '$customer:', $this->getModuleVersion());
+            $this->module->createLog($customer, '$customer:', $this->module->getNuveiModuleVersion());
             Tools::redirect($this->context->link->getPageLink('order'));
         }
         

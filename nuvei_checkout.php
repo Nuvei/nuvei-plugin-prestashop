@@ -18,8 +18,8 @@ class Nuvei_Checkout extends PaymentModule
     public $is_eu_compatible            = 1;
     public $controllers                 = array('payment', 'validation');
     public $ps_versions_compliancy      = array(
-        'min' => '8.1.0', 
-        'max' => '8.999.999' // for curent version - _PS_VERSION_
+        'min' => '9.0.0', 
+        'max' => '9.999.999' // for curent version - _PS_VERSION_
     );
     public $tab;
     public $version;
@@ -63,7 +63,7 @@ class Nuvei_Checkout extends PaymentModule
             . 'classes' . DIRECTORY_SEPARATOR . 'NuveiRequest.php';
         
         $this->tab      = $this->getConfigData('tab');
-        $this->version  = $this->getModuleVersion();
+        $this->version  = $this->getNuveiModuleVersion();
         
         parent::__construct();
 
@@ -397,6 +397,10 @@ class Nuvei_Checkout extends PaymentModule
     
 	public function getNotifyUrl()
     {
+        if (defined('NUVEI_CUSTOM_DMN_URL')) {
+            return NUVEI_CUSTOM_DMN_URL;
+        }
+        
         return $this->context->link
             ->getModuleLink('nuvei_checkout', 'payment', array(
                 'prestaShopAction'  => 'processDmn',
@@ -1189,7 +1193,7 @@ class Nuvei_Checkout extends PaymentModule
         $logs_path              = _PS_ROOT_DIR_ . '/var/logs/';
         $allowed_controllers    = array('AdminDashboard', 'AdminOrders');
         $git_version            = 0;
-        $plug_curr_ver          = str_replace('.', '', trim($this->getModuleVersion()));
+        $plug_curr_ver          = str_replace('.', '', trim($this->getNuveiModuleVersion()));
         
         if(!in_array(Tools::getValue('controller'), $allowed_controllers)) {
             return;
@@ -1223,9 +1227,9 @@ class Nuvei_Checkout extends PaymentModule
         }
     }
     
-    public function getModuleVersion()
+    public static function getNuveiModuleVersion()
     {
-        $xml = simplexml_load_file(_PS_MODULE_DIR_ . $this->name . '/config.xml');
+        $xml = simplexml_load_file(__DIR__ . '/config.xml');
         
         return (string) $xml->version;
     }
@@ -1326,7 +1330,7 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         $machine_name       = '';
-        $service_name       = 'Nuvei Prestashop Checkout ' . $this->getModuleVersion() . '|';
+        $service_name       = 'Nuvei Prestashop Checkout ' . $this->getNuveiModuleVersion() . '|';
         $source_file_name   = '';
         $member_name        = '';
         $source_line_number = '';
@@ -1473,8 +1477,8 @@ class Nuvei_Checkout extends PaymentModule
                 'clientRequestId'   => $time . '_' . uniqid(),
                 
                 'timeStamp'         => $time,
-                'deviceDetails'     => NuveiRequest::get_device_details($this->getModuleVersion()),
-                'webMasterId'       => 'PrestaShop ' . _PS_VERSION_ . '; Plugin v' . $this->getModuleVersion(),
+                'deviceDetails'     => NuveiRequest::get_device_details($this->getNuveiModuleVersion()),
+                'webMasterId'       => 'PrestaShop ' . _PS_VERSION_ . '; Plugin v' . $this->getNuveiModuleVersion(),
                 'sourceApplication' => $this->nuvei_source_application,
                 'url'               => $notificationUrl, // a custom parameter for the checksum
             ),
@@ -1717,7 +1721,7 @@ class Nuvei_Checkout extends PaymentModule
         
         return hash(
             $merchant_hash_alg,
-            $this->name . '_' . $this->getModuleVersion() . '_' . $user_id
+            $this->name . '_' . $this->getNuveiModuleVersion() . '_' . $user_id
         ); 
     }
     
