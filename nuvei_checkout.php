@@ -450,9 +450,7 @@ class Nuvei_Checkout extends PaymentModule
 
             $newOption
                 ->setModuleName($this->name)
-                ->setCallToActionText($option_text)
-//                ->setLogo(_MODULE_DIR_ . 'nuvei_checkout/views/img/nuvei-v2.gif')
-            ;
+                ->setCallToActionText($option_text);
             
             $this->context->smarty->assign('nuveiModuleName', $this->name);
 		

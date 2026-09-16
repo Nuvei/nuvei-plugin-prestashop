@@ -1,5 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
+## 2.5.1
+```
+    * Updated logos.
+```
+
 ## 2.5.0
 ```
     * The version is compatible with Prestashop 9.x.x.
