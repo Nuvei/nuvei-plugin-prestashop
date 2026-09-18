@@ -2101,9 +2101,9 @@ class Nuvei_Checkout extends PaymentModule
      */
     private function getSdkLibUrl()
     {
-        if ($this->isQaSite()) {
-            return $this->sdkLibTagUrl;
-        }
+//        if ($this->isQaSite()) {
+//            return $this->sdkLibTagUrl;
+//        }
         
         return $this->sdkLibProdUrl;
     }

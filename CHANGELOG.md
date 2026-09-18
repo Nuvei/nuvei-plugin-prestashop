@@ -3,6 +3,7 @@
 ## 2.5.1
 ```
     * Updated logos.
+    * Removed the QA Simply Connect URL.
 ```
 
 ## 2.5.0
