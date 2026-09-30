@@ -48,7 +48,6 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
                 Tools::redirect($this->context->link->getPageLink('order'));
             }
             
-//            $this->module->openOrder(true);
             $this->prePaymentCheck();
             return;
         }
@@ -153,17 +152,10 @@ class Nuvei_CheckoutPaymentModuleFrontController extends ModuleFrontController
 			}
 			# /additional check for existing Order by the Card ID
 			
-//			if(!Tools::getValue('sc_transaction_id', false)) {
-//                $this->module->createLog('processOrder() missing sc_transaction_id.');
-//                Tools::redirect($error_url);
-//            }
-            
             // save order
             $extra_vars     = [];
             $nuvei_tr_id    = Tools::getValue('sc_transaction_id');
             $nuvei_pm       = Tools::getValue('nuveiPaymentMethod');
-//            $payment_method = $this->module->displayName . ' - ' 
-//                . ($nuvei_pm ? $nuvei_pm : 'APM');
             $payment_method = $this->module->name;
             
             if ($nuvei_tr_id && is_numeric($nuvei_tr_id)) {

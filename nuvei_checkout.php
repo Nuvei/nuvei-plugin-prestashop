@@ -347,14 +347,30 @@ class Nuvei_Checkout extends PaymentModule
             Configuration::updateValue('NUVEI_GPAY_BTN_COLOR',      Tools::getValue('NUVEI_GPAY_BTN_COLOR'));
             Configuration::updateValue('NUVEI_GPAY_BTN_TEXT',       Tools::getValue('NUVEI_GPAY_BTN_TEXT'));
             
+            # blocked PMs setting
             $nuvei_block_pms = Tools::getValue('NUVEI_BLOCK_PMS');
             
             if(is_array($nuvei_block_pms) && !empty($nuvei_block_pms)) {
-                $res = Configuration::updateValue('NUVEI_BLOCK_PMS', implode(',', $nuvei_block_pms));
+//                $res = Configuration::updateValue('NUVEI_BLOCK_PMS', implode(',', $nuvei_block_pms));
+                Configuration::updateValue('NUVEI_BLOCK_PMS', implode(',', $nuvei_block_pms));
             }
             else {
-                $res = Configuration::updateValue('NUVEI_BLOCK_PMS', '');
+//                $res = Configuration::updateValue('NUVEI_BLOCK_PMS', '');
+                Configuration::updateValue('NUVEI_BLOCK_PMS', '');
             }
+            
+            # PMs order setting
+            $pmOrder = Tools::getValue('NUVEI_PM_ORDER', []);
+            
+            if (is_array($pmOrder)) {
+                $pmOrder = array_values(array_unique(array_filter($pmOrder, 'is_string')));
+                Configuration::updateValue('NUVEI_PM_ORDER', implode(',', $pmOrder));
+            }
+            else {
+                Configuration::updateValue('NUVEI_PM_ORDER', '');
+            }
+            
+            Configuration::updateValue('NUVEI_SKIP_CUSTOM_PMS_ORDER', Tools::getValue('NUVEI_SKIP_CUSTOM_PMS_ORDER'));
         }
 
         if (isset($this->_postErrors) && sizeof($this->_postErrors)) {
@@ -1483,7 +1499,8 @@ class Nuvei_Checkout extends PaymentModule
             $params
         );
         
-        $params['merchantDetails']['customField4'] = time();
+        $params['merchantDetails']['customField4']  = time();
+        $params['merchantDetails']['customField15'] = $params['sourceApplication'];
         
         // calculate the checksum
         $concat = '';
@@ -1864,8 +1881,16 @@ class Nuvei_Checkout extends PaymentModule
             $checkout_params['pmWhitelist'] = ['cc_card'];
         }
         
+        // for the PMs order
+        if ( (int) Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER') == 0
+            && !empty($pmOrder = Configuration::get('NUVEI_PM_ORDER') ?? '') 
+        ) {
+            $checkout_params['paymentMethodsOrder'] = explode(',', $pmOrder);
+        }
+        
         $sdk_url = $this->getSdkLibUrl();
         
+        $this->createLog([Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER') , Configuration::get('NUVEI_PM_ORDER')]);
         $this->createLog($checkout_params, 'SDK params.');
         
         $this->context->smarty->assign('nuveiSdkUrl',       $sdk_url);
@@ -2020,16 +2045,17 @@ class Nuvei_Checkout extends PaymentModule
             return;
         }
         
-		$payment_methods            = [];
-        $nuvei_block_pms            = Configuration::get('NUVEI_BLOCK_PMS');
-        $nuvei_block_pms_arr        = !empty($nuvei_block_pms) ? explode(',', $nuvei_block_pms) : [];
+		$payment_methods        = [];
+        $orderedPaymentMethods  = [];
+        $nuvei_block_pms        = Configuration::get('NUVEI_BLOCK_PMS');
+        $nuvei_block_pms_arr    = !empty($nuvei_block_pms) ? explode(',', $nuvei_block_pms) : [];
+        $savedOrder             = array_filter( explode(',', (string) Configuration::get('NUVEI_PM_ORDER')) );
         
         $this->createLog($nuvei_block_pms, '$nuvei_block_pms');
 			
 		$apms_params		= array(
 			'sessionToken'  => $session_token,
 			'languageCode'  => $this->context->language->iso_code,
-//			'currencyCode'  => $this->context->currency->iso_code,
 		);
         
 		$res = $this->callRestApi(
@@ -2059,6 +2085,17 @@ class Nuvei_Checkout extends PaymentModule
                 ];
             }
 		}
+        
+        // sort the PMs
+        uksort($payment_methods, function ($a, $b) use ($savedOrder) {
+            $posA = array_search($a, $savedOrder);
+            $posB = array_search($b, $savedOrder);
+
+            $posA = $posA === false ? PHP_INT_MAX : $posA;
+            $posB = $posB === false ? PHP_INT_MAX : $posB;
+
+            return $posA <=> $posB;
+        });
         
 		$this->context->smarty->assign('paymentMethods', $payment_methods);
 	}

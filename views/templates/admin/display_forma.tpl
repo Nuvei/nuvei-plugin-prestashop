@@ -155,7 +155,7 @@
                                 </select>
                             </div>
                         </div>
-                            
+                        
                         <div class="form-group">
                             <label class="control-label col-lg-3">{l s='Block Cards' mod='nuvei'}</label>
                             <div class="col-lg-9">
@@ -163,7 +163,50 @@
                                 <span class="help-block">{l s='For examples' mod='nuvei'} <a href="https://docs.nuvei.com/documentation/accept-payment/simply-connect/payment-customization/#Card_Processing" target="_blank">{l s='check the Documentation.' mod='nuvei'}</a></span>
                             </div>
                         </div>
-                            
+                                
+                        <div class="form-group">
+                            <label class="control-label col-lg-3">{l s='Payment methods order' mod='nuvei'}</label>
+
+                            <div class="col-lg-9">
+                                <ul id="nuvei-pm-order" class="list-group" style="max-height: 200px; overflow-y: auto;">
+                                    {foreach from=$paymentMethods key=$method item=$pmData}
+                                        <li class="list-group-item">
+                                            <input type="hidden" 
+                                                   name="NUVEI_PM_ORDER[]" 
+                                                   value="{$method|escape:'html':'UTF-8'}">
+
+                                            <span>{$pmData.name|escape:'html':'UTF-8'}</span>
+
+                                            <span class="pull-right">
+                                                <button type="button" class="btn btn-default btn-xs nuvei-pm-up">
+                                                    <i class="icon-chevron-up"></i>
+                                                </button>
+
+                                                <button type="button" class="btn btn-default btn-xs nuvei-pm-down">
+                                                    <i class="icon-chevron-down"></i>
+                                                </button>
+                                            </span>
+                                        </li>
+                                    {/foreach}
+                                </ul>
+
+                                <span class="help-block">
+                                    {l s='Use the arrows to define the payment methods display order.' mod='nuvei'}
+                                </span>
+                                
+                                <span class="help-block">
+                                    <label class="">
+                                        <input type="checkbox" 
+                                               value="{Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER')}" 
+                                               id="nuvei-skip-custom-pms-order" 
+                                               name="NUVEI_SKIP_CUSTOM_PMS_ORDER" 
+                                               {if Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER') eq '1'}checked="checked"{/if} /> 
+                                        {l s='Use Simply Connect default order.' mod='nuvei'}
+                                    </label>
+                                </span>
+                            </div>
+                        </div>
+                                
                         <div class="form-group">
                             <label class="control-label col-lg-3">{l s='Block Payment methods' mod='nuvei'}</label>
                             <div class="col-lg-9">
@@ -390,7 +433,23 @@
     
     function disableNuveiPm(_id) {
         $(_id).hide();
-        
-        
     }
-</script>
+    
+    // sortinng the PMs
+    $(document).on('click', '.nuvei-pm-up', function () {
+        var item = $(this).closest('li');
+        item.prev().before(item);
+    });
+
+    $(document).on('click', '.nuvei-pm-down', function () {
+        var item = $(this).closest('li');
+        item.next().after(item);
+    });
+    
+    // skip sortinng the PMs
+    $(document).on('change', '#nuvei-skip-custom-pms-order', function() {
+        let self = $(this);
+        
+        self.val(self.is(':checked') ? 1 : 0);
+    });
+ </script>

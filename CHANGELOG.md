@@ -1,9 +1,10 @@
 # Nuvei Checkout plugin for Prestashop Changelog
 
-## 2.5.1
+## 2.6.0
 ```
     * Updated logos.
     * Removed the QA Simply Connect URL.
+    * Added option to manually sort the Order of the available Payment Methods.
 ```
 
 ## 2.5.0
