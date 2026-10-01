@@ -371,6 +371,34 @@ class Nuvei_Checkout extends PaymentModule
             }
             
             Configuration::updateValue('NUVEI_SKIP_CUSTOM_PMS_ORDER', Tools::getValue('NUVEI_SKIP_CUSTOM_PMS_ORDER'));
+            
+            # PMs total ranges
+            $ranges = [];
+            
+            foreach ((array) Tools::getValue('NUVEI_PM_RANGES', []) as $r) {
+                // if no PMs selected
+                if (empty($r['pms']) || !is_array($r['pms'])) { 
+                    continue; 
+                }
+
+                $min = (float) str_replace(',', '.', (string) ($r['min'] ?? 0));
+                $max = trim( (string) ($r['max'] ?? '') ) === ''
+                    ? null : (float) str_replace(',', '.', $r['max']);
+
+                // error
+                if ($max !== null && $max < $min) { 
+                    continue;
+                }
+
+                $ranges[] = [
+                    'min' => $min,
+                    'max' => $max,
+                    'pms' => array_values(array_filter($r['pms'], 'is_string')),
+                ];
+            }
+            
+            Configuration::updateValue('NUVEI_PM_RANGES', json_encode($ranges));
+            Configuration::updateValue('NUVEI_SKIP_CUSTOM_PMS_RANGE', Tools::getValue('NUVEI_SKIP_CUSTOM_PMS_RANGE'));
         }
 
         if (isset($this->_postErrors) && sizeof($this->_postErrors)) {
@@ -384,6 +412,10 @@ class Nuvei_Checkout extends PaymentModule
         
         // for the admin we need the Merchant Payment Methods
         $this->getPaymentMethods();
+        
+        $pmRanges = Configuration::get('NUVEI_PM_RANGES');
+        
+        $this->smarty->assign('nuveiPmRanges', json_decode((string) $pmRanges, true) ?: []);
 
         return $this->display(__FILE__, 'views/templates/admin/display_forma.tpl');
     }
@@ -1801,6 +1833,25 @@ class Nuvei_Checkout extends PaymentModule
 		}
 		# /blocked_cards
         
+        $pmWhitelist = null;
+        
+        // PMs by Order amount
+        $pmRanges = json_decode(Configuration::get('NUVEI_PM_RANGES') ?? '', true);
+        
+        if ( (int) Configuration::get('NUVEI_SKIP_CUSTOM_PMS_RANGE') == 0 && !empty($pmRanges)  ) {
+            foreach($pmRanges as $group) {
+                $this->createLog([$group, $oo_params['request_params']['amount']]);
+
+                if ($oo_params['request_params']['amount'] >= $group['min']
+                    && ($group['max'] === null || $oo_params['request_params']['amount'] <= $group['max'])
+                ) {
+                    $pmWhitelist    = $group['pms'];
+                    $blocked_pms    = null;
+                    break;
+                }
+            }
+        }
+        
         if(empty($oo_params['request_params']['billingAddress'])) {
             $addresses                                      = $this->getOrderAddresses();
             $oo_params['request_params']['billingAddress']  = $addresses['billingAddress'];
@@ -1847,7 +1898,7 @@ class Nuvei_Checkout extends PaymentModule
 			'strict'                    => false,
 			'savePM'                    => $save_pm,
 			'showUserPaymentOptions'    => $use_upos,
-			'pmWhitelist'               => null,
+			'pmWhitelist'               => $pmWhitelist,
 			'pmBlacklist'               => $blocked_pms,
             'blockCards'                => $blocked_cards,
 			'alwaysCollectCvv'          => true,
@@ -1889,9 +1940,6 @@ class Nuvei_Checkout extends PaymentModule
         }
         
         $sdk_url = $this->getSdkLibUrl();
-        
-        $this->createLog([Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER') , Configuration::get('NUVEI_PM_ORDER')]);
-        $this->createLog($checkout_params, 'SDK params.');
         
         $this->context->smarty->assign('nuveiSdkUrl',       $sdk_url);
         $this->context->smarty->assign('showNuveoOnly',     $this->is_rebilling_order);

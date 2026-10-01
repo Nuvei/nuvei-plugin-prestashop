@@ -5,6 +5,7 @@
     * Updated logos.
     * Removed the QA Simply Connect URL.
     * Added option to manually sort the Order of the available Payment Methods.
+    * Added option to filter the payment methods based on the Order amount.
 ```
 
 ## 2.5.0

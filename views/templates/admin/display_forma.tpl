@@ -168,7 +168,18 @@
                             <label class="control-label col-lg-3">{l s='Payment methods order' mod='nuvei'}</label>
 
                             <div class="col-lg-9">
-                                <ul id="nuvei-pm-order" class="list-group" style="max-height: 200px; overflow-y: auto;">
+                                <span class="help-block">
+                                    <label class="">
+                                        <input type="checkbox" 
+                                               value="{Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER')}" 
+                                               id="nuvei-skip-custom-pms-order" 
+                                               name="NUVEI_SKIP_CUSTOM_PMS_ORDER" 
+                                               {if Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER') eq '1'}checked="checked"{/if} /> 
+                                        {l s='Use Simply Connect default order.' mod='nuvei'}
+                                    </label>
+                                </span>
+                                
+                                <ul id="nuvei-pm-order" class="list-group {if Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER') eq '1'}hidden{/if}" style="max-height: 200px; overflow-y: auto;">
                                     {foreach from=$paymentMethods key=$method item=$pmData}
                                         <li class="list-group-item">
                                             <input type="hidden" 
@@ -190,25 +201,102 @@
                                     {/foreach}
                                 </ul>
 
-                                <span class="help-block">
+                                <span class="help-block  {if Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER') eq '1'}hidden{/if}" id="nuvei-pm-order-help">
                                     {l s='Use the arrows to define the payment methods display order.' mod='nuvei'}
                                 </span>
-                                
+                            </div>
+                        </div>
+                                    
+                        <div class="form-group">
+                            <label class="control-label col-lg-3">{l s='Select Payment methods by Order amount' mod='nuvei'}</label>
+                            
+                            <div class="col-lg-9">
                                 <span class="help-block">
                                     <label class="">
                                         <input type="checkbox" 
-                                               value="{Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER')}" 
-                                               id="nuvei-skip-custom-pms-order" 
-                                               name="NUVEI_SKIP_CUSTOM_PMS_ORDER" 
-                                               {if Configuration::get('NUVEI_SKIP_CUSTOM_PMS_ORDER') eq '1'}checked="checked"{/if} /> 
-                                        {l s='Use Simply Connect default order.' mod='nuvei'}
+                                               value="{Configuration::get('NUVEI_SKIP_CUSTOM_PMS_RANGE')}" 
+                                               id="nuvei-skip-custom-pms-range" 
+                                               name="NUVEI_SKIP_CUSTOM_PMS_RANGE" 
+                                               {if Configuration::get('NUVEI_SKIP_CUSTOM_PMS_RANGE') eq '1'}checked="checked"{/if} /> 
+                                        {l s='Use Simply Connect default.' mod='nuvei'}
                                     </label>
                                 </span>
+                                
+                                <table class="table {if Configuration::get('NUVEI_SKIP_CUSTOM_PMS_RANGE') eq '1'}hidden{/if}" id="nuvei_ranges">
+                                    <thead>
+                                        <tr>
+                                            <th>{l s='Min amount' mod='nuvei'}</th>
+                                            <th>{l s='Max amount' mod='nuvei'}</th>
+                                            <th>{l s='Allowed payment methods (multiple can be selected)' mod='nuvei'}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {if isset($nuveiPmRanges) && $nuveiPmRanges}
+                                        {foreach from=$nuveiPmRanges key=i item=r}
+                                            <tr class="nuvei-range-row">
+                                                <td>
+                                                    <input type="number" 
+                                                           step="0.01" 
+                                                           min="0" 
+                                                           name="NUVEI_PM_RANGES[{$i}][min]" 
+                                                           value="{$r.min|escape:'html':'UTF-8'}">
+                                                </td>
+                                                
+                                                <td>
+                                                    <input type="number" 
+                                                           step="0.01" 
+                                                           min="0" 
+                                                           name="NUVEI_PM_RANGES[{$i}][max]" 
+                                                           value="{if $r.max !== null}{$r.max|escape:'html':'UTF-8'}{/if}" 
+                                                           placeholder="{l s='No limit' mod='nuvei'}" >
+                                                </td>
+                                                
+                                                <td>
+                                                    <select multiple name="NUVEI_PM_RANGES[{$i}][pms][]">
+                                                        {foreach from=$paymentMethods key=method item=pmData}
+                                                            <option value="{$method|escape:'html':'UTF-8'}" {if in_array($method, $r.pms|default:[])}selected{/if}>{$pmData.name|escape:'html':'UTF-8'}</option>
+                                                        {/foreach}
+                                                    </select>
+                                                </td>
+                                                <td><button type="button" class="btn btn-default nuvei-range-del">✕</button></td>
+                                            </tr>
+                                        {/foreach}
+                                        {/if}
+                                    </tbody>
+                                </table>
+                                
+                                <button type="button" class="btn btn-default  {if Configuration::get('NUVEI_SKIP_CUSTOM_PMS_RANGE') eq '1'}hidden{/if}" id="nuvei_range_add">{l s='Add range' mod='nuvei'}</button>
+                                
+                                <template id="nuvei_range_tpl">
+                                    <tr class="nuvei-range-row">
+                                        <td><input type="number" 
+                                                   step="0.01" 
+                                                   min="0" 
+                                                   name="NUVEI_PM_RANGES[__i__][min]"></td>
+                                        
+                                        <td><input type="number" 
+                                                   step="0.01" 
+                                                   min="0" 
+                                                   name="NUVEI_PM_RANGES[__i__][max]" 
+                                                   placeholder="{l s='No limit' mod='nuvei'}"></td>
+                                        
+                                        <td>
+                                            <select multiple name="NUVEI_PM_RANGES[__i__][pms][]">
+                                                {foreach from=$paymentMethods key=method item=pmData}
+                                                    <option value="{$method|escape:'html':'UTF-8'}">{$pmData.name|escape:'html':'UTF-8'}</option>
+                                                {/foreach}
+                                            </select>
+                                        </td>
+                                        <td><button type="button" class="btn btn-default nuvei-range-del">✕</button></td>
+                                    </tr>
+                                </template>
                             </div>
                         </div>
                                 
                         <div class="form-group">
                             <label class="control-label col-lg-3">{l s='Block Payment methods' mod='nuvei'}</label>
+                            
                             <div class="col-lg-9">
                                 <select name="NUVEI_BLOCK_PMS[]" multiple="">
                                     <option value="">{l s='None' mod='nuvei'}</option>
@@ -450,6 +538,40 @@
     $(document).on('change', '#nuvei-skip-custom-pms-order', function() {
         let self = $(this);
         
-        self.val(self.is(':checked') ? 1 : 0);
+        if (self.is(':checked')) {
+            self.val(1);
+            $('#nuvei-pm-order, #nuvei-pm-order-help').toggleClass('hidden');
+        } 
+        else {
+            self.val(0);
+            $('#nuvei-pm-order, #nuvei-pm-order-help').toggleClass('hidden');
+        }
     });
+    
+    // PMs by ranges
+    let nuveiRangeTpl   = document.getElementById('nuvei_range_tpl').innerHTML;
+    let nuveiRangeRows  = $('.nuvei-range-row').length;
+
+    $(document).on('click', '#nuvei_range_add', function() {
+        $('#nuvei_ranges tbody').append( nuveiRangeTpl.replace(/__i__/g, nuveiRangeRows++) );
+    });
+    
+    $(document).on('click', '.nuvei-range-del', function() {
+        let self = $(this);
+        self.closest('tr').remove();
+    });
+    
+    $(document).on('change', '#nuvei-skip-custom-pms-range', function() {
+        let self = $(this);
+        
+        if (self.is(':checked')) {
+            self.val(1);
+            $('#nuvei_ranges, #nuvei_range_add').toggleClass('hidden');
+        } 
+        else {
+            self.val(0);
+            $('#nuvei_ranges, #nuvei_range_add').toggleClass('hidden');
+        }
+    });
+
  </script>
