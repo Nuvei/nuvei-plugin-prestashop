@@ -6,6 +6,10 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+if ( is_file( dirname(__DIR__) . '/nuvei.config.local.php' ) ) {
+    include_once dirname(__DIR__) . '/nuvei.config.local.php';
+}
+
 class Nuvei_Checkout extends PaymentModule
 {
     public $name                        = 'nuvei_checkout';
@@ -445,8 +449,8 @@ class Nuvei_Checkout extends PaymentModule
     
 	public function getNotifyUrl()
     {
-        if (defined('NUVEI_CUSTOM_DMN_URL')) {
-            return NUVEI_CUSTOM_DMN_URL;
+        if (defined('NUVEI_LOCAL_CONF') && !empty(NUVEI_LOCAL_CONF['dmn_url'])) {
+            return NUVEI_LOCAL_CONF['dmn_url'];
         }
         
         return $this->context->link
@@ -1922,9 +1926,13 @@ class Nuvei_Checkout extends PaymentModule
             'fieldStyle'				=> json_decode(Configuration::get('NUVEI_SDK_STYLE'), true),
         ];
         
-        // for the QA site pass a specific parameter
-        if ($this->isQaSite()) {
-            $checkout_params['webSdkEnv'] = 'devmobile';
+        // use custom settings
+        if ( defined('NUVEI_LOCAL_CONF') && !empty(NUVEI_LOCAL_CONF['webSdk_env']) ) {
+            $checkout_params['webSdkEnv'] = NUVEI_LOCAL_CONF['webSdk_env'];
+        }
+        // use custom settings
+        if ( defined('NUVEI_LOCAL_CONF') && !empty(NUVEI_LOCAL_CONF['simply_env']) ) {
+            $checkout_params['env'] = NUVEI_LOCAL_CONF['simply_env'];
         }
         
         if($this->is_rebilling_order) {
@@ -2174,6 +2182,10 @@ class Nuvei_Checkout extends PaymentModule
 	 * @return string
 	 */
 	private function getEndPointBase() {
+        if (defined('NUVEI_LOCAL_CONF') && !empty(NUVEI_LOCAL_CONF['endpoint_base'])) {
+            return NUVEI_LOCAL_CONF['endpoint_base'];
+        }
+        
 		if (Configuration::get('SC_TEST_MODE') == 'yes') {
 			return $this->restApiIntUrl;
 		}
@@ -2186,25 +2198,13 @@ class Nuvei_Checkout extends PaymentModule
      */
     private function getSdkLibUrl()
     {
-//        if ($this->isQaSite()) {
-//            return $this->sdkLibTagUrl;
-//        }
+        if (defined('NUVEI_LOCAL_CONF') && !empty(NUVEI_LOCAL_CONF['simply_url'])) {
+            return NUVEI_LOCAL_CONF['simply_url'];
+        }
         
         return $this->sdkLibProdUrl;
     }
     
-    private function isQaSite()
-    {
-        if (!empty($_SERVER['SERVER_NAME'])
-            && !empty($this->sdkLibTagUrl)
-            && 'prestaautomation.gw-4u.com' == $_SERVER['SERVER_NAME']
-        ) {
-            return true;
-        }
-        
-        return false;
-    }
-	
 	/**
 	 * Function update_order
 	 * 
