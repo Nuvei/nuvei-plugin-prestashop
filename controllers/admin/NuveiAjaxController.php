@@ -159,8 +159,8 @@ class NuveiAjaxController extends ModuleAdminControllerCore
         $time= date('YmdHis', time());
         
         $params = array(
-            'planStatus'		=> 'ACTIVE',
-			'currency'			=> '',
+            'planStatus'    => 'ACTIVE',
+			'currency'		=> '',
         );
         
         $checksum = hash(
@@ -181,11 +181,11 @@ class NuveiAjaxController extends ModuleAdminControllerCore
             array('merchantId', 'merchantSiteId', 'currency', 'planStatus', 'timeStamp')
         );
         
-        if(!isset($resp['plans']) || !is_array($resp['plans'])) {
-            header('Content-Type: application/json');
-            echo json_encode(array('status' => 0));
-            exit;
-        }
+//        if(!isset($resp['plans']) || !is_array($resp['plans'])) {
+//            header('Content-Type: application/json');
+//            echo json_encode(array('status' => 0));
+//            exit;
+//        }
         
         // generate default plan
         if(empty($resp['plans']) && $call == 0) {
