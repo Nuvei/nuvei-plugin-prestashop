@@ -1,5 +1,6 @@
 <?php
 
+use PrestaShop\PrestaShop\Core\Action\ActionsBarButton;
 use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
 
 if (!defined('_PS_VERSION_')) {
@@ -648,7 +649,7 @@ class Nuvei_Checkout extends PaymentModule
             return;
         }
         
-        /** @var \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButtonsCollection $bar */
+        /** @var PrestaShop\PrestaShop\Core\Action\ActionsBarButton $bar */
         $bar                        = $params['actions_bar_buttons_collection'];
         $sc_data['order_state']     = $order->current_state;
         $sc_data['order_payment']   = $payment;
@@ -663,7 +664,7 @@ class Nuvei_Checkout extends PaymentModule
             && Configuration::get('SC_OS_AWAITING_PAIMENT') == $sc_data['order_state']
         ) {
             $bar->add(
-                new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
+                new ActionsBarButton(
                     'btn btn-action',
                     [
                         'href' => '#',
@@ -707,7 +708,7 @@ class Nuvei_Checkout extends PaymentModule
         // add Void button
         if($enable_void) {
             $bar->add(
-                new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
+                new ActionsBarButton(
                     'btn btn-action',
                     [
                         'href' => '#',
@@ -729,7 +730,7 @@ class Nuvei_Checkout extends PaymentModule
         
         if (!empty($subs_state['subscr_state']) && 'active' == $subs_state['subscr_state']) {
             $bar->add(
-                new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
+                new ActionsBarButton(
                     'btn btn-action',
                     [
                         'href'      => '#',
@@ -1536,7 +1537,7 @@ class Nuvei_Checkout extends PaymentModule
         );
         
         $params['merchantDetails']['customField4']  = time();
-        $params['merchantDetails']['customField15'] = $params['sourceApplication'];
+        $params['merchantDetails']['customField15'] = $params['webMasterId'];
         
         // calculate the checksum
         $concat = '';
@@ -1849,11 +1850,18 @@ class Nuvei_Checkout extends PaymentModule
                 if ($oo_params['request_params']['amount'] >= $group['min']
                     && ($group['max'] === null || $oo_params['request_params']['amount'] <= $group['max'])
                 ) {
-                    $pmWhitelist    = $group['pms'];
+                    if (is_null($pmWhitelist)) {
+                        $pmWhitelist = [];
+                    }
+                    
+//                    $pmWhitelist    = $group['pms'];
+                    $pmWhitelist    = array_merge($pmWhitelist, $group['pms']);
                     $blocked_pms    = null;
-                    break;
+//                    break;
                 }
             }
+            
+            $pmWhitelist = array_values(array_unique($pmWhitelist));
         }
         
         if(empty($oo_params['request_params']['billingAddress'])) {
