@@ -13,7 +13,7 @@
 ```
     * The version is compatible with Prestashop 9.x.x.
     * Added a check for the possible DMN URL constant NUVEI_CUSTOM_DMN_URL.
-``
+```
 
 ## 2.4.0
 ```
