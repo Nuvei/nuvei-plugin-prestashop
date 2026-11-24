@@ -7,6 +7,7 @@
     * Added option to manually sort the Order of the available Payment Methods.
     * Added option to filter the payment methods based on the Order amount.
     * Fixed the problem when the merchant try to download the Payment plans, but there are not any payment plans.
+    * Verify the SSLs.
 ```
 
 ## 2.5.0

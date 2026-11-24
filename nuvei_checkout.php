@@ -2578,7 +2578,7 @@ class Nuvei_Checkout extends PaymentModule
             $ch      = curl_init();
 
             curl_setopt($ch, CURLOPT_URL, $this->plugin_git_changelog);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
             $file_text = curl_exec($ch);
